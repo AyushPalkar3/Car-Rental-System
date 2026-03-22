@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import PredefinedDateRanges from "../../common/range-picker/datePicker";
 // import { driversData } from "../../common/json/driversList";
 import CommonDatatable from "../../common/dataTable";
 import { all_routes } from "../../../../router/all_routes";
-import CustomSelect from "../../common/select/commonSelect";
-import { Gender } from "../../common/json/selectOption";
-import { DatePicker } from "antd";
-import "react-phone-number-input/style.css";
-import PhoneInput from "react-phone-number-input";
 import { carPartnerAPI } from "../../service/api/carPartner";
+import { toast } from "react-toastify";
 
 const CarPartnerList = () => {
   const [driversData, setDriverData] = useState<any[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [value, setValue] = useState<any>();
+  const [deactivatePartnerId, setDeactivatePartnerId] = useState<string | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editAddressLine, setEditAddressLine] = useState("");
+  const [editPhoneDisplay, setEditPhoneDisplay] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Add Car Partner form state
   const [formName, setFormName] = useState("");
@@ -45,6 +48,87 @@ const CarPartnerList = () => {
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
+  };
+
+  const hideEditModal = () => {
+    const el = document.getElementById("edit_driver");
+    const bs = (window as unknown as { bootstrap?: { Modal: { getInstance: (n: HTMLElement) => { hide: () => void } | null } } }).bootstrap?.Modal?.getInstance(el as HTMLElement);
+    bs?.hide();
+  };
+
+  const resetEditForm = () => {
+    setEditId(null);
+    setEditName("");
+    setEditEmail("");
+    setEditAddressLine("");
+    setEditPhoneDisplay("");
+    setEditError(null);
+    setEditLoading(false);
+  };
+
+  const openEditPartner = (record: any) => {
+    setEditId(record.id);
+    setEditName(record.name?.trim() || "");
+    setEditEmail(record.email?.trim() || "");
+    setEditAddressLine(record.address?.trim() || "");
+    setEditPhoneDisplay(record.phoneNum || "");
+    setEditError(null);
+  };
+
+  const handleSaveEditPartner = async () => {
+    if (!editId) return;
+    if (!editName.trim()) {
+      setEditError("Name is required.");
+      return;
+    }
+    if (!editEmail.trim()) {
+      setEditError("Email is required.");
+      return;
+    }
+    setEditError(null);
+    setEditLoading(true);
+    try {
+      await carPartnerAPI.update(editId, {
+        name: editName.trim(),
+        email: editEmail.trim(),
+        address: editAddressLine.trim() || null,
+      });
+      toast.success("Car partner updated.");
+      resetEditForm();
+      hideEditModal();
+      await getAllCarPartner();
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message || e?.message || "Could not save changes.";
+      setEditError(msg);
+      toast.error(msg);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const hideDeleteModal = () => {
+    const el = document.getElementById("delete_driver");
+    const bs = (window as unknown as { bootstrap?: { Modal: { getInstance: (n: HTMLElement) => { hide: () => void } | null } } }).bootstrap?.Modal?.getInstance(el as HTMLElement);
+    bs?.hide();
+  };
+
+  const handleConfirmDeactivatePartner = async () => {
+    if (!deactivatePartnerId) return;
+    setStatusUpdating(true);
+    try {
+      await carPartnerAPI.setStatus(deactivatePartnerId, "Inactive");
+      toast.success("Car partner marked as inactive.");
+      setDeactivatePartnerId(null);
+      hideDeleteModal();
+      await getAllCarPartner();
+    } catch (e: any) {
+      toast.error(
+        e?.response?.data?.message || e?.message || "Could not update status"
+      );
+    } finally {
+      setStatusUpdating(false);
+    }
   };
 
   const handleCreateCarPartner = async () => {
@@ -102,6 +186,33 @@ const CarPartnerList = () => {
       render: (text: string) => <p className="text-gray-9">{text}</p>,
       sorter: (a: any, b: any) => a.phoneNum.localeCompare(b.phoneNum),
     },
+    {
+      title: "Total cars",
+      dataIndex: "_count",
+      render: (_: unknown, record: any) => (
+        <p className="text-gray-9 mb-0">{record._count?.cars ?? 0}</p>
+      ),
+      sorter: (a: any, b: any) =>
+        (a._count?.cars ?? 0) - (b._count?.cars ?? 0),
+    },
+    {
+      title: "Joining date",
+      dataIndex: "createdAt",
+      render: (iso: string) => (
+        <p className="text-gray-9 mb-0">
+          {iso
+            ? new Date(iso).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })
+            : "—"}
+        </p>
+      ),
+      sorter: (a: any, b: any) =>
+        new Date(a.createdAt || 0).getTime() -
+        new Date(b.createdAt || 0).getTime(),
+    },
     // {
     //   title: "LICENSE NO",
     //   dataIndex: "LICENSE_NO",
@@ -130,7 +241,7 @@ const CarPartnerList = () => {
     {
       title: "Action",
       dataIndex: "",
-      render: () => (
+      render: (_: unknown, record: any) => (
         <div className="dropdown">
           <button
             className="btn btn-icon btn-sm"
@@ -147,22 +258,26 @@ const CarPartnerList = () => {
                 to="#"
                 data-bs-toggle="modal"
                 data-bs-target="#edit_driver"
+                onClick={() => openEditPartner(record)}
               >
                 <i className="ti ti-edit me-1" />
                 Edit
               </Link>
             </li>
-            <li>
-              <Link
-                className="dropdown-item rounded-1"
-                to="#"
-                data-bs-toggle="modal"
-                data-bs-target="#delete_driver"
-              >
-                <i className="ti ti-trash me-1" />
-                Delete
-              </Link>
-            </li>
+            {record.status === "Active" ? (
+              <li>
+                <Link
+                  className="dropdown-item rounded-1"
+                  to="#"
+                  data-bs-toggle="modal"
+                  data-bs-target="#delete_driver"
+                  onClick={() => setDeactivatePartnerId(record.id)}
+                >
+                  <i className="ti ti-trash me-1" />
+                  Delete
+                </Link>
+              </li>
+            ) : null}
           </ul>
         </div>
       ),
@@ -414,6 +529,7 @@ const CarPartnerList = () => {
           dataSource={filteredData}
           columns={columns}
           searchValue={searchValue}
+          showRowSelection={false}
         />
         {/* Custom Data Table */}
       </div>
@@ -426,23 +542,27 @@ const CarPartnerList = () => {
               <span className="avatar avatar-lg bg-transparent-danger rounded-circle text-danger mb-3">
                 <i className="ti ti-trash-x fs-26" />
               </span>
-              <h4 className="mb-1">Delete Driver</h4>
-              <p className="mb-3">Are you sure you want to delete Driver?</p>
+              <h4 className="mb-1">Deactivate car partner</h4>
+              <p className="mb-3">
+                This will set their status to <strong>Inactive</strong>. They will remain in the list.
+              </p>
               <div className="d-flex justify-content-center">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-light me-3"
                   data-bs-dismiss="modal"
+                  onClick={() => setDeactivatePartnerId(null)}
                 >
                   Cancel
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-dismiss="modal"
+                </button>
+                <button
+                  type="button"
                   className="btn btn-primary"
+                  disabled={statusUpdating || !deactivatePartnerId}
+                  onClick={() => void handleConfirmDeactivatePartner()}
                 >
-                  Yes, Delete
-                </Link>
+                  {statusUpdating ? "Updating…" : "Yes, deactivate"}
+                </button>
               </div>
             </div>
           </div>
@@ -636,212 +756,115 @@ const CarPartnerList = () => {
         </div>
       </div>
       {/* /Add Driver */}
-      {/* Add Driver */}
+      {/* Edit Car Partner */}
       <div className="modal fade" id="edit_driver">
         <div className="modal-dialog modal-dialog-centered modal-lg">
           <div className="modal-content">
             <div className="modal-header">
-              <h5 className="mb-0">Edit Driver</h5>
+              <h5 className="mb-0">Edit Car Partner</h5>
               <button
                 type="button"
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
+                onClick={resetEditForm}
               >
                 <i className="ti ti-x fs-16" />
               </button>
             </div>
             <div className="modal-body pb-1">
               <div className="row">
-                <div className="mb-3">
-                  <label className="form-label">
-                    Image <span className="text-danger">*</span>
-                  </label>
-                  <div className="d-flex align-items-center flex-wrap row-gap-3">
-                    <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border me-3 p-2 flex-shrink-0 text-dark frames">
-                      <ImageWithBasePath
-                        src="assets/admin/img/customer/customer-01.jpg"
-                        className="img-fluid rounded"
-                        alt="img"
-                      />
-                      <span className="avatar-badge bg-light text-danger m-1">
-                        <i className="ti ti-trash"></i>
-                      </span>
-                    </div>
-                    <div className="profile-upload">
-                      <div className="profile-uploader d-flex align-items-center">
-                        <div className="drag-upload-btn btn btn-md btn-dark">
-                          <i className="ti ti-photo-up fs-14" />
-                          Upload
-                          <input
-                            type="file"
-                            className="form-control image-sign"
-                            multiple
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-2">
-                        <p className="fs-14">
-                          Upload Image size 180*180, within 5MB
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-6">
+                <div className="col-md-12">
                   <div className="mb-3">
                     <label className="form-label">
-                      Driver Name <span className="text-danger">*</span>
+                      Name <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
-                      defaultValue="Reuben Keen"
                       className="form-control"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Partner name"
+                      disabled={editLoading}
                     />
                   </div>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-12">
                   <div className="mb-3">
-                    <label className="form-label">
-                      Gender <span className="text-danger">*</span>
-                    </label>
-                    <CustomSelect
-                      options={Gender}
-                      defaultValue={Gender[1]}
-                      className="select d-flex"
-                      placeholder="Select"
+                    <label className="form-label">Phone number</label>
+                    <input
+                      type="text"
+                      className="form-control bg-light"
+                      value={editPhoneDisplay}
+                      readOnly
+                      tabIndex={-1}
+                      aria-readonly
                     />
+                    <p className="fs-12 text-muted mb-0 mt-1">
+                      Phone number cannot be changed.
+                    </p>
                   </div>
                 </div>
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Phone Number <span className="text-danger">*</span>
-                    </label>
-                    <PhoneInput
-                      placeholder="Enter phone number"
-                      country="US"
-                      value={value}
-                      onChange={setValue}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6">
+                <div className="col-md-12">
                   <div className="mb-3">
                     <label className="form-label">
                       Email <span className="text-danger">*</span>
                     </label>
                     <input
                       className="form-control"
-                      defaultValue="reuben@example.com"
-                      type="text"
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      disabled={editLoading}
                     />
                   </div>
                 </div>
                 <div className="col-md-12">
                   <div className="mb-3">
-                    <label className="form-label">
-                      Address <span className="text-danger">*</span>
-                    </label>
+                    <label className="form-label">Address Line</label>
                     <input
                       className="form-control"
-                      defaultValue="2881 Jarvis Street"
                       type="text"
+                      value={editAddressLine}
+                      onChange={(e) => setEditAddressLine(e.target.value)}
+                      placeholder="Street, area…"
+                      disabled={editLoading}
                     />
                   </div>
                 </div>
-                <h6 className="fs-16 fw-medium mb-2">License Details</h6>
-                <div className="col-md-4">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Card Number <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      className="form-control"
-                      defaultValue="DL123456789"
-                      type="text"
-                    />
+                {editError ? (
+                  <div className="col-md-12">
+                    <div className="alert alert-danger py-2 mb-0">{editError}</div>
                   </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Date of Issue <span className="text-danger">*</span>
-                    </label>
-                    <div className="input-icon-end position-relative">
-                      <DatePicker
-                        className="form-control datetimepicker"
-                        placeholder="28-03-2025"
-                      />
-                      <span className="input-icon-addon">
-                        <i className="ti ti-calendar" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Valid Date <span className="text-danger">*</span>
-                    </label>
-                    <div className="input-icon-end position-relative">
-                      <DatePicker
-                        className="form-control datetimepicker"
-                        placeholder="30-03-2025"
-                      />
-                      <span className="input-icon-addon">
-                        <i className="ti ti-calendar" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-12">
-                  <label className="form-label"> Document</label>
-                  <div className="document-upload text-center br-3 mb-3">
-                    <ImageWithBasePath
-                      src="assets/admin/img/icons/upload-icon.svg"
-                      alt="img"
-                      className="mb-2"
-                    />
-                    <p className="mb-2">
-                      Drop your files here or{" "}
-                      <span className="text-info text-decoration-underline">
-                        Browse
-                      </span>
-                    </p>
-                    <p className="fs-12 mb-0">Maximum size 50mb</p>
-                    <input
-                      type="file"
-                      className="form-control image-sign"
-                      multiple
-                      accept=".pdf, .txt, .doc, .docx"
-                    />
-                  </div>
-                </div>
+                ) : null}
               </div>
             </div>
             <div className="modal-footer">
               <div className="d-flex justify-content-center">
-                <Link
-                  to="#"
-                  className="btn btn-light me-3"
-                  data-bs-dismiss="modal"
-                >
-                  Cancel
-                </Link>
                 <button
                   type="button"
+                  className="btn btn-light me-3"
                   data-bs-dismiss="modal"
-                  className="btn btn-primary"
+                  disabled={editLoading}
+                  onClick={resetEditForm}
                 >
-                  Create New
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={editLoading || !editId}
+                  onClick={() => void handleSaveEditPartner()}
+                >
+                  {editLoading ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-      {/* /Add Driver */}
+      {/* /Edit Car Partner */}
     </>
   );
 };

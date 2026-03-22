@@ -15,14 +15,19 @@ const { RangePicker } = DatePicker;
 const dateFormat = 'YYYY/MM/DD';
 
 interface PredefinedDatePickerProps {
-  onDateChange?: (dates: [dayjs.Dayjs, dayjs.Dayjs]) => void;
+  /** Called when the range changes. `null` means “show all” (no date filter). */
+  onDateChange?: (dates: [dayjs.Dayjs, dayjs.Dayjs] | null) => void;
+  /** Start with no range selected (“Show all” in the field). Use with `onDateChange` for filtered lists. */
+  defaultShowAll?: boolean;
 }
 
-const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({ onDateChange }) => {
-  const [dates, setDates] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-    dayjs().subtract(6, 'days'),
-    dayjs(),
-  ]);
+const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({
+  onDateChange,
+  defaultShowAll = false,
+}) => {
+  const [dates, setDates] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(() =>
+    defaultShowAll ? null : [dayjs().subtract(6, 'days'), dayjs()]
+  );
   const [customVisible, setCustomVisible] = useState(false);
   const rangeRef = useRef<any>(null);
 
@@ -38,7 +43,15 @@ const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({ onDateChang
     ],
   };
 
+  const SHOW_ALL_KEY = '__show_all__';
+
   const handleMenuClick = ({ key }: { key: string }) => {
+    if (key === SHOW_ALL_KEY) {
+      setDates(null);
+      onDateChange?.(null);
+      setCustomVisible(false);
+      return;
+    }
     if (key === 'Custom Range') {
       setCustomVisible(true);
       // Trigger calendar popup manually
@@ -46,7 +59,7 @@ const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({ onDateChang
     } else {
       const selectedDates = predefinedRanges[key];
       setDates(selectedDates);
-      if (onDateChange) onDateChange(selectedDates);
+      onDateChange?.(selectedDates);
       setCustomVisible(false);
     }
   };
@@ -54,7 +67,7 @@ const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({ onDateChang
   const handleCustomChange = (value: any) => {
     if (value) {
       setDates(value);
-      if (onDateChange) onDateChange(value);
+      onDateChange?.(value);
       setCustomVisible(false);
     }
   };
@@ -63,6 +76,8 @@ const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({ onDateChang
     <Menu
       onClick={handleMenuClick}
       items={[
+        { key: SHOW_ALL_KEY, label: 'Show all' },
+        { type: 'divider' },
         ...Object.keys(predefinedRanges).map(label => ({
           key: label,
           label,
@@ -73,7 +88,9 @@ const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({ onDateChang
     />
   );
 
-  const displayValue = `${dates[0].format(dateFormat)} - ${dates[1].format(dateFormat)}`;
+  const displayValue = dates
+    ? `${dates[0].format(dateFormat)} - ${dates[1].format(dateFormat)}`
+    : 'Show all';
 
   return (
     <div>
@@ -92,7 +109,7 @@ const PredefinedDatePicker: React.FC<PredefinedDatePickerProps> = ({ onDateChang
           ref={rangeRef}
           onChange={handleCustomChange}
           format={dateFormat}
-          value={dates}
+          value={dates ?? undefined}
           allowClear={false}
           style={{ position: 'absolute', top: 0, left: 0, opacity: 0, pointerEvents: 'none' }}
           onOpenChange={(open) => {

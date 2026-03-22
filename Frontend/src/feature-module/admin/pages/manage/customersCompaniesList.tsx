@@ -552,6 +552,7 @@ const CustomersCompaniesList = () => {
           dataSource={data}
           columns={columns}
           searchValue={searchValue}
+          showRowSelection={false}
         />
         {/* Custom Data Table */}
       </div>

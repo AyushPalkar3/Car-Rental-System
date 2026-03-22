@@ -40,7 +40,7 @@ function formatAddress(addr) {
  */
 export function buildInvoicePdf(doc, opts) {
   const {
-    companyName = "Ekal",
+    companyName = "Ekalo Drive",
     companyAddress = "",
     companyPhone = "",
     companyEmail = "",

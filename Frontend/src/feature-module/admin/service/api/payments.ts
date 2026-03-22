@@ -81,39 +81,85 @@ export function computeInvoiceTotals(amount: number, gstMode: "none" | "gst18") 
   return { subtotal, gstAmount, total };
 }
 
-async function fetchInvoiceBlob(id: string, gst: GstDownloadMode) {
-  const res = await axiosClient.get(`/admin/payments/${id}/invoice`, {
-    params: { gst },
-    responseType: "blob",
-    timeout: 60000,
-  });
-  const contentType = res.headers["content-type"] || "";
-  if (contentType.includes("application/json")) {
-    const text = await (res.data as Blob).text();
-    const err = JSON.parse(text) as { message?: string };
-    throw new Error(err.message || "Failed to download invoice");
+function parseFilenameFromContentDisposition(cd: string | undefined): string | null {
+  if (!cd) return null;
+  const utf8 = cd.match(/filename\*\s*=\s*UTF-8''([^;\s]+)/i);
+  if (utf8?.[1]) {
+    try {
+      return decodeURIComponent(utf8[1].replace(/"/g, ""));
+    } catch {
+      return utf8[1].replace(/"/g, "");
+    }
   }
-  return new Blob([res.data as BlobPart], { type: "application/pdf" });
+  const simple = cd.match(/filename\s*=\s*("?)([^";\n]+)\1/i);
+  return simple?.[2]?.trim() || null;
+}
+
+async function messageFromErrorBlob(blob: Blob): Promise<string> {
+  const text = await blob.text();
+  try {
+    const j = JSON.parse(text) as { message?: string };
+    return j.message || "Failed to download invoice";
+  } catch {
+    return "Failed to download invoice";
+  }
+}
+
+async function fetchInvoiceBlob(
+  id: string,
+  gst: GstDownloadMode
+): Promise<{ blob: Blob; filename: string | null }> {
+  try {
+    const res = await axiosClient.get(`/admin/payments/${id}/invoice`, {
+      params: { gst },
+      responseType: "blob",
+      timeout: 60000,
+    });
+    const raw = res.data as Blob;
+    const contentType = String(res.headers["content-type"] || "").toLowerCase();
+
+    if (contentType.includes("application/json")) {
+      throw new Error(await messageFromErrorBlob(raw));
+    }
+
+    const head = await raw.slice(0, 5).text();
+    const looksLikePdf = head.startsWith("%PDF");
+    const looksLikeJson = head.trimStart().startsWith("{");
+    if (!looksLikePdf && looksLikeJson) {
+      throw new Error(await messageFromErrorBlob(raw));
+    }
+
+    const filename = parseFilenameFromContentDisposition(
+      res.headers["content-disposition"] as string | undefined
+    );
+    const pdfBlob = new Blob([raw], { type: "application/pdf" });
+    return { blob: pdfBlob, filename };
+  } catch (e: unknown) {
+    if (e instanceof Blob) {
+      throw new Error(await messageFromErrorBlob(e));
+    }
+    if (typeof e === "string") {
+      throw new Error(e);
+    }
+    if (e instanceof Error) {
+      throw e;
+    }
+    throw new Error("Failed to download invoice");
+  }
 }
 
 export async function downloadInvoicePdf(id: string, gst: GstDownloadMode) {
-  const blob = await fetchInvoiceBlob(id, gst);
+  const { blob, filename } = await fetchInvoiceBlob(id, gst);
+  const fallback = `invoice-${id}-${gst === "18" ? "gst-18" : "no-gst"}.pdf`;
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `invoice-${id}-${gst === "18" ? "gst-18" : "no-gst"}.pdf`;
+  a.download = filename || fallback;
+  a.rel = "noopener";
   document.body.appendChild(a);
   a.click();
   a.remove();
   window.URL.revokeObjectURL(url);
-}
-
-/** Opens PDF in a new tab (e.g. for printing). */
-export async function openInvoicePdfTab(id: string, gst: GstDownloadMode) {
-  const blob = await fetchInvoiceBlob(id, gst);
-  const url = window.URL.createObjectURL(blob);
-  window.open(url, "_blank", "noopener,noreferrer");
-  window.setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
 }
 
 export const adminPaymentsApi = {

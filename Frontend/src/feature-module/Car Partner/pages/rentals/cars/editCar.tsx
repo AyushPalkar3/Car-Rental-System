@@ -4,13 +4,11 @@ import CarBookingModal from "../../../common/modal/carBookingModal";
 import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../../router/all_routes";
-import { DatePicker, Select } from "antd";
+import { DatePicker } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import CustomSelect from "../../../common/select/commonSelect";
 import type { OptionType } from "../../../common/select/commonSelect";
 import {
-  Brand,
-  CarModal,
   CarType,
   Fuel,
   MainLocation,
@@ -111,11 +109,12 @@ const EditCar = () => {
   // ---- Form fields ----
   const [carName, setCarName] = useState("");
   const [carType, setCarType] = useState<{ label: string; value: string | number } | null>(null);
-  const [carBrand, setCarBrand] = useState<{ label: string; value: string | number } | null>(null);
-  const [carModelSel, setCarModelSel] = useState<{ label: string; value: string | number } | null>(null);
+  const [carBrand, setCarBrand] = useState("");
+  const [carModelText, setCarModelText] = useState("");
   const [carTransmission, setCarTransmission] = useState<{ label: string; value: string | number } | null>(null);
   const [carFuel, setCarFuel] = useState<{ label: string; value: string | number } | null>(null);
   const [carSeating, setCarSeating] = useState<{ label: string; value: string | number } | null>(null);
+  const [carLocation, setCarLocation] = useState<{ label: string; value: string | number } | null>(null);
   const [carColor, setCarColor] = useState<string>("White");
   const [carYear, setCarYear] = useState<Dayjs | null>(null);
   const [carDescription, setCarDescription] = useState("");
@@ -152,24 +151,15 @@ const EditCar = () => {
         const car = res.data;
         setCarName(car.name ?? "");
         setCarDescription(car.description ?? "");
+        setCarBrand(car.brand ?? "");
+        setCarModelText(car.description ?? "");
         setCarColor(car.color ?? "White");
         setCarYear(car.modelYear ? dayjs().year(car.modelYear) : null);
-
-        // Pre-fill selects
-        const brandMatch = Brand.find(
-          (o) => o.label.toLowerCase() === car.brand?.toLowerCase()
-        );
-        if (brandMatch) setCarBrand(brandMatch);
 
         const typeMatch = CarType.find(
           (o) => o.label.toLowerCase() === car.category?.toLowerCase()
         );
         if (typeMatch) setCarType(typeMatch);
-
-        const modelMatch = CarModal.find(
-          (o) => o.label.toLowerCase() === car.description?.toLowerCase()
-        );
-        if (modelMatch) setCarModelSel(modelMatch);
 
         if (car.transmission && transmissionReverseMap[car.transmission]) {
           setCarTransmission(transmissionReverseMap[car.transmission]);
@@ -179,6 +169,12 @@ const EditCar = () => {
         }
         if (car.seating && seaterReverseMap[car.seating]) {
           setCarSeating(seaterReverseMap[car.seating]);
+        }
+
+        const locLabel = car.location?.trim();
+        if (locLabel) {
+          const locMatch = MainLocation.find((o) => o.label === locLabel);
+          if (locMatch) setCarLocation(locMatch);
         }
 
         // Pre-fill existing thumbnail
@@ -273,10 +269,30 @@ const EditCar = () => {
 
   const getDocName = (path: string) => path.split("/").pop() ?? path;
 
+  const validateBasicStep = (): string | null => {
+    if (!featuredImage) return "Featured image is required.";
+    if (!carName.trim()) return "Car name is required.";
+    if (!carType) return "Category is required.";
+    if (!carBrand.trim()) return "Brand is required.";
+    if (!carModelText.trim()) return "Model is required.";
+    if (!carNumber.trim()) return "Car number is required.";
+    if (!plateNumber.trim()) return "Plate number is required.";
+    if (String(airBags).trim() === "") return "Number of air bags is required.";
+    if (!carLocation) return "Location is required.";
+    if (!carFuel) return "Fuel is required.";
+    if (!carColor.trim()) return "Color is required.";
+    if (!carYear) return "Year of car is required.";
+    if (!carTransmission) return "Transmission is required.";
+    if (!carSeating) return "Number of seats is required.";
+    if (!carDescription.trim()) return "Description is required.";
+    return null;
+  };
+
   const handleSubmit = async () => {
     if (!carId) return;
-    if (!carName.trim()) {
-      setSubmitError("Car name is required.");
+    const basicErr = validateBasicStep();
+    if (basicErr) {
+      setSubmitError(basicErr);
       setCurrentStep(1);
       return;
     }
@@ -289,8 +305,8 @@ const EditCar = () => {
 
       const fd = new FormData();
       fd.append("name", carName);
-      fd.append("brand", carBrand?.label ?? "");
-      fd.append("description", carDescription || (carModelSel?.label ?? ""));
+      fd.append("brand", carBrand.trim());
+      fd.append("description", carDescription.trim() || carModelText.trim());
       fd.append("modelYear", String(carYear?.year() ?? new Date().getFullYear()));
       fd.append("transmission", transmissionMap[carTransmission?.label ?? ""] ?? "AUTO");
       fd.append("fuelType", fuelMap[carFuel?.label ?? ""] ?? "PETROL");
@@ -299,6 +315,7 @@ const EditCar = () => {
       fd.append("color", carColor);
       fd.append("hexCode", "#FFFFFF");
       fd.append("category", carType?.label ?? "");
+      fd.append("location", carLocation?.label ?? "");
       fd.append("plateNumber", plateNumber);
       fd.append("carNumber", carNumber);
       fd.append("airBags", airBags);
@@ -328,16 +345,18 @@ const EditCar = () => {
     }
   };
 
-  const handleNext = () => setCurrentStep(currentStep + 1);
+  const handleNext = () => {
+    if (currentStep === 1) {
+      const err = validateBasicStep();
+      if (err) {
+        setSubmitError(err);
+        return;
+      }
+      setSubmitError(null);
+    }
+    setCurrentStep(currentStep + 1);
+  };
   const handlePrev = () => setCurrentStep(currentStep - 1);
-
-  const options = [
-    { label: "Red", value: "Red", bg: "danger" },
-    { label: "White", value: "White", bg: "light" },
-    { label: "Black", value: "Black", bg: "dark" },
-    { label: "Green", value: "Green", bg: "success" },
-    { label: "Blue", value: "Blue", bg: "info" },
-  ];
 
   if (pageLoading) {
     return (
@@ -428,7 +447,9 @@ const EditCar = () => {
                     <div className="border-bottom mb-4 pb-4">
                       <div className="row row-gap-4">
                         <div className="col-xl-3">
-                          <h6 className="mb-1">Featured Image</h6>
+                          <h6 className="mb-1">
+                            Featured Image <span className="text-danger">*</span>
+                          </h6>
                           <p>Upload Featured Image</p>
                         </div>
                         <div className="col-xl-9">
@@ -499,7 +520,7 @@ const EditCar = () => {
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Car Type <span className="text-danger">*</span>
+                                  Category <span className="text-danger">*</span>
                                 </label>
                                 <CustomSelect
                                   options={CarType}
@@ -515,12 +536,12 @@ const EditCar = () => {
                                 <label className="form-label">
                                   Brand <span className="text-danger">*</span>
                                 </label>
-                                <CustomSelect
-                                  options={Brand}
-                                  className="select d-flex"
-                                  placeholder="Select"
+                                <input
+                                  type="text"
+                                  className="form-control"
                                   value={carBrand}
-                                  onChange={(v: OptionType) => setCarBrand(v)}
+                                  onChange={(e) => setCarBrand(e.target.value)}
+                                  placeholder="e.g. Toyota"
                                 />
                               </div>
                             </div>
@@ -529,32 +550,20 @@ const EditCar = () => {
                                 <label className="form-label">
                                   Model <span className="text-danger">*</span>
                                 </label>
-                                <CustomSelect
-                                  options={CarModal}
-                                  className="select d-flex"
-                                  placeholder="Select"
-                                  value={carModelSel}
-                                  onChange={(v: OptionType) => setCarModelSel(v)}
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  value={carModelText}
+                                  onChange={(e) => setCarModelText(e.target.value)}
+                                  placeholder="e.g. Urban Cruiser"
                                 />
                               </div>
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Category <span className="text-danger">*</span>
+                                  Car Number <span className="text-danger">*</span>
                                 </label>
-                                <CustomSelect
-                                  options={CarType}
-                                  className="select d-flex"
-                                  placeholder="Select"
-                                  value={carType}
-                                  onChange={(v: OptionType) => setCarType(v)}
-                                />
-                              </div>
-                            </div>
-                            <div className="col-lg-4 col-md-6">
-                              <div className="mb-3">
-                                <label className="form-label">Car Number</label>
                                 <input
                                   type="text"
                                   className="form-control"
@@ -566,7 +575,9 @@ const EditCar = () => {
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">Plate Number</label>
+                                <label className="form-label">
+                                  Plate Number <span className="text-danger">*</span>
+                                </label>
                                 <input
                                   type="text"
                                   className="form-control"
@@ -578,7 +589,9 @@ const EditCar = () => {
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">No. of Air Bags</label>
+                                <label className="form-label">
+                                  No. of Air Bags <span className="text-danger">*</span>
+                                </label>
                                 <input
                                   type="number"
                                   min={0}
@@ -592,18 +605,22 @@ const EditCar = () => {
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Main Location <span className="text-danger">*</span>
+                                  Location <span className="text-danger">*</span>
                                 </label>
                                 <CustomSelect
                                   options={MainLocation}
                                   className="select d-flex"
                                   placeholder="Select"
+                                  value={carLocation}
+                                  onChange={(v: OptionType) => setCarLocation(v)}
                                 />
                               </div>
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">Fuel</label>
+                                <label className="form-label">
+                                  Fuel <span className="text-danger">*</span>
+                                </label>
                                 <CustomSelect
                                   options={Fuel}
                                   className="select d-flex"
@@ -618,19 +635,12 @@ const EditCar = () => {
                                 <label className="form-label">
                                   Color <span className="text-danger">*</span>
                                 </label>
-                                <Select
-                                  style={{ width: "100%" }}
-                                  placeholder="Select a Color"
-                                  className="Select"
+                                <input
+                                  type="text"
+                                  className="form-control"
                                   value={carColor}
-                                  onChange={(v: string) => setCarColor(v)}
-                                  options={options}
-                                  optionRender={(option) => (
-                                    <span>
-                                      <span className={`color-icon bg-${option.data.bg}`} />
-                                      {option.data.label}
-                                    </span>
-                                  )}
+                                  onChange={(e) => setCarColor(e.target.value)}
+                                  placeholder="e.g. White"
                                 />
                               </div>
                             </div>
@@ -655,7 +665,9 @@ const EditCar = () => {
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">Transmission</label>
+                                <label className="form-label">
+                                  Transmission <span className="text-danger">*</span>
+                                </label>
                                 <CustomSelect
                                   options={Transmission}
                                   className="select d-flex"
@@ -667,7 +679,9 @@ const EditCar = () => {
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">No of Seats</label>
+                                <label className="form-label">
+                                  No of Seats <span className="text-danger">*</span>
+                                </label>
                                 <CustomSelect
                                   options={Seater}
                                   className="select d-flex"
@@ -690,7 +704,9 @@ const EditCar = () => {
                         </div>
                         <div className="col-xl-9">
                           <div className="mb-3">
-                            <label className="form-label">Description</label>
+                            <label className="form-label">
+                              Description <span className="text-danger">*</span>
+                            </label>
                             <textarea
                               className="form-control"
                               rows={4}
@@ -702,6 +718,9 @@ const EditCar = () => {
                         </div>
                       </div>
                     </div>
+                    {submitError && (
+                      <div className="alert alert-danger mt-3">{submitError}</div>
+                    )}
                     <div className="d-flex align-items-center justify-content-end pt-3">
                       <Link
                         to={all_routes.carPartnerCarsList}

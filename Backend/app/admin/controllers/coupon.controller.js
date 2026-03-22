@@ -1,5 +1,14 @@
 import prisma from "../../../lib/db.config.js";
 
+/** Persist "1" = percentage, "2" = fixed (accepts legacy words from older clients). */
+function toStoredCouponType(type) {
+  if (type == null || String(type).trim() === "") return "1";
+  const t = String(type).trim().toLowerCase();
+  if (t === "1" || t === "percentage") return "1";
+  if (t === "2" || t === "fixed") return "2";
+  return String(type).trim();
+}
+
 export const getCoupons = async (req, res) => {
   try {
     const coupons = await prisma.coupon.findMany({
@@ -20,7 +29,7 @@ export const createCoupon = async (req, res) => {
         name,
         code,
         description,
-        type,
+        type: toStoredCouponType(type),
         value: parseFloat(value),
         startDate: new Date(startDate),
         endDate: new Date(endDate),
@@ -49,7 +58,7 @@ export const updateCoupon = async (req, res) => {
         name,
         code,
         description,
-        type,
+        type: toStoredCouponType(type),
         value: parseFloat(value),
         startDate: new Date(startDate),
         endDate: new Date(endDate),

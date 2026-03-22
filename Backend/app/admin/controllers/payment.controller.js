@@ -1,3 +1,4 @@
+import PDFDocument from "pdfkit";
 import prisma from "../../../lib/db.config.js";
 import { buildInvoicePdf, formatAddress, formatDate } from "../utils/invoicePdf.js";
 
@@ -74,10 +75,10 @@ export const downloadInvoicePdf = async (req, res) => {
     const invoiceDate = formatDate(payment.createdAt);
     const dueDate = booking?.returnDate ? formatDate(booking.returnDate) : invoiceDate;
 
-    const companyName = process.env.INVOICE_COMPANY_NAME || "Ekal";
+    const companyName = process.env.INVOICE_COMPANY_NAME || "Ekalo Drive";
     const companyAddress = process.env.INVOICE_COMPANY_ADDRESS || "";
-    const companyPhone = process.env.INVOICE_COMPANY_PHONE || "";
-    const companyEmail = process.env.INVOICE_COMPANY_EMAIL || "";
+    const companyPhone = process.env.INVOICE_COMPANY_PHONE || "+91 9168527197";
+    const companyEmail = process.env.INVOICE_COMPANY_EMAIL || "support@ekalodrive.com";
 
     const customerName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Customer";
     const customerAddress = formatAddress(user?.address);

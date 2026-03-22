@@ -25,16 +25,16 @@ const FooterThree = () => {
               <h6>Want to book a bike instantly Contact Us !!!</h6>
               <div className="footer-address">
                 <div className="addr-info">
-                  <Link to="tel:+1(888)7601940">
-                    <i className="bx bxs-phone" />+ 1 (888) 760 1940
+                  <Link to="tel:+919168527197">
+                    <i className="bx bxs-phone" />+91 9168527197
                   </Link>
                 </div>
               </div>
               <div className="footer-address">
                 <div className="addr-info">
-                  <Link to="mailto:support@example.com">
+                  <Link to="mailto:support@ekalodrive.com">
                     <i className="bx bxs-envelope" />
-                    support@example.com
+                    support@ekalodrive.com
                   </Link>
                 </div>
               </div>

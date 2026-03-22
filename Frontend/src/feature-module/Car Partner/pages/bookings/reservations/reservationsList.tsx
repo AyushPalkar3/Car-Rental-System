@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../../../../router/all_routes";
-import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import PredefinedDateRanges from "../../../common/range-picker/datePicker";
 import CommonDatatable from "../../../common/dataTable";
 import axios from "axios";
@@ -82,7 +81,6 @@ const ReservationsList = () => {
             CAR_NO: booking.orderId || booking.id.substring(0, 8), // Show short ID if no orderId
             CAR: booking.car?.name || "Unknown Car",
             CUSTOMER: `${booking.user?.firstName || ""} ${booking.user?.lastName || ""}`.trim() || "Unknown",
-            CUSTOMER_IMG: "customer-01.jpg", // Placeholder until users have avatars
             BADGE: "Client", 
             PICK_UP_DATE: pDate.day,
             PICK_UP_MONTHYEAR: pDate.monthYear,
@@ -183,26 +181,15 @@ const ReservationsList = () => {
       title: "CUSTOMER",
       dataIndex: "CUSTOMER",
       render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link
-            to={`${all_routes.carPartnerReservationDetails}/${record.key}`}
-            className="avatar avatar-rounded me-2 flex-shrink-0"
+        <div>
+          <h6 className="mb-1 fs-14">
+            <Link to={`${all_routes.carPartnerReservationDetails}/${record.key}`}>{text}</Link>
+          </h6>
+          <span
+            className={`badge  ${record.BADGE === "Client" ? "bg-secondary-transparent" : "bg-violet-transparent"} rounded-pill`}
           >
-             <ImageWithBasePath
-              src={`assets/admin/img/customer/customer-01.jpg`}
-              alt=""
-            />
-          </Link>
-          <div>
-            <h6 className="mb-1 fs-14">
-              <Link to={`${all_routes.carPartnerReservationDetails}/${record.key}`}>{text}</Link>
-            </h6>
-            <span
-              className={`badge  ${record.BADGE === "Client" ? "bg-secondary-transparent" : "bg-violet-transparent"} rounded-pill`}
-            >
-              {record.BADGE}
-            </span>
-          </div>
+            {record.BADGE}
+          </span>
         </div>
       ),
       sorter: (a: any, b: any) => a.CUSTOMER.length - b.CUSTOMER.length,

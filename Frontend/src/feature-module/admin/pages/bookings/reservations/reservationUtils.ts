@@ -65,7 +65,6 @@ export function mapReservationToTableRow(
     CAR: car?.name ?? "—",
     CAR_IMG: thumbUrl,
     CUSTOMER: customerName,
-    CUSTOMER_IMG: "customer-01.jpg",
     BADGE: "Client",
     PICK_UP_DATE: String(new Date(b.pickupDate).getDate()),
     PICK_UP_MONTH: formatListMonthYear(b.pickupDate),

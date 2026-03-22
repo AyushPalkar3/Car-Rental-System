@@ -1,6 +1,7 @@
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Link, Outlet } from "react-router-dom";
+import Cookies from "js-cookie";
+import { Link, Navigate, Outlet } from "react-router-dom";
 import CarPartnerHeader from "./Car Partner/common/header/adminHeader";
 import CarPartnerSidebar from "./Car Partner/common/sidebar/adminSidebar";
 import CarPartnerFooter from "./Car Partner/common/footer/adminFooter";
@@ -8,9 +9,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { setMobileSidebar } from "../core/data/redux/commonSlice";
 import CarPartnerSettingsSidebar from "./Car Partner/common/settings-sidebar/settingsSidebar";
 import { all_routes } from "../router/all_routes";
+import { useSessionRestoreGuard } from "../hooks/useSessionRestoreGuard";
 
 const CarPartnerSettingsFeature = () => {
   const dispatch = useDispatch();
+  const carPartnerToken = Cookies.get("carPartnerAccessToken");
+  useSessionRestoreGuard("carPartnerAccessToken", all_routes.carPartnerLogin);
   const expandMenu = useSelector((state: any) => state.commonSlice.expandMenu);
   const miniSidebar = useSelector(
     (state: any) => state.commonSlice.miniSidebar
@@ -21,6 +25,11 @@ const CarPartnerSettingsFeature = () => {
   const toggleMobileSidebar = () => {
     dispatch(setMobileSidebar(!mobileSidebar));
   };
+
+  if (!carPartnerToken) {
+    return <Navigate to={all_routes.carPartnerLogin} replace />;
+  }
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={4000} closeOnClick />

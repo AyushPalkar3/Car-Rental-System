@@ -243,7 +243,7 @@ model Coupon {
   admin        Admin     @relation(fields: [adminId], references: [id])
   code         String    @unique
   description  String?
-  type         String    // "percentage" or "fixed"
+  type         String    // "1" = percentage, "2" = fixed (legacy rows may use words)
   value        Float
   startDate    DateTime
   endDate      DateTime

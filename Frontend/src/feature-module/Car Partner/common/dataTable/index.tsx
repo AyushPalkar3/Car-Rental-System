@@ -66,7 +66,7 @@ const CommonDatatable: React.FC<DatatableProps> = ({
   return (
     <div ref={tableRootRef} className="custom-table antd-custom-table">
       <Table
-        className="table datanew dataTable no-footer"
+        className="antd-data-table datanew no-footer"
         columns={columns}
         rowHoverable={false}
         rowSelection={showRowSelection ? rowSelection : undefined}

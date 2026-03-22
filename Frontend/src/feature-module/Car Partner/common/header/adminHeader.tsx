@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from "react";
 import { VscAccount } from "react-icons/vsc";
 import { Link } from 'react-router-dom'
 import ImageWithBasePath from '../../../../core/data/img/ImageWithBasePath'
 import { useDispatch, useSelector } from 'react-redux';
 import { setDark, setExpandMenu, setMiniSidebar, setMobileSidebar } from '../../../../core/data/redux/commonSlice';
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
+import { clearCarPartnerAuthCookies } from "../../../../utils/auth.utils";
 import {
   carPartnerAccountAPI,
   type CarPartnerProfile,
@@ -62,9 +63,12 @@ const AdminHeader = () => {
   const handleDataThemeChange = (theme: string) => {
     dispatch(setDark(theme));
   };
-  const handleOnLogout = () =>{
-    Cookies.remove('carPartnerAccessToken');
-  }
+  const handleOnLogout = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    clearCarPartnerAuthCookies();
+    setProfile(null);
+    window.location.assign(all_routes.carPartnerLogin);
+  };
   useEffect(() => {
     const theme = localStorage.getItem("dataTheme");
     dispatch(setDark(theme));
@@ -616,7 +620,8 @@ const AdminHeader = () => {
                       Settings
                     </Link>
                     <div className="dropdown-divider my-2" />
-                    <Link onClick={handleOnLogout}
+                    <Link
+                      onClick={handleOnLogout}
                       className="dropdown-item logout d-flex align-items-center justify-content-between"
                       to={all_routes.carPartnerLogin}
                     >
@@ -648,7 +653,11 @@ const AdminHeader = () => {
               <Link className="dropdown-item" to={all_routes.carPartnerProfileSettings}>
                 Settings
               </Link>
-              <Link className="dropdown-item" to={all_routes.carPartnerLogin}>
+              <Link
+                className="dropdown-item"
+                to={all_routes.carPartnerLogin}
+                onClick={handleOnLogout}
+              >
                 Logout
               </Link>
             </div>

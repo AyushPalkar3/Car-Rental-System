@@ -689,24 +689,12 @@ const AdminDashboard = () => {
                         </p>
                       </td>
                       <td>
-                        <div className="d-flex align-items-center gap-3">
-                          <h6 className="fs-14 fw-semibold">
-                            ₹{b.unitPrice}{" "}
-                            <span className="fw-normal text-default">
-                              /{durationUi(b.pricingDuration).toLowerCase()}
-                            </span>
-                          </h6>
-                          <Link
-                            to={`${all_routes.customerDetails}/${b.userId}`}
-                            className="avatar avatar-sm"
-                          >
-                            <ImageWithBasePath
-                              src="assets/admin/img/profiles/avatar-05.jpg"
-                              alt="img"
-                              className="rounded-circle"
-                            />
-                          </Link>
-                        </div>
+                        <h6 className="fs-14 fw-semibold">
+                          ₹{b.unitPrice}{" "}
+                          <span className="fw-normal text-default">
+                            /{durationUi(b.pricingDuration).toLowerCase()}
+                          </span>
+                        </h6>
                       </td>
                     </tr>
                       ))
@@ -743,36 +731,24 @@ const AdminDashboard = () => {
                         </td>
                       </tr>
                     ) : (
-                      topCustomers.map((c, idx) => (
+                      topCustomers.map((c) => (
                     <tr key={c.id}>
                       <td>
-                        <div className="d-flex align-items-center">
-                          <Link
-                            to={`${all_routes.customerDetails}/${c.id}`}
-                            className="avatar flex-shrink-0"
+                        <div>
+                          <h6 className="fs-14 fw-semibold mb-1">
+                            <Link to={`${all_routes.customerDetails}/${c.id}`}>
+                              {c.name}
+                            </Link>
+                          </h6>
+                          <span
+                            className={`badge badge-sm rounded-pill ${
+                              c.badge === "Company"
+                                ? "bg-violet-transparent"
+                                : "bg-secondary-transparent"
+                            }`}
                           >
-                            <ImageWithBasePath
-                              src={`assets/admin/img/customer/customer-${String((idx % 6) + 1).padStart(2, "0")}.jpg`}
-                              className="rounded-circle"
-                              alt=""
-                            />
-                          </Link>
-                          <div className="flex-grow-1 ms-2">
-                            <h6 className="fs-14 fw-semibold mb-1">
-                              <Link to={`${all_routes.customerDetails}/${c.id}`}>
-                                {c.name}
-                              </Link>
-                            </h6>
-                            <span
-                              className={`badge badge-sm rounded-pill ${
-                                c.badge === "Company"
-                                  ? "bg-violet-transparent"
-                                  : "bg-secondary-transparent"
-                              }`}
-                            >
-                              {c.badge}
-                            </span>
-                          </div>
+                            {c.badge}
+                          </span>
                         </div>
                       </td>
                       <td className="text-end">
@@ -1232,7 +1208,7 @@ const AdminDashboard = () => {
                         </td>
                       </tr>
                     ) : (
-                      recentInvoices.map((inv, idx) => (
+                      recentInvoices.map((inv) => (
                         <tr key={inv.id}>
                           <td>
                             <Link
@@ -1245,25 +1221,11 @@ const AdminDashboard = () => {
                             </Link>
                           </td>
                           <td>
-                            <div className="d-flex align-items-center">
-                              <Link
-                                to={`${all_routes.customerDetails}/${inv.userId}`}
-                                className="avatar flex-shrink-0"
-                              >
-                                <ImageWithBasePath
-                                  src={`assets/admin/img/profiles/avatar-${String((idx % 18) + 3).padStart(2, "0")}.jpg`}
-                                  className="rounded-circle"
-                                  alt=""
-                                />
+                            <h6 className="fs-14 fw-semibold mb-1">
+                              <Link to={`${all_routes.customerDetails}/${inv.userId}`}>
+                                {inv.customerName}
                               </Link>
-                              <div className="flex-grow-1 ms-2">
-                                <h6 className="fs-14 fw-semibold mb-1">
-                                  <Link to={`${all_routes.customerDetails}/${inv.userId}`}>
-                                    {inv.customerName}
-                                  </Link>
-                                </h6>
-                              </div>
-                            </div>
+                            </h6>
                           </td>
                           <td>{inv.email}</td>
                           <td>{formatDateShort(inv.createdDate)}</td>

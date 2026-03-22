@@ -89,6 +89,10 @@ export async function getCouponEligibilityError(coupon, ctx) {
       if (days < 30) return "This coupon requires a long rental (30+ days).";
       return null;
     }
+    case "6": {
+      // ALL Customer — no extra eligibility rules
+      return null;
+    }
     default:
       return null;
   }

@@ -7,17 +7,16 @@ import {
   computeInvoiceTotals,
   downloadInvoicePdf,
   formatInvoiceCurrency,
-  openInvoicePdfTab,
   type AdminPayment,
 } from "../../service/api/payments";
 
 const COMPANY = {
-  name: import.meta.env.VITE_INVOICE_COMPANY_NAME || "Ekal",
+  name: import.meta.env.VITE_INVOICE_COMPANY_NAME || "Ekalo Drive",
   address:
     import.meta.env.VITE_INVOICE_COMPANY_ADDRESS ||
     "Flat 8, Park View House, 7 High Street",
-  phone: import.meta.env.VITE_INVOICE_COMPANY_PHONE || "+91 00000 00000",
-  email: import.meta.env.VITE_INVOICE_COMPANY_EMAIL || "billing@example.com",
+  phone: import.meta.env.VITE_INVOICE_COMPANY_PHONE || "+91 9168527197",
+  email: import.meta.env.VITE_INVOICE_COMPANY_EMAIL || "support@ekalodrive.com",
 };
 
 function formatDisplayDate(iso?: string | null) {
@@ -93,19 +92,6 @@ const AdminInvoiceDetails = () => {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Download failed.";
       window.alert(msg);
-    } finally {
-      setDownloading(null);
-    }
-  };
-
-  const handlePrint = async () => {
-    if (!paymentId) return;
-    const gst = gstPreview === "gst18" ? "18" : "0";
-    setDownloading(`print-${gst}`);
-    try {
-      await openInvoicePdfTab(paymentId, gst);
-    } catch {
-      window.alert("Could not open invoice for printing.");
     } finally {
       setDownloading(null);
     }
@@ -298,41 +284,16 @@ const AdminInvoiceDetails = () => {
               </div>
             </div>
           </div>
-          <div className="row justify-content-between align-items-center">
-            <div className="col-md-9">
-              <div className="d-flex align-items-center">
-                <div className="me-4">
-                  <p className="mb-2 text-center small text-muted">Scan to pay</p>
-                  <ImageWithBasePath src="assets/admin/img/icons/qr-img.svg" alt="" />
-                </div>
-                <div>
-                  <h5 className="mb-2">Bank Details</h5>
-                  <p className="mb-2 small text-muted">
-                    Configure bank details in environment variables for production invoices.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
       <div className="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-4">
-        <button
-          type="button"
-          className="btn btn-primary d-inline-flex justify-content-center align-items-center"
-          onClick={handlePrint}
-          disabled={!!downloading}
-        >
-          <i className="ti ti-printer me-2" />
-          {downloading?.startsWith("print") ? "Opening…" : "Print Invoice"}
-        </button>
         <div className="dropdown">
           <button
             className="btn btn-dark text-white d-inline-flex align-items-center border dropdown-toggle"
             type="button"
             data-bs-toggle="dropdown"
             aria-expanded="false"
-            disabled={!!downloading && !downloading.startsWith("print")}
+            disabled={!!downloading}
           >
             <i className="ti ti-download me-2" />
             Download Invoice

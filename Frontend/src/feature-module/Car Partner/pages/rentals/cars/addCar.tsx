@@ -4,13 +4,11 @@ import CarBookingModal from "../../../common/modal/carBookingModal";
 import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../../router/all_routes";
-import { DatePicker, Select } from "antd";
+import { DatePicker } from "antd";
 import type { Dayjs } from "dayjs";
 import CustomSelect from "../../../common/select/commonSelect";
 import type { OptionType } from "../../../common/select/commonSelect";
 import {
-  Brand,
-  CarModal,
   CarType,
   Fuel,
   MainLocation,
@@ -52,11 +50,12 @@ const AddCar = () => {
   // Form field state
   const [carName, setCarName] = useState("");
   const [carType, setCarType] = useState<{ label: string; value: string | number } | null>(null);
-  const [carBrand, setCarBrand] = useState<{ label: string; value: string | number } | null>(null);
-  const [carModelSel, setCarModelSel] = useState<{ label: string; value: string | number } | null>(null);
+  const [carBrand, setCarBrand] = useState("");
+  const [carModelText, setCarModelText] = useState("");
   const [carTransmission, setCarTransmission] = useState<{ label: string; value: string | number } | null>(null);
   const [carFuel, setCarFuel] = useState<{ label: string; value: string | number } | null>(null);
   const [carSeating, setCarSeating] = useState<{ label: string; value: string | number } | null>(null);
+  const [carLocation, setCarLocation] = useState<{ label: string; value: string | number } | null>(null);
   const [carColor, setCarColor] = useState<string>("White");
   const [carYear, setCarYear] = useState<Dayjs | null>(null);
   const [carDescription, setCarDescription] = useState("");
@@ -142,9 +141,29 @@ const AddCar = () => {
     }
   };
 
+  const validateBasicStep = (): string | null => {
+    if (!thumbnailFileRef.current) return "Featured image is required.";
+    if (!carName.trim()) return "Car name is required.";
+    if (!carType) return "Category is required.";
+    if (!carBrand.trim()) return "Brand is required.";
+    if (!carModelText.trim()) return "Model is required.";
+    if (!carNumber.trim()) return "Car number is required.";
+    if (!plateNumber.trim()) return "Plate number is required.";
+    if (String(airBags).trim() === "") return "Number of air bags is required.";
+    if (!carLocation) return "Location is required.";
+    if (!carFuel) return "Fuel is required.";
+    if (!carColor.trim()) return "Color is required.";
+    if (!carYear) return "Year of car is required.";
+    if (!carTransmission) return "Transmission is required.";
+    if (!carSeating) return "Number of seats is required.";
+    if (!carDescription.trim()) return "Description is required.";
+    return null;
+  };
+
   const handleSubmit = async () => {
-    if (!carName.trim()) {
-      setSubmitError("Car name is required.");
+    const basicErr = validateBasicStep();
+    if (basicErr) {
+      setSubmitError(basicErr);
       setCurrentStep(1);
       return;
     }
@@ -172,8 +191,8 @@ const AddCar = () => {
 
       const fd = new FormData();
       fd.append("name", carName);
-      fd.append("brand", carBrand?.label ?? "");
-      fd.append("description", carDescription || (carModelSel?.label ?? ""));
+      fd.append("brand", carBrand.trim());
+      fd.append("description", carDescription.trim() || carModelText.trim());
       fd.append("modelYear", String(carYear?.year() ?? new Date().getFullYear()));
       fd.append("transmission", transmissionMap[carTransmission?.label ?? ""] ?? "AUTO");
       fd.append("fuelType", fuelMap[carFuel?.label ?? ""] ?? "PETROL");
@@ -182,6 +201,7 @@ const AddCar = () => {
       fd.append("color", carColor);
       fd.append("hexCode", "#FFFFFF");
       fd.append("category", carType?.label ?? "");
+      fd.append("location", carLocation?.label ?? "");
       fd.append("plateNumber", plateNumber);
       fd.append("carNumber", carNumber);
       fd.append("airBags", airBags);
@@ -205,29 +225,20 @@ const AddCar = () => {
     }
   };
   const handleNext = () => {
+    if (currentStep === 1) {
+      const err = validateBasicStep();
+      if (err) {
+        setSubmitError(err);
+        return;
+      }
+      setSubmitError(null);
+    }
     setCurrentStep(currentStep + 1);
   };
 
   const handlePrev = () => {
     setCurrentStep(currentStep - 1);
   };
-  const options = [
-    {
-      label: "Red",
-      value: "Red",
-      bg: "danger",
-    },
-    {
-      label: "Green",
-      value: "Green",
-      bg: "success",
-    },
-    {
-      label: "Blue",
-      value: "Blue",
-      bg: "info",
-    },
-  ];
   return (
     <>
       <div className="content me-0">
@@ -331,7 +342,9 @@ const AddCar = () => {
                     <div className="border-bottom mb-4 pb-4">
                       <div className="row row-gap-4">
                         <div className="col-xl-3">
-                          <h6 className="mb-1">Featured Image</h6>
+                          <h6 className="mb-1">
+                            Featured Image <span className="text-danger">*</span>
+                          </h6>
                           <p>Upload Featured Image</p>
                         </div>
                         <div className="col-xl-9">
@@ -348,7 +361,11 @@ const AddCar = () => {
                                 <Link
                                   to="#"
                                   className="upload-img-trash trash-end btn btn-sm rounded-circle"
-                                  onClick={(e) => { e.preventDefault(); setFeaturedImage(null); }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setFeaturedImage(null);
+                                    thumbnailFileRef.current = null;
+                                  }}
                                 >
                                   <i className="ti ti-trash fs-12" />
                                 </Link>
@@ -394,7 +411,7 @@ const AddCar = () => {
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Car Type{" "}
+                                  Category{" "}
                                   <span className="text-danger">*</span>
                                 </label>
                                 <CustomSelect
@@ -411,12 +428,12 @@ const AddCar = () => {
                                 <label className="form-label">
                                   Brand <span className="text-danger">*</span>
                                 </label>
-                                <CustomSelect
-                                  options={Brand}
-                                  className="select d-flex"
-                                  placeholder="Select"
+                                <input
+                                  type="text"
+                                  className="form-control"
                                   value={carBrand}
-                                  onChange={(v: OptionType) => setCarBrand(v)}
+                                  onChange={(e) => setCarBrand(e.target.value)}
+                                  placeholder="e.g. Toyota"
                                 />
                               </div>
                             </div>
@@ -425,33 +442,19 @@ const AddCar = () => {
                                 <label className="form-label">
                                   Model <span className="text-danger">*</span>
                                 </label>
-                                <CustomSelect
-                                  options={CarModal}
-                                  className="select d-flex"
-                                  placeholder="Select"
-                                  value={carModelSel}
-                                  onChange={(v: OptionType) => setCarModelSel(v)}
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  value={carModelText}
+                                  onChange={(e) => setCarModelText(e.target.value)}
+                                  placeholder="e.g. Urban Cruiser"
                                 />
                               </div>
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Category{" "}
-                                  <span className="text-danger">*</span>
-                                </label>
-
-                                <CustomSelect
-                                  options={CarModal}
-                                  className="select d-flex"
-                                  placeholder="Select"
-                                />
-                              </div>
-                            </div>
-                            <div className="col-lg-4 col-md-6">
-                              <div className="mb-3">
-                                <label className="form-label">
-                                  Car Number
+                                  Car Number <span className="text-danger">*</span>
                                 </label>
                                 <input
                                   type="text"
@@ -465,7 +468,7 @@ const AddCar = () => {
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Plate Number
+                                  Plate Number <span className="text-danger">*</span>
                                 </label>
                                 <input
                                   type="text"
@@ -478,7 +481,9 @@ const AddCar = () => {
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">No. of Air Bags</label>
+                                <label className="form-label">
+                                  No. of Air Bags <span className="text-danger">*</span>
+                                </label>
                                 <input
                                   type="number"
                                   min={0}
@@ -492,7 +497,7 @@ const AddCar = () => {
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Main Location{" "}
+                                  Location{" "}
                                   <span className="text-danger">*</span>
                                 </label>
 
@@ -500,40 +505,16 @@ const AddCar = () => {
                                   options={MainLocation}
                                   className="select d-flex"
                                   placeholder="Select"
-                                />
-                              </div>
-                            </div>
-                            <div className="col-lg-4 col-md-6">
-                              <div className="mb-3 select-search">
-                                <label className="form-label ">
-                                  Link Other Location
-                                </label>
-                                <Select
-                                  showSearch
-                                  allowClear
-                                  className="select w-100"
-                                  placeholder="Select a Location"
-                                  optionFilterProp="label"
-                                  options={[
-                                    {
-                                      value: "jack",
-                                      label: "Evans Dealer Car Zone",
-                                    },
-                                    {
-                                      value: "lucy",
-                                      label: "Allen Dealer Parking Lot",
-                                    },
-                                    {
-                                      value: "tom",
-                                      label: "Walker Auto Trade Yard",
-                                    },
-                                  ]}
+                                  value={carLocation}
+                                  onChange={(v: OptionType) => setCarLocation(v)}
                                 />
                               </div>
                             </div>
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">Fuel</label>
+                                <label className="form-label">
+                                  Fuel <span className="text-danger">*</span>
+                                </label>
                                 <CustomSelect
                                   options={Fuel}
                                   className="select d-flex"
@@ -548,23 +529,12 @@ const AddCar = () => {
                                 <label className="form-label">
                                   Color <span className="text-danger">*</span>
                                 </label>
-                                <Select
-                                  style={{ width: "100%" }}
-                                  placeholder="select one Color"
-                                  className="Select"
+                                <input
+                                  type="text"
+                                  className="form-control"
                                   value={carColor}
-                                  onChange={(v: string) => setCarColor(v)}
-                                  options={options}
-                                  optionRender={(option) => (
-                                    <>
-                                      <span>
-                                        <span
-                                          className={`color-icon bg-${option.data.bg}`}
-                                        ></span>
-                                        {option.data.label}
-                                      </span>
-                                    </>
-                                  )}
+                                  onChange={(e) => setCarColor(e.target.value)}
+                                  placeholder="e.g. White"
                                 />
                               </div>
                             </div>
@@ -591,7 +561,7 @@ const AddCar = () => {
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Transmission
+                                  Transmission <span className="text-danger">*</span>
                                 </label>
                                 <CustomSelect
                                   options={Transmission}
@@ -605,7 +575,7 @@ const AddCar = () => {
                             <div className="col-lg-4 col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  No of Seats
+                                  No of Seats <span className="text-danger">*</span>
                                 </label>
                                 <CustomSelect
                                   options={Seater}
@@ -628,7 +598,9 @@ const AddCar = () => {
                         </div>
                         <div className="col-xl-9">
                           <div className="mb-3">
-                            <label className="form-label">Description</label>
+                            <label className="form-label">
+                              Description <span className="text-danger">*</span>
+                            </label>
                             <textarea
                               className="form-control"
                               rows={4}
@@ -640,6 +612,9 @@ const AddCar = () => {
                         </div>
                       </div>
                     </div>
+                    {submitError && (
+                      <div className="alert alert-danger mt-3">{submitError}</div>
+                    )}
                     <div className="d-flex align-items-center justify-content-end pt-3">
                       <button
                         type="button"

@@ -1035,6 +1035,8 @@ ul.slick-dots li button:before {
       font-weight: 600;
       background: #fff !important;
       color: #111827;
+      vertical-align: middle;
+      border-radius: 0 !important;
     }
   }
   .ant-table {
@@ -1245,6 +1247,7 @@ ul.slick-dots li button:before {
   .antd-custom-table .ant-table-wrapper .ant-table-thead > tr > th {
     background: #070808 !important;
     border-bottom: 1px solid #252525;
+    border-radius: 0 !important;
   }
   .antd-custom-table .ant-table {
     border: 1px solid #252525;

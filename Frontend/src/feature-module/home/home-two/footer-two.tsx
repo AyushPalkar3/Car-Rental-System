@@ -213,9 +213,9 @@ const FooterTwo = () => {
               <h4>24/7 Live Support</h4>
               <ul className="footer-address">
                 <li>Want to book a Yacht instantly Contact Us !!!</li>
-                <li>Contact : + 1 (888) 760 1940</li>
-                <li>Emergency : +1 68564 55664</li>
-                <li>Email : support@example.com</li>
+                <li>Contact : +91 9168527197</li>
+                <li>Emergency : +91 9168527197</li>
+                <li>Email : support@ekalodrive.com</li>
                 <li className="social-link">
                   <ul>
                     <li>

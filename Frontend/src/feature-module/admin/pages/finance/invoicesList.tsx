@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { Link, generatePath } from "react-router-dom";
 import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import CommonDatatable from "../../common/dataTable";
+import { InvoicesListTableSkeleton } from "../../common/financeListTableSkeleton";
 import { all_routes } from "../../../../router/all_routes";
 import {
   adminPaymentsApi,
+  downloadInvoicePdf,
   formatInvoiceCurrency,
   type AdminPayment,
 } from "../../service/api/payments";
@@ -82,6 +85,18 @@ const InvoicesList = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
+  };
+
+  const handleDownloadInvoice = (paymentId: string, gst: "0" | "18") => {
+    void (async () => {
+      try {
+        await downloadInvoicePdf(paymentId, gst);
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Could not download invoice PDF."
+        );
+      }
+    })();
   };
 
   const columns = [
@@ -196,15 +211,26 @@ const InvoicesList = () => {
           </button>
           <ul className="dropdown-menu dropdown-menu-end p-2">
             <li>
-              <Link
+              <button
+                type="button"
                 className="dropdown-item rounded-1"
-                to={generatePath(all_routes.adminEditInvoice, { paymentId: record.id })}
+                onClick={() => handleDownloadInvoice(record.id, "18")}
               >
-                <i className="ti ti-edit me-1" />
-                Edit
-              </Link>
+                <i className="ti ti-download me-1" />
+                PDF with GST 18%
+              </button>
             </li>
             <li>
+              <button
+                type="button"
+                className="dropdown-item rounded-1"
+                onClick={() => handleDownloadInvoice(record.id, "0")}
+              >
+                <i className="ti ti-download me-1" />
+                PDF without GST
+              </button>
+            </li>
+            {/* <li>
               <Link
                 className="dropdown-item rounded-1"
                 to="#"
@@ -214,7 +240,7 @@ const InvoicesList = () => {
                 <i className="ti ti-trash me-1" />
                 Delete
               </Link>
-            </li>
+            </li> */}
           </ul>
         </div>
       ),
@@ -273,15 +299,19 @@ const InvoicesList = () => {
           </div>
         </div>
 
-        <CommonDatatable
-          dataSource={dataSource}
-          columns={columns}
-          searchValue={searchValue}
-          showRowSelection={false}
-        />
+        {loading ? (
+          <InvoicesListTableSkeleton />
+        ) : (
+          <CommonDatatable
+            dataSource={dataSource}
+            columns={columns}
+            searchValue={searchValue}
+            showRowSelection={false}
+          />
+        )}
       </div>
 
-      <div className="modal fade" id="delete_modal">
+      {/* <div className="modal fade" id="delete_modal">
         <div className="modal-dialog modal-dialog-centered modal-sm">
           <div className="modal-content">
             <div className="modal-body text-center">
@@ -308,7 +338,7 @@ const InvoicesList = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </>
   );
 };

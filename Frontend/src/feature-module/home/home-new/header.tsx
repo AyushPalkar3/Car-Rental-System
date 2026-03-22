@@ -1,22 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { all_routes } from "../../../router/all_routes";
 import ImageWithBasePath from "../../../core/data/img/ImageWithBasePath";
 import { header } from "../../../core/data/json/header";
-
-import Cookies from 'js-cookie'
+import Cookies from "js-cookie";
+import { clearCustomerAuthCookies } from "../../../utils/auth.utils";
+import { logoutUser } from "../../user/userSlice";
 
 const NewHeader = () => {
+  const dispatch = useDispatch();
   const [scrolled, setScrolled] = useState(false);
   const [isLogin, setLogin] = useState(false)
   const location = useLocation();
 
 
   const onLogout = () => {
-    Cookies.remove('accessToken')
-    Cookies.remove('refreshToken')
-    setLogin(false)
-  }
+    clearCustomerAuthCookies();
+    dispatch(logoutUser());
+    setLogin(false);
+    window.location.assign(all_routes.home);
+  };
 
   const onHandleMobileMenu = () => {
     document.documentElement.classList.add("menu-opened");

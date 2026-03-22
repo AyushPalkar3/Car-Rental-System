@@ -114,13 +114,13 @@ const Footer = () => {
                     <div className="footer-address">											
                       <span><i className="feather icon-phone-call" /></span>
                       <div className="addr-info">
-                        <Link to="tel:+1(888)7601940">+ 1 (888) 760 1940</Link>
+                        <Link to="tel:+919168527197">+91 9168527197</Link>
                       </div>
                     </div>
                     <div className="footer-address">
                       <span><i className="feather icon-mail" /></span>
                       <div className="addr-info">
-                        <Link to="mailto:support@example.com">support@example.com</Link>
+                        <Link to="mailto:support@ekalodrive.com">support@ekalodrive.com</Link>
                       </div>
                     </div>
                     <div className="update-form">

@@ -1,4 +1,4 @@
-import  { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from "react";
 import { getAdmin } from '../../service/api/admin';
 import { Link } from 'react-router-dom'
 import ImageWithBasePath from '../../../../core/data/img/ImageWithBasePath'
@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setDark, setExpandMenu, setMiniSidebar, setMobileSidebar } from '../../../../core/data/redux/commonSlice';
 import { all_routes } from '../../../../router/all_routes';
 import { VscAccount } from 'react-icons/vsc';
-import Cookies from 'js-cookie';
+import { clearAdminAuthCookies } from "../../../../utils/auth.utils";
 
 const AdminHeader = () => {
   const dispatch = useDispatch();
@@ -44,9 +44,10 @@ const AdminHeader = () => {
     fetchAdminData();
   }, []);
 
-  const handleOnLogout = () => {
-    Cookies.remove("adminAccessToken");
-    Cookies.remove("adminRefreshToken");
+  const handleOnLogout = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    clearAdminAuthCookies();
+    window.location.assign(all_routes.adminlogin);
   };
   useEffect(() => {
     const theme = localStorage.getItem("dataTheme");
@@ -601,7 +602,8 @@ const AdminHeader = () => {
                   Settings
                 </Link>
                 <div className="dropdown-divider my-2" />
-                <Link onClick={handleOnLogout}
+                <Link
+                  onClick={handleOnLogout}
                   className="dropdown-item logout d-flex align-items-center justify-content-between"
                   to={all_routes.adminlogin}
                 >
@@ -633,7 +635,11 @@ const AdminHeader = () => {
           <Link className="dropdown-item" to={all_routes.profileSettings}>
             Settings
           </Link>
-          <Link className="dropdown-item" to={all_routes.adminlogin}>
+          <Link
+            className="dropdown-item"
+            to={all_routes.adminlogin}
+            onClick={handleOnLogout}
+          >
             Logout
           </Link>
         </div>

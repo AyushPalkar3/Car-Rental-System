@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../../router/all_routes";
 import { message } from "antd";
+import { Seater } from "../../../common/json/selectOption";
 import { adminCarAPI } from "../../../service/api/car";
 import { carPartnerAPI } from "../../../service/api/carPartner";
 import { getAdmin } from "../../../service/api/admin";
@@ -22,10 +23,8 @@ const AMENITY_OPTIONS = [
 ] as const;
 
 const CAR_TYPES   = ["Sedan", "Hatchback", "SUV", "Coupes"];
-const BRANDS      = ["Toyota", "Audi", "Lamborghini", "Tata", "Maruti", "Honda", "Hyundai", "Mahindra", "Other"];
-const FUELS       = ["Petrol", "Diesel", "Electric", "Hybrid"];
+const FUELS       = ["Petrol", "Diesel", "Electric", "CNG", "Hybrid"];
 const TRANSMISSIONS = ["Automatic", "Semi-Automatic", "Manual"];
-const COLORS      = ["Red", "Green", "Blue", "White", "Black", "Silver", "Grey", "Orange", "Yellow"];
 const LOCATIONS   = ["Johnson Dealer Zone", "Miller Auto Trade Zone", "Thompson Dealer Parking"];
 
 const EditCar = () => {
@@ -51,7 +50,7 @@ const EditCar = () => {
     const [carName, setCarName]               = useState("");
     const [carType, setCarType]               = useState("");
     const [brand, setBrand]                   = useState("");
-    const [category, setCategory]             = useState("");
+    const [carModel, setCarModel]             = useState("");
     const [plateNumber, setPlateNumber]       = useState("");
     const [carNumber, setCarNumber]           = useState("");
     const [location, setLocation]             = useState("");
@@ -128,7 +127,7 @@ const EditCar = () => {
 
                 setCarName(car.name ?? "");
                 setBrand(car.brand ?? "");
-                setCategory(car.category ?? "");
+                setCarModel("");
                 setLocation(car.location ?? "");
                 setModelYear(car.modelYear ? String(car.modelYear) : "");
                 setSeating(car.seating ? String(car.seating) : "");
@@ -141,7 +140,7 @@ const EditCar = () => {
 
                 // Enums → display
                 const txMap: Record<string, string> = { AUTO: "Automatic", SEMI_AUTO: "Semi-Automatic", MANUAL: "Manual" };
-                const fuelMap: Record<string, string> = { PETROL: "Petrol", DIESEL: "Diesel", ELECTRIC: "Electric", HYBRID: "Hybrid" };
+                const fuelMap: Record<string, string> = { PETROL: "Petrol", DIESEL: "Diesel", ELECTRIC: "Electric", CNG: "CNG", HYBRID: "Hybrid" };
                 setTransmission(txMap[car.transmission] ?? "Automatic");
                 setFuelType(fuelMap[car.fuelType] ?? "Petrol");
                 setCarType(car.carType ?? car.category ?? "");
@@ -200,7 +199,7 @@ const EditCar = () => {
     }, [loadingCar, carId, searchParams]);
 
     const toTransmissionEnum = (label: string) => ({ Automatic: "AUTO", "Semi-Automatic": "SEMI_AUTO", Manual: "MANUAL" } as Record<string, string>)[label] ?? "AUTO";
-    const toFuelEnum = (label: string) => ({ Petrol: "PETROL", Diesel: "DIESEL", Electric: "ELECTRIC", Hybrid: "HYBRID" } as Record<string, string>)[label] ?? "PETROL";
+    const toFuelEnum = (label: string) => ({ Petrol: "PETROL", Diesel: "DIESEL", Electric: "ELECTRIC", CNG: "CNG", Hybrid: "HYBRID" } as Record<string, string>)[label] ?? "PETROL";
 
     const allFeaturesSelected = selectedFeatures.length === AMENITY_OPTIONS.length;
     const toggleFeature = (label: string, checked: boolean) =>
@@ -230,12 +229,12 @@ const EditCar = () => {
             fd.append("name", carName);
             fd.append("brand", brand);
             fd.append("modelYear", modelYear);
-            fd.append("category", category);
+            fd.append("category", carType);
             fd.append("location", location);
             fd.append("transmission", toTransmissionEnum(transmission));
             fd.append("fuelType", toFuelEnum(fuelType));
             fd.append("powerType", "POWER");
-            fd.append("description", description);
+            fd.append("description", description.trim() || carModel.trim());
             fd.append("mileageKm", mileageKm || "0");
             fd.append("seating", seating || "0");
             fd.append("plateNumber", plateNumber);
@@ -291,7 +290,9 @@ const EditCar = () => {
         if (currentStep === 1) {
             const errors: string[] = [];
             if (!carName.trim()) errors.push("Name");
+            if (!carType.trim()) errors.push("Category");
             if (!brand.trim()) errors.push("Brand");
+            if (!carModel.trim() && !description.trim()) errors.push("Model");
             if (!location.trim()) errors.push("Location");
             if (!fuelType) errors.push("Fuel");
             if (!modelYear) errors.push("Year");
@@ -433,27 +434,38 @@ const EditCar = () => {
                                                 <div className="row">
                                                     <div className="col-lg-4 col-md-6">
                                                         <div className="mb-3">
-                                                            <label className="form-label">Car Type</label>
-                                                            <select className="form-select" value={carType} onChange={e => setCarType(e.target.value)}>
+                                                            <label className="form-label">Category <span className="text-danger">*</span></label>
+                                                            <select className={`form-select ${step1Touched && !carType ? "is-invalid" : ""}`} value={carType} onChange={e => setCarType(e.target.value)}>
                                                                 <option value="">Select</option>
                                                                 {CAR_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                                             </select>
+                                                            {step1Touched && !carType && <div className="invalid-feedback">Category is required.</div>}
                                                         </div>
                                                     </div>
                                                     <div className="col-lg-4 col-md-6">
                                                         <div className="mb-3">
                                                             <label className="form-label">Brand <span className="text-danger">*</span></label>
-                                                            <select className={`form-select ${step1Touched && !brand ? "is-invalid" : ""}`} value={brand} onChange={e => setBrand(e.target.value)}>
-                                                                <option value="">Select</option>
-                                                                {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                                                            </select>
-                                                            {step1Touched && !brand && <div className="invalid-feedback">Brand is required.</div>}
+                                                            <input
+                                                                type="text"
+                                                                className={`form-control ${step1Touched && !brand.trim() ? "is-invalid" : ""}`}
+                                                                value={brand}
+                                                                onChange={e => setBrand(e.target.value)}
+                                                                placeholder="e.g. Toyota"
+                                                            />
+                                                            {step1Touched && !brand.trim() && <div className="invalid-feedback">Brand is required.</div>}
                                                         </div>
                                                     </div>
                                                     <div className="col-lg-4 col-md-6">
                                                         <div className="mb-3">
-                                                            <label className="form-label">Category</label>
-                                                            <input type="text" className="form-control" value={category} onChange={e => setCategory(e.target.value)} placeholder="e.g. Economy" />
+                                                            <label className="form-label">Model <span className="text-danger">*</span></label>
+                                                            <input
+                                                                type="text"
+                                                                className={`form-control ${step1Touched && !carModel.trim() && !description.trim() ? "is-invalid" : ""}`}
+                                                                value={carModel}
+                                                                onChange={e => setCarModel(e.target.value)}
+                                                                placeholder="e.g. Urban Cruiser"
+                                                            />
+                                                            {step1Touched && !carModel.trim() && !description.trim() && <div className="invalid-feedback">Model or description is required.</div>}
                                                         </div>
                                                     </div>
                                                     <div className="col-lg-4 col-md-6">
@@ -505,8 +517,19 @@ const EditCar = () => {
                                                     <div className="col-lg-4 col-md-6">
                                                         <div className="mb-3">
                                                             <label className="form-label">No of Seats <span className="text-danger">*</span></label>
-                                                            <input type="number" className={`form-control ${step1Touched && !seating ? "is-invalid" : ""}`}
-                                                                value={seating} onChange={e => setSeating(e.target.value)} placeholder="e.g. 5" />
+                                                            <select
+                                                                className={`form-select ${step1Touched && !seating ? "is-invalid" : ""}`}
+                                                                value={seating}
+                                                                onChange={e => setSeating(e.target.value)}
+                                                            >
+                                                                <option value="">Select</option>
+                                                                {Seater.map((s) => {
+                                                                    const n = Number(String(s.label).split(/\s+/)[0]);
+                                                                    return (
+                                                                        <option key={s.value} value={String(n)}>{s.label}</option>
+                                                                    );
+                                                                })}
+                                                            </select>
                                                             {step1Touched && !seating && <div className="invalid-feedback">Seats is required.</div>}
                                                         </div>
                                                     </div>
@@ -518,10 +541,14 @@ const EditCar = () => {
                                                     </div>
                                                     <div className="col-lg-4 col-md-6">
                                                         <div className="mb-3">
-                                                            <label className="form-label">Color</label>
-                                                            <select className="form-select" value={color} onChange={e => setColor(e.target.value)}>
-                                                                {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-                                                            </select>
+                                                            <label className="form-label">Color <span className="text-danger">*</span></label>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control"
+                                                                value={color}
+                                                                onChange={e => setColor(e.target.value)}
+                                                                placeholder="e.g. White"
+                                                            />
                                                         </div>
                                                     </div>
                                                     <div className="col-lg-12">

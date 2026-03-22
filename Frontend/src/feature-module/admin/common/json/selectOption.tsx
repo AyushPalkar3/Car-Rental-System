@@ -188,6 +188,8 @@ export const Fuel = [
   { label: 'Petrol', value: '1' },
   { label: 'Diesel', value: '2' },
   { label: 'Electric', value: '3' },
+  { label: 'CNG', value: '4' },
+  { label: 'Hybrid', value: '5' },
 ];
 export const Platform = [
   { label: 'Youtube', value: '1' },
@@ -197,6 +199,7 @@ export const Seater = [
   { label: '2 Seater', value: '1' },
   { label: '4 Seater', value: '2' },
   { label: '5 Seater', value: '3' },
+  { label: '7 Seater', value: '5' },
 ];
 export const Doors = [
   { label: '2 Doors', value: '1' },
@@ -306,9 +309,8 @@ export const couponsType = [
 export const Applicable = [
   { label: 'New Customers', value: '1' },
   { label: 'Weekly Rentals', value: '2' },
-  { label: 'VIP Members', value: '3' },
-  { label: 'Luxury Cars', value: '4' },
   { label: 'Long Rentals', value: '5' },
+  { label: 'ALL Customer', value: '6' },
 ];
 
 export const invoiceCar = [

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { Link, generatePath } from "react-router-dom";
 import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import CommonDatatable from "../../common/dataTable";
+import { PaymentsListTableSkeleton } from "../../common/financeListTableSkeleton";
 import { all_routes } from "../../../../router/all_routes";
 import {
   adminPaymentsApi,
@@ -85,6 +87,18 @@ const PaymentsList = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
+  };
+
+  const handleDownloadInvoice = (paymentId: string, gst: "0" | "18") => {
+    void (async () => {
+      try {
+        await downloadInvoicePdf(paymentId, gst);
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Could not download invoice PDF."
+        );
+      }
+    })();
   };
 
   const columns = [
@@ -198,7 +212,7 @@ const PaymentsList = () => {
               <button
                 type="button"
                 className="dropdown-item rounded-1"
-                onClick={() => downloadInvoicePdf(record.id, "0")}
+                onClick={() => handleDownloadInvoice(record.id, "0")}
               >
                 <i className="ti ti-download me-1" />
                 PDF without GST
@@ -208,13 +222,13 @@ const PaymentsList = () => {
               <button
                 type="button"
                 className="dropdown-item rounded-1"
-                onClick={() => downloadInvoicePdf(record.id, "18")}
+                onClick={() => handleDownloadInvoice(record.id, "18")}
               >
                 <i className="ti ti-download me-1" />
                 PDF with GST 18%
               </button>
             </li>
-            <li>
+            {/* <li>
               <Link
                 className="dropdown-item rounded-1"
                 to="#"
@@ -224,7 +238,7 @@ const PaymentsList = () => {
                 <i className="ti ti-trash me-1" />
                 Delete
               </Link>
-            </li>
+            </li> */}
           </ul>
         </div>
       ),
@@ -274,15 +288,19 @@ const PaymentsList = () => {
           </div>
         </div>
 
-        <CommonDatatable
-          dataSource={dataSource}
-          columns={columns}
-          searchValue={searchValue}
-          showRowSelection={false}
-        />
+        {loading ? (
+          <PaymentsListTableSkeleton />
+        ) : (
+          <CommonDatatable
+            dataSource={dataSource}
+            columns={columns}
+            searchValue={searchValue}
+            showRowSelection={false}
+          />
+        )}
       </div>
 
-      <div className="modal fade" id="delete_contact">
+      {/* <div className="modal fade" id="delete_contact">
         <div className="modal-dialog modal-dialog-centered modal-sm">
           <div className="modal-content">
             <div className="modal-body text-center">
@@ -309,7 +327,7 @@ const PaymentsList = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </>
   );
 };

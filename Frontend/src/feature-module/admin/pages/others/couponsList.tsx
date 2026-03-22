@@ -9,6 +9,26 @@ import dayjs from "dayjs";
 import { getCoupons, addCoupon, updateCoupon, deleteCoupon } from "../../service/api/coupon";
 import { toast } from "react-toastify";
 
+/** DB stores "1" = percentage, "2" = fixed; legacy rows may use words. */
+const normalizeCouponTypeForForm = (t: unknown) => {
+  const s = String(t ?? "").toLowerCase();
+  if (s === "1" || s === "percentage") return "1";
+  if (s === "2" || s === "fixed") return "2";
+  return "1";
+};
+
+const couponTypeLabel = (t: unknown) => {
+  const s = String(t ?? "").toLowerCase();
+  if (s === "1" || s === "percentage") return "Percentage";
+  if (s === "2" || s === "fixed") return "Fixed";
+  return String(t ?? "");
+};
+
+const isPercentageCouponType = (t: unknown) => {
+  const s = String(t ?? "").toLowerCase();
+  return s === "1" || s === "percentage";
+};
+
 const CouponsList = () => {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +40,7 @@ const CouponsList = () => {
   const [formData, setFormData] = useState({
     name: "",
     code: "",
-    type: "percentage",
+    type: "1",
     value: "",
     startDate: null as any,
     endDate: null as any,
@@ -66,7 +86,7 @@ const CouponsList = () => {
     setFormData({
       name: "",
       code: "",
-      type: "percentage",
+      type: "1",
       value: "",
       startDate: null,
       endDate: null,
@@ -116,7 +136,7 @@ const CouponsList = () => {
       resetForm();
       fetchCoupons();
       // Use Bootstrap's modal instance to hide it if validation passes
-      const modalElement = document.getElementById(editingCoupon ? "edit_coupons" : "add_coupons");
+      const modalElement = document.getElementById("coupon_form_modal");
       if (modalElement) {
         const bootstrap = (window as any).bootstrap;
         if (bootstrap) {
@@ -134,7 +154,7 @@ const CouponsList = () => {
     setFormData({
       name: coupon.name,
       code: coupon.code,
-      type: coupon.type,
+      type: normalizeCouponTypeForForm(coupon.type),
       value: coupon.value.toString(),
       startDate: dayjs(coupon.startDate),
       endDate: dayjs(coupon.endDate),
@@ -181,12 +201,16 @@ const CouponsList = () => {
     {
       title: "DISCOUNT TYPE",
       dataIndex: "type",
-      render: (text: string) => <p className="text-capitalize">{text}</p>,
+      render: (_: string, record: any) => (
+        <p className="text-capitalize">{couponTypeLabel(record.type)}</p>
+      ),
     },
     {
       title: "DISCOUNT",
       dataIndex: "value",
-      render: (val: number, record: any) => <p>{val}{record.type === 'percentage' ? '%' : ''}</p>,
+      render: (val: number, record: any) => (
+        <p>{val}{isPercentageCouponType(record.type) ? "%" : ""}</p>
+      ),
     },
     {
       title: "LIMIT",
@@ -218,8 +242,10 @@ const CouponsList = () => {
     },
     {
       title: "Action",
-      dataIndex: "",
-      render: (record: any) => (
+      key: "action",
+      align: "center",
+      width: 72,
+      render: (_: unknown, record: any) => (
         <div className="dropdown">
           <button
             className="btn btn-icon btn-sm"
@@ -235,7 +261,7 @@ const CouponsList = () => {
                 className="dropdown-item rounded-1"
                 to="#"
                 data-bs-toggle="modal"
-                data-bs-target="#edit_coupons"
+                data-bs-target="#coupon_form_modal"
                 onClick={() => handleEdit(record)}
               >
                 <i className="ti ti-edit me-1" />
@@ -284,7 +310,7 @@ const CouponsList = () => {
                 to="#"
                 className="btn btn-primary d-flex align-items-center"
                 data-bs-toggle="modal"
-                data-bs-target="#add_coupons"
+                data-bs-target="#coupon_form_modal"
                 onClick={resetForm}
               >
                 <i className="ti ti-plus me-2" />
@@ -323,7 +349,7 @@ const CouponsList = () => {
       </div>
 
       {/* Add/Edit Coupon Modal */}
-      <div className="modal fade" id={editingCoupon ? "edit_coupons" : "add_coupons"}>
+      <div className="modal fade" id="coupon_form_modal">
         <div className="modal-dialog modal-dialog-centered modal-lg">
           <div className="modal-content">
             <div className="modal-header">

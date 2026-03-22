@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../../../router/all_routes";
 import PredefinedDateRanges from "../../common/range-picker/datePicker";
-import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import CommonDatatable from "../../common/dataTable";
 import CustomerModal from "../../common/modal/customerModal";
 import { userAPI } from "../../service/api/user";
@@ -14,10 +13,7 @@ const CustomersList = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchValue, setSearchValue] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("Latest");
-  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-    dayjs().subtract(6, "days"),
-    dayjs(),
-  ]);
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -49,20 +45,21 @@ const CustomersList = () => {
     setSearchValue(e.target.value);
   };
 
-  const handleDateChange = (dates: [dayjs.Dayjs, dayjs.Dayjs]) => {
+  const handleDateChange = (dates: [dayjs.Dayjs, dayjs.Dayjs] | null) => {
     setDateRange(dates);
   };
 
   const filteredAndSortedData = useMemo(() => {
     let result = [...data];
 
-    // Filter by Date Range
-    if (dateRange[0] && dateRange[1]) {
+    // Filter by registration date only when a range is selected (not “Show all”)
+    if (dateRange?.[0] && dateRange?.[1]) {
+      const [from, to] = dateRange;
       result = result.filter((user) => {
         const createdAt = dayjs(user.createdAt);
         return (
-          (createdAt.isSame(dateRange[0], "day") || createdAt.isAfter(dateRange[0], "day")) &&
-          (createdAt.isSame(dateRange[1], "day") || createdAt.isBefore(dateRange[1], "day"))
+          (createdAt.isSame(from, "day") || createdAt.isAfter(from, "day")) &&
+          (createdAt.isSame(to, "day") || createdAt.isBefore(to, "day"))
         );
       });
     }
@@ -84,25 +81,13 @@ const CustomersList = () => {
       title: "CUSTOMER",
       dataIndex: "firstName",
       render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link
-            to={`${all_routes.customerDetails}/${record.id}`}
-            className="avatar rounded-circle me-2 flex-shrink-0"
-          >
-            <ImageWithBasePath
-              src={`assets/admin/img/customer/customer-01.jpg`}
-              className="rounded-circle"
-              alt="img"
-            />
-          </Link>
-          <div>
-            <h6 className="fs-14 fw-semibold">
-              <Link to={`${all_routes.customerDetails}/${record.id}`}>
-                {record.firstName} {record.lastName}
-              </Link>
-            </h6>
-            <p>{record.phoneNum}</p>
-          </div>
+        <div>
+          <h6 className="fs-14 fw-semibold">
+            <Link to={`${all_routes.customerDetails}/${record.id}`}>
+              {record.firstName} {record.lastName}
+            </Link>
+          </h6>
+          <p>{record.phoneNum}</p>
         </div>
       ),
       sorter: (a: any, b: any) => (a.firstName || "").localeCompare(b.firstName || ""),
@@ -252,7 +237,10 @@ const CustomersList = () => {
                 <span className="input-icon-addon">
                   <i className="ti ti-calendar" />
                 </span>
-                <PredefinedDateRanges onDateChange={handleDateChange} />
+                <PredefinedDateRanges
+                  defaultShowAll
+                  onDateChange={handleDateChange}
+                />
               </div>
             </div>
           </div>
@@ -280,6 +268,7 @@ const CustomersList = () => {
           dataSource={filteredAndSortedData}
           columns={columns}
           searchValue={searchValue}
+          showRowSelection={false}
         />
         {/* Custom Data Table */}
       </div>

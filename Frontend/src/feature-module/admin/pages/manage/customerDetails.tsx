@@ -51,18 +51,10 @@ const CustomerDetails = () => {
                   <h5>Basic Details</h5>
                 </div>
                 <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                  <div className="d-flex align-items-center">
-                    <span className="avatar avatar-lg me-3">
-                      <ImageWithBasePath
-                        src="assets/admin/img/customer/customer-01.jpg"
-                        alt="img"
-                      />
-                    </span>
-                    <div>
-                      <h6 className="mb-1">{user.firstName} {user.lastName}</h6>
-                      <div className="d-flex align-items-center">
-                        <p className="mb-0 me-2">Added On : {new Date(user.createdAt).toLocaleDateString()}</p>
-                      </div>
+                  <div>
+                    <h6 className="mb-1">{user.firstName} {user.lastName}</h6>
+                    <div className="d-flex align-items-center">
+                      <p className="mb-0 me-2">Added On : {new Date(user.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="d-flex align-items-center flex-wrap gap-3">

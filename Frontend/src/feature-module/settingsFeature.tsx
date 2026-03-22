@@ -1,5 +1,5 @@
-
-import { Link, Outlet } from "react-router-dom";
+import Cookies from "js-cookie";
+import { Link, Navigate, Outlet } from "react-router-dom";
 import AdminHeader from "./admin/common/header/adminHeader";
 import AdminSidebar from "./admin/common/sidebar/adminSidebar";
 import AdminFooter from "./admin/common/footer/adminFooter";
@@ -7,9 +7,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { setMobileSidebar } from "../core/data/redux/commonSlice";
 import SettingsSidebar from "./admin/common/settings-sidebar/settingsSidebar";
 import { all_routes } from "../router/all_routes";
+import { useSessionRestoreGuard } from "../hooks/useSessionRestoreGuard";
 
 const SettingsFeature = () => {
   const dispatch = useDispatch();
+  const adminToken = Cookies.get("adminAccessToken");
+  useSessionRestoreGuard("adminAccessToken", all_routes.adminlogin);
   const expandMenu = useSelector((state: any) => state.commonSlice.expandMenu);
   const miniSidebar = useSelector(
     (state: any) => state.commonSlice.miniSidebar
@@ -20,6 +23,11 @@ const SettingsFeature = () => {
   const toggleMobileSidebar = () => {
     dispatch(setMobileSidebar(!mobileSidebar));
   };
+
+  if (!adminToken) {
+    return <Navigate to={all_routes.adminlogin} replace />;
+  }
+
   return (
     <>
       <div

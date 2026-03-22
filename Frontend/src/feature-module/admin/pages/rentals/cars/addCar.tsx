@@ -3,11 +3,9 @@ import CarBookingModal from "../../../common/modal/carBookingModal";
 import { Link, useNavigate } from "react-router-dom";
 import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../../router/all_routes";
-import { DatePicker, message, Select } from "antd";
+import { DatePicker, message } from "antd";
 import CustomSelect from "../../../common/select/commonSelect";
 import {
-    Brand,
-    CarModal,
     CarType,
     Fuel,
     MainLocation,
@@ -74,7 +72,6 @@ const AddCar = () => {
     const [carType, setCarType] = useState("");
     const [brand, setBrand] = useState("");
     const [carModel, setCarModel] = useState("");
-    const [category, setCategory] = useState("");
     const [plateNumber, setPlateNumber] = useState("");
     const [carNumber, setCarNumber] = useState("");
     const [location, setLocation] = useState("");
@@ -167,6 +164,18 @@ const AddCar = () => {
                 return "#00ff00";
             case "blue":
                 return "#0000ff";
+            case "white":
+                return "#ffffff";
+            case "black":
+                return "#000000";
+            case "silver":
+            case "grey":
+            case "gray":
+                return "#c0c0c0";
+            case "orange":
+                return "#ffa500";
+            case "yellow":
+                return "#ffff00";
             default:
                 return "#000000";
         }
@@ -193,6 +202,10 @@ const AddCar = () => {
                 return "DIESEL";
             case "Electric":
                 return "ELECTRIC";
+            case "CNG":
+                return "CNG";
+            case "Hybrid":
+                return "HYBRID";
             default:
                 return "PETROL";
         }
@@ -207,7 +220,7 @@ const AddCar = () => {
             fd.append("brand", brand);
             fd.append("modelYear", String(modelYear));
             fd.append("featured", "false");
-            fd.append("category", category);
+            fd.append("category", carType);
             fd.append("plateNumber", plateNumber);
             fd.append("carNumber", carNumber);
             fd.append("location", location);
@@ -215,7 +228,7 @@ const AddCar = () => {
             fd.append("transmission", toTransmissionEnum(transmissionLabel));
             fd.append("fuelType", toFuelEnum(fuelLabel));
             fd.append("powerType", "POWER");
-            fd.append("description", description);
+            fd.append("description", description.trim() || carModel.trim());
 
             fd.append("mileageKm", String(mileageKm ?? 0));
             fd.append("seating", String(seating ?? 0));
@@ -278,10 +291,9 @@ const AddCar = () => {
             const errors: string[] = [];
             if (!thumbnailFile) errors.push("Featured Image");
             if (!carName.trim()) errors.push("Name");
-            if (!carType.trim()) errors.push("Car Type");
+            if (!carType.trim()) errors.push("Category");
             if (!brand.trim()) errors.push("Brand");
             if (!carModel.trim()) errors.push("Model");
-            if (!category.trim()) errors.push("Category");
             if (!plateNumber.trim()) errors.push("Plate Number");
             if (!location.trim()) errors.push("Location");
             if (!fuelLabel.trim()) errors.push("Fuel");
@@ -321,23 +333,6 @@ const AddCar = () => {
     const handlePrev = () => {
         setCurrentStep(currentStep - 1);
     };
-    const options = [
-        {
-            label: "Red",
-            value: "Red",
-            bg: "danger",
-        },
-        {
-            label: "Green",
-            value: "Green",
-            bg: "success",
-        },
-        {
-            label: "Blue",
-            value: "Blue",
-            bg: "info",
-        },
-    ];
     return (
         <>
             <div className="content me-0">
@@ -631,7 +626,7 @@ const AddCar = () => {
                                                             <div className="mb-3">
                                                                 <div className="d-flex align-items-center justify-content-between">
                                                                     <label className="form-label">
-                                                                        Car Type{" "}
+                                                                        Category{" "}
                                                                         <span className="text-danger">
                                                                             *
                                                                         </span>
@@ -647,7 +642,7 @@ const AddCar = () => {
                                                                     }}
                                                                 />
                                                                 {step1Touched && !carType.trim() && (
-                                                                    <div className="text-danger fs-12 mt-1">Car Type is required.</div>
+                                                                    <div className="text-danger fs-12 mt-1">Category is required.</div>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -661,32 +656,12 @@ const AddCar = () => {
                                                                         </span>
                                                                     </label>
                                                                 </div>
-                                                                <CustomSelect
-                                                                    options={
-                                                                        Brand
-                                                                    }
-                                                                    className="select d-flex"
-                                                                    placeholder="Select"
-                                                                    onChange={(
-                                                                        opt: unknown,
-                                                                    ) => {
-                                                                        const label =
-                                                                            (
-                                                                                opt as {
-                                                                                    label?: unknown;
-                                                                                }
-                                                                            )
-                                                                                ?.label;
-                                                                        setBrand(
-                                                                            typeof label ===
-                                                                                "string"
-                                                                                ? label
-                                                                                : String(
-                                                                                      label ??
-                                                                                          "",
-                                                                                  ),
-                                                                        );
-                                                                    }}
+                                                                <input
+                                                                    type="text"
+                                                                    className={`form-control ${step1Touched && !brand.trim() ? "is-invalid" : ""}`}
+                                                                    value={brand}
+                                                                    onChange={e => setBrand(e.target.value)}
+                                                                    placeholder="e.g. Toyota"
                                                                 />
                                                                 {step1Touched && !brand.trim() && (
                                                                     <div className="text-danger fs-12 mt-1">Brand is required.</div>
@@ -704,40 +679,15 @@ const AddCar = () => {
                                                                     </label>
                                                                 </div>
 
-                                                                <CustomSelect
-                                                                    options={CarModal}
-                                                                    className="select d-flex"
-                                                                    placeholder="Select"
-                                                                    onChange={(opt: unknown) => {
-                                                                        const label = (opt as { label?: unknown })?.label;
-                                                                        setCarModel(typeof label === "string" ? label : String(label ?? ""));
-                                                                    }}
+                                                                <input
+                                                                    type="text"
+                                                                    className={`form-control ${step1Touched && !carModel.trim() ? "is-invalid" : ""}`}
+                                                                    value={carModel}
+                                                                    onChange={e => setCarModel(e.target.value)}
+                                                                    placeholder="e.g. Urban Cruiser"
                                                                 />
                                                                 {step1Touched && !carModel.trim() && (
                                                                     <div className="text-danger fs-12 mt-1">Model is required.</div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="col-lg-4 col-md-6">
-                                                            <div className="mb-3">
-                                                                <label className="form-label">
-                                                                    Category{" "}
-                                                                    <span className="text-danger">
-                                                                        *
-                                                                    </span>
-                                                                </label>
-
-                                                                <CustomSelect
-                                                                    options={CarModal}
-                                                                    className="select d-flex"
-                                                                    placeholder="Select"
-                                                                    onChange={(opt: unknown) => {
-                                                                        const label = (opt as { label?: unknown })?.label;
-                                                                        setCategory(typeof label === "string" ? label : String(label ?? ""));
-                                                                    }}
-                                                                />
-                                                                {step1Touched && !category.trim() && (
-                                                                    <div className="text-danger fs-12 mt-1">Category is required.</div>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -846,36 +796,12 @@ const AddCar = () => {
                                                                         *
                                                                     </span>
                                                                 </label>
-                                                                <Select
-                                                                    style={{
-                                                                        width: "100%",
-                                                                    }}
-                                                                    placeholder="select one Color"
-                                                                    className="Select"
-                                                                    defaultValue={
-                                                                        "Red"
-                                                                    }
-                                                                    options={
-                                                                        options
-                                                                    }
-                                                                    onChange={value =>
-                                                                        setColor(
-                                                                            value,
-                                                                        )
-                                                                    }
-                                                                    optionRender={option => (
-                                                                        <>
-                                                                            <span>
-                                                                                <span
-                                                                                    className={`color-icon bg-${option.data.bg}`}></span>
-                                                                                {
-                                                                                    option
-                                                                                        .data
-                                                                                        .label
-                                                                                }
-                                                                            </span>
-                                                                        </>
-                                                                    )}
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-control"
+                                                                    value={color}
+                                                                    onChange={e => setColor(e.target.value)}
+                                                                    placeholder="e.g. White"
                                                                 />
                                                             </div>
                                                         </div>

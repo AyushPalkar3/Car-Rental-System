@@ -145,26 +145,15 @@ const ReservationsList = () => {
       title: "CUSTOMER",
       dataIndex: "CUSTOMER",
       render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link
-            to={all_routes.companyDetails}
-            className="avatar avatar-rounded me-2 flex-shrink-0"
+        <div>
+          <h6 className="mb-1 fs-14">
+            <Link to={all_routes.companyDetails}>{text}</Link>
+          </h6>
+          <span
+            className={`badge  ${record.BADGE === "Client" ? "bg-secondary-transparent" : "bg-violet-transparent"} rounded-pill`}
           >
-            <ImageWithBasePath
-              src={`assets/admin/img/customer/${record.CUSTOMER_IMG}`}
-              alt=""
-            />
-          </Link>
-          <div>
-            <h6 className="mb-1 fs-14">
-              <Link to={all_routes.companyDetails}>{text}</Link>
-            </h6>
-            <span
-              className={`badge  ${record.BADGE === "Client" ? "bg-secondary-transparent" : "bg-violet-transparent"} rounded-pill`}
-            >
-              {record.BADGE}
-            </span>
-          </div>
+            {record.BADGE}
+          </span>
         </div>
       ),
       sorter: (a: any, b: any) => a.CUSTOMER.length - b.CUSTOMER.length,

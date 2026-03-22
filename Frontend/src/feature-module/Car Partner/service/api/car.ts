@@ -14,6 +14,7 @@ export type PartnerCar = {
   brand: string;
   modelYear: number;
   category?: string | null;
+  location?: string | null;
   carNumber?: string | null;
   plateNumber?: string | null;
   airBags?: number | null;
