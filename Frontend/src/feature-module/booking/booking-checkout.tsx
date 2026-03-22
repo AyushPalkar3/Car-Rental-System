@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import Breadcrumbs from "../common/breadcrumbs";
 import { Calendar } from "primereact/calendar";
@@ -9,6 +10,7 @@ import { all_routes, listingDetailsPath } from "../../router/all_routes";
 
 import { useDispatch, useSelector } from "react-redux";
 import { setBookingDetails } from "./checkoutSlice";
+import { couponAPI } from "../../api/user/coupon.api";
 
 const BookingCheckout = () => {
   const routes = all_routes;
@@ -20,11 +22,33 @@ const BookingCheckout = () => {
   const userInfo = useSelector((state: any) => state.user.userInfo);
   const bookingData = useSelector((state: any) => state.checkout);
 
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string;
+    code: string;
+    discountAmount: number;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponInline, setCouponInline] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
+
+  const parseCouponApiError = (err: unknown): string => {
+    if (typeof err === "string") return err;
+    if (err && typeof err === "object") {
+      const o = err as Record<string, unknown>;
+      if (typeof o.message === "string" && o.message) return o.message;
+      if (typeof o.error === "string" && o.error) return o.error;
+    }
+    return "Could not apply coupon.";
+  };
+
   const [deliveryLocation, setDeliveryLocation] = useState("");
   const [returnLocation, setReturnLocation] = useState("");
   const [startTime, setStartTime] = useState<any>(null);
   const [returnTime, setReturnTime] = useState<any>(null);
-  const [bookingType, setBookingType] = useState("day");
+  const [bookingType, setBookingType] = useState("delivery");
   const [startDate, setStartDate] = useState<Date | null>();
   const [endDate, setEndDate] = useState<Date | null>();
   const [distanceKM, setDistanceKM] = useState<number>(0);
@@ -35,26 +59,100 @@ const BookingCheckout = () => {
 
   const navigate = useNavigate();
 
-  // ✅ Load redux booking data
-  useEffect(() => {
-    console.log("booking data", bookingData)
-    if (bookingData) {
-      setBookingType(bookingData.rentalType || "delivery");
-      setDeliveryLocation(bookingData.deliveryLocation || "");
-      setReturnLocation(bookingData.returnLocation || "");
-      setStartDate(
-        bookingData.startDate || null
-      );
-      setEndDate(
-        bookingData.endDate || null
-      );
-      setStartTime(bookingData.startTime || null);
-      setReturnTime(bookingData.endTime || null);
-      setDistanceKM(bookingData.distanceKM || 0);
-      setDeliveryFee(bookingData.deliveryFee || 0);
-      setPriceBreakdown(bookingData.priceBreakdown || null);
+  const toDate = (v: unknown): Date | null => {
+    if (v == null) return null;
+    if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v;
+    const d = new Date(v as string);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  const isDayjsTime = (v: unknown): v is { hour: () => number; minute: () => number } =>
+    !!v &&
+    typeof v === "object" &&
+    typeof (v as { hour?: unknown }).hour === "function";
+
+  // Hydrate form from Redux once per car (includes sessionStorage restore on refresh).
+  useLayoutEffect(() => {
+    if (!bookingData?.car?.id) return;
+    setBookingType(bookingData.rentalType || "delivery");
+    setDeliveryLocation(bookingData.deliveryLocation || "");
+    setReturnLocation(bookingData.returnLocation || "");
+    setStartDate(toDate(bookingData.startDate));
+    setEndDate(toDate(bookingData.endDate));
+    setStartTime(isDayjsTime(bookingData.startTime) ? bookingData.startTime : null);
+    setReturnTime(isDayjsTime(bookingData.endTime) ? bookingData.endTime : null);
+    setDistanceKM(bookingData.distanceKM ?? 0);
+    setDeliveryFee(bookingData.deliveryFee ?? 0);
+    setPriceBreakdown(bookingData.priceBreakdown ?? null);
+    if (bookingData.couponId && (bookingData.discountAmount ?? 0) > 0) {
+      setAppliedCoupon({
+        id: bookingData.couponId,
+        code: bookingData.couponCode || "",
+        discountAmount: bookingData.discountAmount,
+      });
+      setCouponInput(bookingData.couponCode || "");
+    } else {
+      setAppliedCoupon(null);
+      setCouponInput("");
     }
-  }, [bookingData]);
+  }, [bookingData?.car?.id]);
+
+  const skipCouponResetRef = useRef(true);
+  useEffect(() => {
+    if (skipCouponResetRef.current) {
+      skipCouponResetRef.current = false;
+      return;
+    }
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponInline(null);
+  }, [startDate, endDate, startTime, returnTime, bookingType, distanceKM]);
+
+  const priceBreakdownKey = priceBreakdown
+    ? JSON.stringify(priceBreakdown)
+    : "";
+
+  useEffect(() => {
+    if (!bookingData?.car?.id) return;
+    const t = setTimeout(() => {
+      dispatch(
+        setBookingDetails({
+          rentalType: bookingType,
+          deliveryLocation,
+          returnLocation,
+          startDate,
+          endDate,
+          startTime,
+          endTime: returnTime,
+          distanceKM,
+          deliveryFee,
+          priceBreakdown,
+          preDiscountTotal: appliedCoupon ? totalPrice : undefined,
+          couponId: appliedCoupon?.id ?? null,
+          couponCode: appliedCoupon?.code ?? null,
+          discountAmount: appliedCoupon?.discountAmount ?? 0,
+        })
+      );
+    }, 400);
+    return () => clearTimeout(t);
+  }, [
+    bookingData?.car?.id,
+    bookingType,
+    deliveryLocation,
+    returnLocation,
+    startDate,
+    endDate,
+    startTime,
+    returnTime,
+    distanceKM,
+    deliveryFee,
+    priceBreakdownKey,
+    appliedCoupon,
+    appliedCoupon?.id,
+    appliedCoupon?.discountAmount,
+    totalPrice,
+    dispatch,
+  ]);
 
   // ✅ Safe Price Calculation
   const calculateTotalPrice = () => {
@@ -175,8 +273,145 @@ const BookingCheckout = () => {
     calculateTotalPrice();
   }, [startDate, endDate, startTime, returnTime, bookingData?.car?.pricing, bookingType, distanceKM]);
 
+  const buildPickupReturnIso = () => {
+    if (
+      !startDate ||
+      !endDate ||
+      !startTime ||
+      !returnTime ||
+      !bookingData?.car?.id
+    ) {
+      return null;
+    }
+    const start = new Date(startDate);
+    start.setHours(startTime.hour());
+    start.setMinutes(startTime.minute());
+    start.setSeconds(0);
+    const end = new Date(endDate);
+    end.setHours(returnTime.hour());
+    end.setMinutes(returnTime.minute());
+    end.setSeconds(0);
+    if (end.getTime() <= start.getTime()) return null;
+    return {
+      pickupDate: start.toISOString(),
+      returnDate: end.toISOString(),
+    };
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    setCouponInline(null);
+    if (!code) {
+      const t = "Enter a coupon code.";
+      setCouponInline({ type: "error", text: t });
+      toast.error(t);
+      return;
+    }
+    const dt = buildPickupReturnIso();
+    if (!dt) {
+      const t = "Choose valid pickup and return date and time first.";
+      setCouponInline({ type: "error", text: t });
+      toast.error(t);
+      return;
+    }
+    if (totalPrice <= 0) {
+      const t = "Set rental dates so the total is greater than zero.";
+      setCouponInline({ type: "error", text: t });
+      toast.error(t);
+      return;
+    }
+    setCouponLoading(true);
+    try {
+      const uid =
+        userInfo?.user?.id || userInfo?.id || bookingData?.userId;
+      const res = await couponAPI.validate({
+        code,
+        subtotalBeforeDiscount: totalPrice,
+        carId: bookingData.car.id,
+        pickupDate: dt.pickupDate,
+        returnDate: dt.returnDate,
+        ...(uid ? { userId: uid } : {}),
+      });
+      const data = res.data;
+      setAppliedCoupon({
+        id: data.coupon.id,
+        code: data.coupon.code,
+        discountAmount: data.discountAmount,
+      });
+      setCouponInline({
+        type: "success",
+        text: `${data.coupon.code} applied · You save ₹${data.discountAmount}`,
+      });
+      toast.success(`Coupon applied · Save ₹${data.discountAmount}`);
+    } catch (err: unknown) {
+      const msg = parseCouponApiError(err);
+      setCouponInline({ type: "error", text: msg });
+      toast.error(msg);
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponInline(null);
+  };
+
+  const discountAmt = appliedCoupon?.discountAmount ?? 0;
+  const finalDisplayTotal = Math.max(0, Math.ceil(totalPrice - discountAmt));
+
+  const validateLocationTimeStep = (): string | null => {
+    const uid = userInfo?.user?.id || userInfo?.id;
+    if (!uid) {
+      return "Please sign in to continue with your booking.";
+    }
+    if (!bookingData?.car?.id) {
+      return "No car selected. Go back and choose a car.";
+    }
+    if (!startDate) return "Please select a start date.";
+    if (!endDate) return "Please select a return date.";
+    if (!isDayjsTime(startTime)) return "Please select a start time.";
+    if (!isDayjsTime(returnTime)) return "Please select a return time.";
+
+    const start = new Date(startDate);
+    start.setHours(startTime.hour(), startTime.minute(), 0, 0);
+    const end = new Date(endDate);
+    end.setHours(returnTime.hour(), returnTime.minute(), 0, 0);
+    if (end.getTime() <= start.getTime()) {
+      return "Return date and time must be after pickup.";
+    }
+
+    if (bookingType === "delivery") {
+      if (!String(deliveryLocation).trim()) {
+        return "Please enter your delivery address.";
+      }
+      if (!sameLocation && !String(returnLocation).trim()) {
+        return "Please enter your return address (or choose return from the same address).";
+      }
+    } else {
+      if (!String(deliveryLocation).trim()) {
+        return "Please select a pickup location.";
+      }
+      if (!sameLocation && !String(returnLocation).trim()) {
+        return "Please select a return location.";
+      }
+    }
+
+    if (totalPrice <= 0 || !priceBreakdown) {
+      return "Rental total is invalid. Check your dates — pricing may be missing for this car.";
+    }
+    return null;
+  };
+
   // ✅ Continue Booking
   const navigatePath = () => {
+    const err = validateLocationTimeStep();
+    if (err) {
+      toast.error(err);
+      return;
+    }
     dispatch(
       setBookingDetails({
         carId: bookingData?.car?.id,
@@ -188,7 +423,7 @@ const BookingCheckout = () => {
         deliveryAddress: deliveryLocation,
         returnAddress: returnLocation,
         bookingType: bookingType,
-        totalPrice: totalPrice,
+        totalPrice: finalDisplayTotal,
         color: bookingData?.car?.color,
         hexCode: bookingData?.car?.hexCode,
         pricingId: bookingData?.car?.pricing?.[0]?.id,
@@ -196,13 +431,18 @@ const BookingCheckout = () => {
         distanceKM: distanceKM,
         deliveryFee: deliveryFee,
         priceBreakdown: priceBreakdown,
-        
+
+        preDiscountTotal: appliedCoupon ? totalPrice : undefined,
+        couponId: appliedCoupon?.id ?? null,
+        couponCode: appliedCoupon?.code ?? null,
+        discountAmount: appliedCoupon ? appliedCoupon.discountAmount : 0,
+
         // keeping original names for UI usage
         startDate: startDate,
         endDate: endDate,
         deliveryLocation: deliveryLocation,
         returnLocation: returnLocation,
-        totalAmount: totalPrice,
+        totalAmount: finalDisplayTotal,
       })
     );
     navigate(routes.bookingDetail);
@@ -496,7 +736,7 @@ const BookingCheckout = () => {
                                   <Calendar
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.value)}
-                                    placeholder="04/11/2023"
+                                    placeholder="Select start date"
                                   />
                                   <span className="input-cal-icon">
                                     <i className="bx bx-calendar" />
@@ -639,6 +879,18 @@ const BookingCheckout = () => {
                                   <h6>Subtotal</h6>
                                   <h5>₹{totalPrice}</h5>
                                 </li>
+                                {appliedCoupon && discountAmt > 0 && (
+                                  <li>
+                                    <h6>
+                                      Coupon ({appliedCoupon.code})
+                                    </h6>
+                                    <h5 className="text-success">− ₹{discountAmt}</h5>
+                                  </li>
+                                )}
+                                <li className="total-rate">
+                                  <h6>Total</h6>
+                                  <h5>₹{finalDisplayTotal}</h5>
+                                </li>
                               </ul>
                             </div>
                           </div>
@@ -649,43 +901,72 @@ const BookingCheckout = () => {
                       <div className="accordion-item border-0 mb-4">
                         <div className="accordion-header">
                           <div
-                            className="accordion-button collapsed"
+                            className="accordion-button"
                             role="button"
                             data-bs-toggle="collapse"
                             data-bs-target="#accordion_collapse_two"
                             aria-expanded="true"
                           >
-                            {/* <div className="booking-sidebar-head d-flex justify-content-between align-items-center">
-                            <h5>
-                              Coupon
-                              <i className="fas fa-chevron-down" />
-                            </h5>
-                            <Link to="#" className="coupon-view">
-                              View Coupons
-                            </Link>
-                          </div> */}
+                            <div className="booking-sidebar-head d-flex justify-content-between align-items-center w-100 me-2">
+                              <h5 className="mb-0">Coupon</h5>
+                            </div>
                           </div>
                         </div>
-                        <div id="accordion_collapse_two" className="accordion-collapse collapse">
+                        <div
+                          id="accordion_collapse_two"
+                          className="accordion-collapse collapse show"
+                        >
                           <div className="booking-sidebar-body">
-                            <form action="#">
-                              <div className="d-flex align-items-center">
-                                <div className="form-custom flex-fill">
-                                  <input
-                                    type="text"
-                                    className="form-control mb-0"
-                                    placeholder="Coupon code"
-                                  />
-                                </div>
+                            <div className="d-flex align-items-center flex-wrap gap-2">
+                              <div className="form-custom flex-fill" style={{ minWidth: "120px" }}>
+                                <input
+                                  type="text"
+                                  className="form-control mb-0"
+                                  placeholder="Coupon code"
+                                  value={couponInput}
+                                  onChange={(e) => {
+                                    setCouponInput(e.target.value.toUpperCase());
+                                    setCouponInline(null);
+                                  }}
+                                  disabled={!!appliedCoupon || couponLoading}
+                                />
+                              </div>
+                              {appliedCoupon ? (
                                 <button
-                                  type="button" data-bs-dismiss="modal"
-                                  className="btn btn-secondary apply-coupon-btn d-flex align-items-center ms-2"
+                                  type="button"
+                                  className="btn btn-outline-secondary apply-coupon-btn d-flex align-items-center"
+                                  onClick={handleRemoveCoupon}
                                 >
-                                  Apply
+                                  Remove
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary apply-coupon-btn d-flex align-items-center"
+                                  onClick={handleApplyCoupon}
+                                  disabled={couponLoading}
+                                >
+                                  {couponLoading ? "…" : "Apply"}
                                   <i className="feather-arrow-right ms-2" />
                                 </button>
-                              </div>
-                            </form>
+                              )}
+                            </div>
+                            {couponInline && (
+                              <p
+                                className={`small mt-2 mb-0 ${
+                                  couponInline.type === "error"
+                                    ? "text-danger"
+                                    : "text-success"
+                                }`}
+                                role={
+                                  couponInline.type === "error"
+                                    ? "alert"
+                                    : "status"
+                                }
+                              >
+                                {couponInline.text}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -693,7 +974,7 @@ const BookingCheckout = () => {
                     <div className="total-rate-card">
                       <div className="vehicle-total-price">
                         <h5>Estimated Total</h5>
-                        <span>₹{totalPrice}</span>
+                        <span>₹{finalDisplayTotal}</span>
                       </div>
                     </div>
                   </div>

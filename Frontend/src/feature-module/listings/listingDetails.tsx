@@ -907,8 +907,7 @@ const listingDetails = () => {
                   </div>
                 </div>
                 {/* /Car Features */}
-                <>
-                  {/* Tariff */}
+                {false && (
                   <div className="review-sec listing-feature">
                     <div className="review-header">
                       <h4>Tariff</h4>
@@ -952,8 +951,8 @@ const listingDetails = () => {
                       </table>
                     </div>
                   </div>
-                  {/* /Tariff */}
-                </>
+                )}
+                {/* Tariff section disabled — set outer condition to `true` to show again */}
 
                 {/* Gallery */}
                 {/* <div className="review-sec mb-0 pb-0">
@@ -1821,7 +1820,7 @@ const listingDetails = () => {
                                         <input
                                           type="text"
                                           className="form-control datetimepicker"
-                                          placeholder="04/11/2023"
+                                          placeholder="Select pickup date"
                                         />
                                         <span className="form-icon">
                                           <i className="fa-regular fa-calendar-days" />
@@ -1858,7 +1857,7 @@ const listingDetails = () => {
                                         <Calendar
                                           value={date3}
                                           onChange={(e) => setDate3(e.value)}
-                                          placeholder="04/11/2023"
+                                          placeholder="Select return date"
                                         />
                                         <span className="form-icon">
                                           <i className="fa-regular fa-calendar-days" />

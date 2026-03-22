@@ -69,7 +69,7 @@ export const verifyPayment = createAsyncThunk(
   }
 );
 
-interface CheckoutState {
+export interface CheckoutState {
   car: any;
   rentalType: any;
   deliveryLocation: any;
@@ -79,6 +79,11 @@ interface CheckoutState {
   endDate: any;
   endTime: any;
   totalAmount: number;
+  /** Rental + delivery before coupon (rupees). Sent with booking when coupon applied. */
+  preDiscountTotal?: number;
+  couponId?: string | null;
+  couponCode?: string | null;
+  discountAmount?: number;
   paymentStatus: string;
   bookingLoading: boolean;
   bookingError: any;
@@ -99,7 +104,7 @@ interface CheckoutState {
   } | null;
 }
 
-const initialState: CheckoutState = {
+export const checkoutInitialState: CheckoutState = {
   car: null,
   rentalType: null,
   deliveryLocation: null,
@@ -109,6 +114,10 @@ const initialState: CheckoutState = {
   endDate: null,
   endTime: null,
   totalAmount: 0,
+  preDiscountTotal: undefined,
+  couponId: null,
+  couponCode: null,
+  discountAmount: 0,
   paymentStatus: "idle",
 
   bookingLoading: false,
@@ -122,17 +131,42 @@ const initialState: CheckoutState = {
   priceBreakdown: null,
 };
 
+const initialState = checkoutInitialState;
+
 const checkoutSlice = createSlice({
   name: "checkout",
   initialState,
   reducers: {
     setBookingCar: (state, action) => {
-      state.car = action.payload;
+      const nextCar = action.payload;
+      if (!nextCar) {
+        state.car = null;
+        return;
+      }
+      const sameCar = state.car?.id === nextCar?.id;
+      state.car = nextCar;
+      if (!sameCar) {
+        state.startDate = null;
+        state.endDate = null;
+        state.startTime = null;
+        state.endTime = null;
+        state.deliveryLocation = null;
+        state.returnLocation = null;
+        state.rentalType = null;
+        state.distanceKM = 0;
+        state.deliveryFee = 0;
+        state.priceBreakdown = null;
+        state.preDiscountTotal = undefined;
+        state.couponId = null;
+        state.couponCode = null;
+        state.discountAmount = 0;
+        state.totalAmount = 0;
+      }
     },
     setBookingDetails: (state, action) => {
       return { ...state, ...action.payload };
     },
-    resetCheckout: () => initialState,
+    resetCheckout: () => ({ ...checkoutInitialState }),
   },
   extraReducers: (builder) => {
     builder

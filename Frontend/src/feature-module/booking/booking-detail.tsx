@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "react-toastify";
 import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import Breadcrumbs from "../common/breadcrumbs";
 import { Dropdown } from "primereact/dropdown";
 import { Link, useNavigate } from "react-router-dom";
 import { all_routes, listingDetailsPath } from "../../router/all_routes";
-import { userAPI } from "../../api/user/user.api";
 import { useDispatch, useSelector } from "react-redux";
-import { setBookingDetails } from "./checkoutSlice";
 import { updateUser } from "../user/userSlice";
 const BookingDetail = () => {
   const routes = all_routes;
@@ -24,7 +23,48 @@ const BookingDetail = () => {
   const country = [{ name: "USA" }, { name: "UK" }];
   const navigate = useNavigate();
 
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const dlFileRef = useRef<HTMLInputElement>(null);
+  const aadhaarFileRef = useRef<HTMLInputElement>(null);
 
+  const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s).trim());
+
+  const validateBillingStep = (): string | null => {
+    if (!userInfo?.user?.id && !userInfo?.id) {
+      return "Please sign in to continue.";
+    }
+    if (!String(formData.firstName).trim()) return "Please enter your first name.";
+    if (!String(formData.lastName).trim()) return "Please enter your last name.";
+    if (!String(formData.addressLine).trim()) return "Please enter your street address.";
+    if (!String(formData.country).trim()) return "Please enter your country.";
+    if (!String(formData.state).trim()) return "Please enter your state or region.";
+    if (!String(formData.city).trim()) return "Please enter your city.";
+    if (!String(formData.pincode).trim()) return "Please enter your pincode.";
+    if (!String(formData.email).trim()) return "Please enter your email address.";
+    if (!emailOk(formData.email)) return "Please enter a valid email address.";
+    if (!String(formData.phoneNum).trim()) {
+      return "Phone number is missing. Please sign in again.";
+    }
+    if (!String(formData.dlNumber).trim()) {
+      return "Please enter your driving licence number.";
+    }
+    const hasDl =
+      String(formData.dlPdf || "").trim().length > 0 ||
+      (dlFileRef.current?.files?.length ?? 0) > 0;
+    const hasAadhaar =
+      String(formData.aadhaarPdf || "").trim().length > 0 ||
+      (aadhaarFileRef.current?.files?.length ?? 0) > 0;
+    if (!hasDl) {
+      return "Please upload your driving licence (JPEG or PNG, max 4MB).";
+    }
+    if (!hasAadhaar) {
+      return "Please upload your Aadhaar card (JPEG or PNG, max 4MB).";
+    }
+    if (!termsAccepted) {
+      return "Please read and accept the terms and conditions.";
+    }
+    return null;
+  };
 
 
 
@@ -90,38 +130,41 @@ const BookingDetail = () => {
 
   const dispatch:any = useDispatch();
 
-  const handleSave = async (e:any) => {
+  const handleSave = async (e: any) => {
     e.preventDefault();
-    await dispatch(updateUser({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      dlNumber: formData.dlNumber,
-      dlPdf: formData.dlPdf,
-      aadhaarPdf: formData.aadhaarPdf,
-      address: {
-        addressLine: formData.addressLine,
-        country: formData.country,
-        state: formData.state,
-        city: formData.city,
-        pincode: formData.pincode,
-      },
-    }));
-    navigate(routes.bookingPayment);
-  };
-
-
-  const navigatePath = async () => {
+    const validationError = validateBillingStep();
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     try {
-
-      // const res = await handleSave();
-      console.log("Done done")
+      const result = await dispatch(
+        updateUser({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          dlNumber: formData.dlNumber,
+          dlPdf: formData.dlPdf,
+          aadhaarPdf: formData.aadhaarPdf,
+          address: {
+            addressLine: formData.addressLine,
+            country: formData.country,
+            state: formData.state,
+            city: formData.city,
+            pincode: formData.pincode,
+          },
+        })
+      );
+      if (!updateUser.fulfilled.match(result)) {
+        toast.error(
+          (result.payload as string) || "Could not save your details. Try again."
+        );
+        return;
+      }
       navigate(routes.bookingPayment);
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     }
-    catch (error) {
-      console.log(error)
-    }
-    
   };
 
   return (
@@ -282,7 +325,7 @@ const BookingDetail = () => {
                               />
                             </div>
                           </div>
-                          <div className="col-md-4">
+                          <div className="col-md-3">
                             <div className="input-block">
                               <label className="form-label">
                                 Country <span className="text-danger"> *</span>
@@ -297,11 +340,26 @@ const BookingDetail = () => {
                               />
                             </div>
                           </div>
-                          <div className="col-md-4">
+                          <div className="col-md-3">
                             <div className="input-block">
                               <label className="form-label">
-                                Enter City{" "}
+                                State / Region{" "}
                                 <span className="text-danger"> *</span>
+                              </label>
+                              <input
+                                value={formData.state}
+                                name="state"
+                                onChange={handleChange}
+                                type="text"
+                                className="form-control"
+                                placeholder="State"
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-3">
+                            <div className="input-block">
+                              <label className="form-label">
+                                City <span className="text-danger"> *</span>
                               </label>
                               <input
                                 value={formData.city}
@@ -313,7 +371,7 @@ const BookingDetail = () => {
                               />
                             </div>
                           </div>
-                          <div className="col-md-4">
+                          <div className="col-md-3">
                             <div className="input-block">
                               <label className="form-label">
                                 Pincode <span className="text-danger"> *</span>
@@ -409,6 +467,7 @@ const BookingDetail = () => {
             or Drag File
           </span>
           <input
+            ref={dlFileRef}
             type="file"
             accept="image/jpeg,image/jpg,image/png"
             id="driving_license"
@@ -435,6 +494,7 @@ const BookingDetail = () => {
             or Drag File
           </span>
           <input
+            ref={aadhaarFileRef}
             type="file"
             accept="image/jpeg,image/jpg,image/png"
             id="aadhaar_card"
@@ -456,7 +516,14 @@ const BookingDetail = () => {
                                   I have Read and Accept Terms &amp; Conditions
                                 </span>{" "}
                                 <span className="text-danger"> *</span>
-                                <input type="checkbox" name="remeber" />
+                                <input
+                                  type="checkbox"
+                                  name="remeber"
+                                  checked={termsAccepted}
+                                  onChange={(e) =>
+                                    setTermsAccepted(e.target.checked)
+                                  }
+                                />
                                 <span className="checkmark" />
                               </label>
                             </div>
@@ -536,12 +603,28 @@ const BookingDetail = () => {
                                       (This does not include fuel)
                                     </span>
                                   </div>
-                                  <h5>₹{checkoutData?.totalAmount - (checkoutData?.deliveryFee || 0)}</h5>
+                                  <h5>
+                                    ₹
+                                    {(checkoutData?.preDiscountTotal != null
+                                      ? checkoutData.preDiscountTotal
+                                      : checkoutData?.totalAmount ?? 0) -
+                                      (checkoutData?.deliveryFee || 0)}
+                                  </h5>
                                 </li>
                                 {checkoutData?.deliveryFee > 0 && (
                                   <li>
                                     <h6>Delivery Fee ({checkoutData?.distanceKM} KM)</h6>
                                     <h5>+ ₹{checkoutData?.deliveryFee}</h5>
+                                  </li>
+                                )}
+                                {(checkoutData?.discountAmount ?? 0) > 0 && (
+                                  <li>
+                                    <h6>
+                                      Coupon ({checkoutData?.couponCode || "—"})
+                                    </h6>
+                                    <h5 className="text-success">
+                                      − ₹{checkoutData.discountAmount}
+                                    </h5>
                                   </li>
                                 )}
                                 <li className="total-rate">
@@ -561,40 +644,30 @@ const BookingDetail = () => {
                           className="accordion-button collapsed"
                           role="button"
                           data-bs-toggle="collapse"
-                          data-bs-target="#accordion_collapse_two"
-                          aria-expanded="true"
+                          data-bs-target="#accordion_collapse_two_detail"
+                          aria-expanded="false"
                         >
                           <div className="booking-sidebar-head d-flex justify-content-between align-items-center">
-                            <h5>
-                              Coupon
-                              <i className="fas fa-chevron-down" />
-                            </h5>
-                            <Link to="#" className="coupon-view">
-                              View Coupons
-                            </Link>
+                            <h5 className="mb-0">Coupon</h5>
                           </div>
                         </div>
                       </div>
-                      <div id="accordion_collapse_two" className="accordion-collapse collapse">
+                      <div
+                        id="accordion_collapse_two_detail"
+                        className="accordion-collapse collapse"
+                      >
                         <div className="booking-sidebar-body">
-                          <form action="#">
-                            <div className="d-flex align-items-center">
-                              <div className="form-custom flex-fill">
-                                <input
-                                  type="text"
-                                  className="form-control mb-0"
-                                  placeholder="Coupon code"
-                                />
-                              </div>
-                              <button
-                                type="button" data-bs-dismiss="modal"
-                                className="btn btn-secondary apply-coupon-btn d-flex align-items-center ms-2"
-                              >
-                                Apply
-                                <i className="feather-arrow-right ms-2" />
-                              </button>
-                            </div>
-                          </form>
+                          {(checkoutData?.discountAmount ?? 0) > 0 ? (
+                            <p className="small text-success mb-0">
+                              {checkoutData.couponCode} applied · −₹
+                              {checkoutData.discountAmount}
+                            </p>
+                          ) : (
+                            <p className="small text-muted mb-0">
+                              Add a coupon on the previous step (Location &amp;
+                              Time).
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -5,6 +5,7 @@ import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import Breadcrumbs from "../common/breadcrumbs";
 import { Link, useNavigate } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
+import { toast } from "react-toastify";
 
 const getAccessToken = () => {
   const value = `; ${document.cookie}`;
@@ -23,8 +24,32 @@ const BookingPayment = () => {
 
   const [loading, setLoading] = useState(false);
   const amount = bookingData?.totalAmount || bookingData?.totalPrice || 0;
+  const discountAmt = bookingData?.discountAmount ?? 0;
+  const preTotal = bookingData?.preDiscountTotal;
+
+  const validatePaymentStep = (): string | null => {
+    const uid = userInfo?.user?.id || userInfo?.id || bookingData?.userId;
+    if (!uid) return "Please sign in to complete payment.";
+    if (!bookingData?.car?.id) {
+      return "Booking data is missing. Go back to location & time and try again.";
+    }
+    if (!amount || amount <= 0) {
+      return "Invalid amount. Complete the previous steps with valid dates and pricing.";
+    }
+    const pickup = bookingData.pickupDate ?? bookingData.startDate;
+    const ret = bookingData.returnDate ?? bookingData.endDate;
+    if (!pickup || !ret) {
+      return "Pickup or return date is missing. Go back and fill all fields.";
+    }
+    return null;
+  };
 
   const handlePayment = async () => {
+    const v = validatePaymentStep();
+    if (v) {
+      toast.error(v);
+      return;
+    }
     try {
       setLoading(true);
 
@@ -44,7 +69,7 @@ const BookingPayment = () => {
       const order = await orderRes.json();
 
       if (!order.id) {
-        alert("Failed to create payment order. Please try again.");
+        toast.error("Failed to create payment order. Please try again.");
         setLoading(false);
         return;
       }
@@ -71,7 +96,9 @@ const BookingPayment = () => {
             );
 
             if (!createBooking.fulfilled.match(bookingRes)) {
-              alert("Booking could not be saved. Payment was collected — please contact support.");
+              toast.error(
+                "Booking could not be saved. Payment was collected — please contact support."
+              );
               setLoading(false);
               return;
             }
@@ -113,14 +140,16 @@ const BookingPayment = () => {
               );
               navigate(routes.bookingSuccess);
             } else {
-              alert(
+              toast.error(
                 "Payment verification failed. Please contact support with your payment ID: " +
                   response.razorpay_payment_id
               );
             }
           } catch (err) {
             console.error("Post-payment error:", err);
-            alert("Something went wrong after payment. Please contact support.");
+            toast.error(
+              "Something went wrong after payment. Please contact support."
+            );
           }
           setLoading(false);
         },
@@ -146,7 +175,7 @@ const BookingPayment = () => {
       rzp.open();
 
       rzp.on("payment.failed", function (response: any) {
-        alert(
+        toast.error(
           "Payment failed: " +
             (response.error?.description || "Unknown error")
         );
@@ -154,7 +183,7 @@ const BookingPayment = () => {
       });
     } catch (error) {
       console.error("handlePayment error:", error);
-      alert("Something went wrong! Please try again.");
+      toast.error("Something went wrong! Please try again.");
       setLoading(false);
     }
   };
@@ -330,7 +359,11 @@ const BookingPayment = () => {
                                 <li>
                                   <h6>Rental Charges</h6>
                                   <h5>
-                                    ₹{amount - (bookingData?.deliveryFee || 0)}
+                                    ₹
+                                    {(preTotal != null
+                                      ? preTotal
+                                      : amount) -
+                                      (bookingData?.deliveryFee || 0)}
                                   </h5>
                                 </li>
                                 {(bookingData?.deliveryFee || 0) > 0 && (
@@ -340,6 +373,16 @@ const BookingPayment = () => {
                                       KM)
                                     </h6>
                                     <h5>+ ₹{bookingData?.deliveryFee}</h5>
+                                  </li>
+                                )}
+                                {discountAmt > 0 && (
+                                  <li>
+                                    <h6>
+                                      Coupon ({bookingData?.couponCode || "—"})
+                                    </h6>
+                                    <h5 className="text-success">
+                                      − ₹{discountAmt}
+                                    </h5>
                                   </li>
                                 )}
                                 <li className="total-rate">

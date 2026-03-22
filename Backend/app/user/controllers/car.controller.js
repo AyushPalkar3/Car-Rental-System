@@ -93,6 +93,7 @@ export const createCar = async (req, res) => {
 export const getAllCars = async (req, res) => {
   try {
     const cars = await prisma.car.findMany({
+      where: { isVerified: true },
       include: {
         pricing: true,
         reviews: true,
@@ -208,6 +209,10 @@ export const getCarById = async (req, res) => {
     });
 
     if (!car) {
+      return res.status(404).json({ message: "Car not found" });
+    }
+
+    if (!car.isVerified) {
       return res.status(404).json({ message: "Car not found" });
     }
 

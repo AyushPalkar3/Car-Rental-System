@@ -1,4 +1,8 @@
- import prisma from "../../../lib/db.config.js";
+import prisma from "../../../lib/db.config.js";
+import {
+  computeCouponDiscount,
+  getCouponEligibilityError,
+} from "../../../lib/couponValidation.js";
 
 export const createBooking = async (req, res) => {
   try {
@@ -26,16 +30,18 @@ export const createBooking = async (req, res) => {
       distanceKM,
       deliveryFee,
       car, // Passed sometimes in legacy payload
+      couponId,
+      preDiscountTotal,
     } = req.body;
 
     // Graceful mapping to support older frontend payloads still in Redux cache
     const finalUserId = userId || req.user?.id; // If you add auth middleware later
-    const finalTotalPrice = totalPrice || totalAmount;
+    let resolvedTotal = Math.round(Number(totalPrice || totalAmount || 0));
     const finalDeliveryAddress = deliveryAddress || deliveryLocation;
     const finalReturnAddress = returnAddress || returnLocation;
     const finalPickupDate = pickupDate || startDate;
     const finalReturnDate = returnDate || endDate;
-    
+
     // Extract duration from pricing array if missing
     let finalDuration = duration;
     if (!finalDuration) {
@@ -47,29 +53,105 @@ export const createBooking = async (req, res) => {
     }
 
     if (!finalUserId) {
-        return res.status(400).json({ message: "userId is required. Please restart checkout or login again." });
+      return res.status(400).json({
+        message: "userId is required. Please restart checkout or login again.",
+      });
     }
 
-    const booking = await prisma.booking.create({
-      data: {
-        carId,
-        pricingId,
-        userId: finalUserId,
-        duration: finalDuration,
-        totalPrice: finalTotalPrice,
-        bookingType: bookingType?.toUpperCase() || "DELIVERY",
-        deliveryAddress: finalDeliveryAddress,
-        returnAddress: finalReturnAddress,
-        sameReturn,
+    if (!carId) {
+      return res.status(400).json({ message: "carId is required." });
+    }
+    const carBookingCheck = await prisma.car.findUnique({
+      where: { id: carId },
+      select: { isVerified: true },
+    });
+    if (!carBookingCheck) {
+      return res.status(400).json({ message: "Car not found." });
+    }
+    if (!carBookingCheck.isVerified) {
+      return res.status(400).json({
+        message: "This vehicle is not available for booking.",
+      });
+    }
+
+    let resolvedCouponId = null;
+
+    if (couponId) {
+      const pre = Math.round(Number(preDiscountTotal));
+      if (!Number.isFinite(pre) || pre < 0) {
+        return res.status(400).json({
+          message: "preDiscountTotal is required when a coupon is applied.",
+        });
+      }
+
+      const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
+      if (!coupon) {
+        return res.status(400).json({ message: "Invalid coupon." });
+      }
+
+      const carRow = await prisma.car.findUnique({ where: { id: carId } });
+      const eligErr = await getCouponEligibilityError(coupon, {
+        car: carRow,
         pickupDate: finalPickupDate,
         returnDate: finalReturnDate,
-        color,
-        hexCode,
-        orderId,
-        paymentId,
-        distanceKM,
-        deliveryFee
+        userId: finalUserId,
+      });
+      if (eligErr) {
+        return res.status(400).json({ message: eligErr });
       }
+
+      const discount = computeCouponDiscount(coupon, pre);
+      const serverFinal = Math.max(0, pre - discount);
+
+      if (Math.abs(serverFinal - resolvedTotal) > 1) {
+        return res.status(400).json({
+          message: "Total does not match coupon discount. Please refresh checkout.",
+        });
+      }
+
+      resolvedTotal = serverFinal;
+      resolvedCouponId = coupon.id;
+    }
+
+    const booking = await prisma.$transaction(async (tx) => {
+      const created = await tx.booking.create({
+        data: {
+          carId,
+          pricingId,
+          userId: finalUserId,
+          duration: finalDuration,
+          totalPrice: resolvedTotal,
+          bookingType: bookingType?.toUpperCase() || "DELIVERY",
+          deliveryAddress: finalDeliveryAddress,
+          returnAddress: finalReturnAddress,
+          sameReturn,
+          pickupDate: finalPickupDate,
+          returnDate: finalReturnDate,
+          color,
+          hexCode,
+          orderId,
+          paymentId,
+          distanceKM,
+          deliveryFee,
+          couponId: resolvedCouponId,
+        },
+      });
+
+      if (resolvedCouponId) {
+        const fresh = await tx.coupon.findUnique({
+          where: { id: resolvedCouponId },
+        });
+        const lim = fresh?.limit != null ? Number(fresh.limit) : null;
+        if (lim && lim > 0 && fresh.usedCount >= lim) {
+          throw new Error("This coupon has reached its usage limit.");
+        }
+        await tx.coupon.update({
+          where: { id: resolvedCouponId },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
+      return created;
     });
 
     res.status(201).json(booking);

@@ -6,6 +6,7 @@ import carRoute from './app/user/routes/car.route.js'
 import carColorRoute from './app/user/routes/carColor.route.js'
 import carPricingRoute from './app/user/routes/carPricing.route.js'
 import bookingRoute from './app/user/routes/booking.route.js'
+import userCouponRoute from './app/user/routes/coupon.route.js'
 import carReviewRoute from './app/user/routes/carReview.route.js'
 import userRoute from './app/user/routes/user.route.js'
 import adminUserRoute from './app/admin/routes/user.route.js'
@@ -54,6 +55,7 @@ app.use('/api/cars',carRoute)
 app.use('/api/car-colors',carColorRoute)
 app.use('/api/car-pricing',carPricingRoute)
 app.use('/api/bookings',bookingRoute)
+app.use('/api/coupons', userCouponRoute)
 app.use('/api/car-review',carReviewRoute)
 app.use('/api/users',userRoute)
 app.use("/api/payment", paymentRoute);
