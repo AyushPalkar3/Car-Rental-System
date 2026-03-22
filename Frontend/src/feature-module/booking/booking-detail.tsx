@@ -8,6 +8,31 @@ import { all_routes, listingDetailsPath } from "../../router/all_routes";
 import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "../user/userSlice";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
+
+const UPLOAD_API_ORIGIN = (
+  import.meta.env.VITE_API_BASE_URL_IMAGE ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:4000"
+).replace(/\/$/, "");
+
+function resolveUploadDocHref(pathOrUrl: string | null | undefined): string | null {
+  const s = String(pathOrUrl || "").trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) return s;
+  return s.startsWith("/") ? `${UPLOAD_API_ORIGIN}${s}` : `${UPLOAD_API_ORIGIN}/${s}`;
+}
+
+function basenameFromDocPath(pathOrUrl: string): string {
+  const s = pathOrUrl.trim().split("?")[0];
+  if (!s) return "";
+  const part = s.split("/").filter(Boolean).pop() || s;
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return part;
+  }
+}
+
 const BookingDetail = () => {
   const routes = all_routes;
 
@@ -15,29 +40,57 @@ const BookingDetail = () => {
   const checkoutData = useSelector((state: any) => state.checkout);
 
   const [selectedPersons, setSelectedPersons] = useState(null);
-  const [selectedCountry, setSelectedCountry] = useState(null);
 
   const persons = [
     { name: "2 Adults, 1 Child" },
     { name: "5 Adults, 2 Child" },
   ];
-  const country = [{ name: "USA" }, { name: "UK" }];
   const navigate = useNavigate();
-
+  const DEFAULT_COUNTRY = "India";
+  const MAX_DOC_BYTES = 4 * 1024 * 1024;
+  const DOC_ACCEPT = "application/pdf,.pdf";
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [pickedDocNames, setPickedDocNames] = useState({
+    dl: "",
+    aadhaar: "",
+    addressProof: "",
+  });
   const dlFileRef = useRef<HTMLInputElement>(null);
   const aadhaarFileRef = useRef<HTMLInputElement>(null);
+  const addressProofFileRef = useRef<HTMLInputElement>(null);
 
   const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s).trim());
 
+  const validateDocFile = (file: File | undefined): string | null => {
+    if (!file) return null;
+    if (file.size > MAX_DOC_BYTES) {
+      return "Each document must be 4MB or smaller.";
+    }
+    const extOk = /\.pdf$/i.test(file.name || "");
+    const t = file.type || "";
+    const typeOk =
+      !t ||
+      t === "application/pdf" ||
+      t === "application/x-pdf" ||
+      (t === "application/octet-stream" && extOk);
+    if (!typeOk && !extOk) {
+      return "Only PDF documents are allowed (max 4MB).";
+    }
+    return null;
+  };
+
   const validateBillingStep = (): string | null => {
-    if (!userInfo?.user?.id && !userInfo?.id) {
+    const profile = userInfo?.user ?? userInfo;
+    const uid = profile?.id ?? userInfo?.id;
+    if (!uid) {
       return "Please sign in to continue.";
+    }
+    if (!termsAccepted) {
+      return "Please tick the box to confirm you have read and accept the Terms & Conditions.";
     }
     if (!String(formData.firstName).trim()) return "Please enter your first name.";
     if (!String(formData.lastName).trim()) return "Please enter your last name.";
     if (!String(formData.addressLine).trim()) return "Please enter your street address.";
-    if (!String(formData.country).trim()) return "Please enter your country.";
     if (!String(formData.state).trim()) return "Please enter your state or region.";
     if (!String(formData.city).trim()) return "Please enter your city.";
     if (!String(formData.pincode).trim()) return "Please enter your pincode.";
@@ -46,24 +99,27 @@ const BookingDetail = () => {
     if (!String(formData.phoneNum).trim()) {
       return "Phone number is missing. Please sign in again.";
     }
-    if (!String(formData.dlNumber).trim()) {
-      return "Please enter your driving licence number.";
-    }
-    const hasDl =
-      String(formData.dlPdf || "").trim().length > 0 ||
-      (dlFileRef.current?.files?.length ?? 0) > 0;
     const hasAadhaar =
       String(formData.aadhaarPdf || "").trim().length > 0 ||
       (aadhaarFileRef.current?.files?.length ?? 0) > 0;
-    if (!hasDl) {
-      return "Please upload your driving licence (JPEG or PNG, max 4MB).";
-    }
+    const hasAddressProof =
+      String(formData.addressProofPdf || "").trim().length > 0 ||
+      (addressProofFileRef.current?.files?.length ?? 0) > 0;
     if (!hasAadhaar) {
-      return "Please upload your Aadhaar card (JPEG or PNG, max 4MB).";
+      return "Please upload your Aadhaar card as a PDF (max 4MB).";
     }
-    if (!termsAccepted) {
-      return "Please read and accept the terms and conditions.";
+    if (!hasAddressProof) {
+      return "Please upload your address proof as a PDF (max 4MB).";
     }
+    const dlPick = dlFileRef.current?.files?.[0];
+    const aadhaarPick = aadhaarFileRef.current?.files?.[0];
+    const addressProofPick = addressProofFileRef.current?.files?.[0];
+    const errDl = validateDocFile(dlPick);
+    if (errDl) return errDl;
+    const errAadhaar = validateDocFile(aadhaarPick);
+    if (errAadhaar) return errAadhaar;
+    const errAddr = validateDocFile(addressProofPick);
+    if (errAddr) return errAddr;
     return null;
   };
 
@@ -75,13 +131,13 @@ const BookingDetail = () => {
     phoneNum: "",
     email: "",
     addressLine: "",
-    country: "",
     state: "",
     city: "",
     pincode: "",
     dlNumber: "",
     dlPdf: "",
-    aadhaarPdf: ""
+    aadhaarPdf: "",
+    addressProofPdf: ""
   });
 
   // const fetchUser = async () => {
@@ -104,29 +160,74 @@ const BookingDetail = () => {
   //   });
   // };
   useEffect(() => {
-    console.log("user info",userInfo)
-    if(userInfo){ 
-      setFormData({
-      firstName: userInfo.user.firstName || "",
-      lastName: userInfo.user.lastName || "",
-      phoneNum: userInfo.user.phoneNum || "",
-      email: userInfo.user.email || "",
-      addressLine: userInfo.user.address?.addressLine || "",
-      country: userInfo.user.address?.country || "",
-      state: userInfo.user.address?.state || "",
-      city: userInfo.user.address?.city || "",
-      pincode: userInfo.user.address?.pincode || "",
-      dlNumber: userInfo.user.dlNumber || "",
-      dlPdf: userInfo.user.dlPdf || "",
-      aadhaarPdf: userInfo.user.aadhaarPdf || "",
-    }); 
-  }
+    if (!userInfo) return;
+    const u = (userInfo as { user?: Record<string, unknown> }).user ?? userInfo;
+    if (!u || typeof u !== "object") return;
+    const row = u as Record<string, any>;
+    setFormData({
+      firstName: row.firstName || "",
+      lastName: row.lastName || "",
+      phoneNum: row.phoneNum || "",
+      email: row.email || "",
+      addressLine: row.address?.addressLine || "",
+      state: row.address?.state || "",
+      city: row.address?.city || "",
+      pincode: row.address?.pincode || "",
+      dlNumber: row.dlNumber || "",
+      dlPdf: row.dlPdf || "",
+      aadhaarPdf: row.aadhaarPdf || "",
+      addressProofPdf: row.addressProofPdf || "",
+    });
   }, [userInfo]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     console.log("Event triger", e)
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDocPick =
+    (key: "dl" | "aadhaar" | "addressProof") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0];
+      setPickedDocNames((prev) => ({ ...prev, [key]: f?.name || "" }));
+    };
+
+  const renderDocUploadStatus = (
+    key: "dl" | "aadhaar" | "addressProof",
+    savedPath: string
+  ) => {
+    const picked = pickedDocNames[key];
+    const saved = String(savedPath || "").trim();
+    if (!picked && !saved) return null;
+    const href = !picked && saved ? resolveUploadDocHref(saved) : null;
+    const displayName = picked || basenameFromDocPath(saved);
+    return (
+      <div
+        className="uploaded-doc-status mt-2 p-2 rounded border d-flex align-items-start gap-2 flex-wrap"
+        style={{ background: "#f8f9fa", borderColor: "#dee2e6" }}
+      >
+        <i className="bx bxs-file-pdf text-danger fs-4 flex-shrink-0" aria-hidden />
+        <div className="small flex-grow-1 min-width-0">
+          <div className="fw-semibold text-success">
+            {picked ? "Selected for upload" : "Already on file"}
+          </div>
+          <div className="text-dark text-break" title={displayName}>
+            {displayName}
+          </div>
+        </div>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm btn-outline-dark flex-shrink-0 align-self-center"
+          >
+            View PDF
+          </a>
+        ) : null}
+      </div>
+    );
   };
 
   const dispatch:any = useDispatch();
@@ -139,7 +240,7 @@ const BookingDetail = () => {
       return;
     }
     try {
-      const result = await dispatch(
+      await dispatch(
         updateUser({
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -147,24 +248,29 @@ const BookingDetail = () => {
           dlNumber: formData.dlNumber,
           dlPdf: formData.dlPdf,
           aadhaarPdf: formData.aadhaarPdf,
+          addressProofPdf: formData.addressProofPdf,
+          dlFile: dlFileRef.current?.files?.[0],
+          aadhaarFile: aadhaarFileRef.current?.files?.[0],
+          addressProofFile: addressProofFileRef.current?.files?.[0],
           address: {
             addressLine: formData.addressLine,
-            country: formData.country,
+            country: DEFAULT_COUNTRY,
             state: formData.state,
             city: formData.city,
             pincode: formData.pincode,
           },
         })
-      );
-      if (!updateUser.fulfilled.match(result)) {
-        toast.error(
-          (result.payload as string) || "Could not save your details. Try again."
-        );
-        return;
-      }
+      ).unwrap();
       navigate(routes.bookingPayment);
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      let msg = "Could not save your details. Try again.";
+      if (typeof err === "string") msg = err;
+      else if (err instanceof Error) msg = err.message || msg;
+      else if (err && typeof err === "object" && "message" in err) {
+        const m = (err as { message: unknown }).message;
+        if (typeof m === "string" && m) msg = m;
+      }
+      toast.error(msg);
     }
   };
 
@@ -239,7 +345,12 @@ const BookingDetail = () => {
 
               <div className="col-lg-8">
                 <div className="booking-information-main">
-                  <form>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void handleSave(e);
+                    }}
+                  >
                     <div className="booking-information-card">
                       <div className="booking-info-head justify-content-between">
                         <div className="d-flex align-items-center">
@@ -326,22 +437,7 @@ const BookingDetail = () => {
                               />
                             </div>
                           </div>
-                          <div className="col-md-3">
-                            <div className="input-block">
-                              <label className="form-label">
-                                Country <span className="text-danger"> *</span>
-                              </label>
-                              <input
-                                value={formData.country}
-                                name="country"
-                                onChange={handleChange}
-                                type="text"
-                                className="form-control"
-                                placeholder="Enter Country"
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-3">
+                          <div className="col-md-4">
                             <div className="input-block">
                               <label className="form-label">
                                 State / Region{" "}
@@ -357,7 +453,7 @@ const BookingDetail = () => {
                               />
                             </div>
                           </div>
-                          <div className="col-md-3">
+                          <div className="col-md-4">
                             <div className="input-block">
                               <label className="form-label">
                                 City <span className="text-danger"> *</span>
@@ -372,7 +468,7 @@ const BookingDetail = () => {
                               />
                             </div>
                           </div>
-                          <div className="col-md-3">
+                          <div className="col-md-4">
                             <div className="input-block">
                               <label className="form-label">
                                 Pincode <span className="text-danger"> *</span>
@@ -436,8 +532,7 @@ const BookingDetail = () => {
                           <div className="col-md-12">
                             <div className="input-block">
                               <label className="form-label">
-                                Driving Licence Number{" "}
-                                <span className="text-danger"> *</span>
+                                Driving Licence Number
                               </label>
                               <input
                                 value={formData.dlNumber}
@@ -453,12 +548,10 @@ const BookingDetail = () => {
                          <div className="col-md-12">
   <div className="row">
 
-    {/* Driving License Upload */}
-    <div className="col-md-6">
+    {/* Driving License Upload (optional) */}
+    <div className="col-md-4">
       <div className="input-block">
-        <label className="form-label">
-          Upload Driving License <span className="text-danger">*</span>
-        </label>
+        <label className="form-label">Upload Driving License</label>
         <div className="profile-uploader">
           <span className="drag-upload-btn">
             <span className="upload-btn">
@@ -469,19 +562,22 @@ const BookingDetail = () => {
           </span>
           <input
             ref={dlFileRef}
+            name="dlPdf"
             type="file"
-            accept="image/jpeg,image/jpg,image/png"
+            accept={DOC_ACCEPT}
             id="driving_license"
+            onChange={handleDocPick("dl")}
           />
         </div>
+        {renderDocUploadStatus("dl", formData.dlPdf)}
         <p className="img-size-info">
-          Max size: 4MB. Formats: jpeg, jpg, png.
+          Max size: 4MB. PDF only.
         </p>
       </div>
     </div>
 
     {/* Aadhaar Card Upload */}
-    <div className="col-md-6">
+    <div className="col-md-4">
       <div className="input-block">
         <label className="form-label">
           Upload Aadhaar Card <span className="text-danger">*</span>
@@ -496,13 +592,46 @@ const BookingDetail = () => {
           </span>
           <input
             ref={aadhaarFileRef}
+            name="aadhaarPdf"
             type="file"
-            accept="image/jpeg,image/jpg,image/png"
+            accept={DOC_ACCEPT}
             id="aadhaar_card"
+            onChange={handleDocPick("aadhaar")}
           />
         </div>
+        {renderDocUploadStatus("aadhaar", formData.aadhaarPdf)}
         <p className="img-size-info">
-          Max size: 4MB. Formats: jpeg, jpg, png.
+          Max size: 4MB. PDF only.
+        </p>
+      </div>
+    </div>
+
+    {/* Address proof (required) */}
+    <div className="col-md-4">
+      <div className="input-block">
+        <label className="form-label">
+          Upload Address Proof <span className="text-danger">*</span>
+        </label>
+        <div className="profile-uploader">
+          <span className="drag-upload-btn">
+            <span className="upload-btn">
+              <i className="bx bx-upload me-2" />
+              Upload Address Proof
+            </span>
+            or Drag File
+          </span>
+          <input
+            ref={addressProofFileRef}
+            name="addressProofPdf"
+            type="file"
+            accept={DOC_ACCEPT}
+            id="address_proof"
+            onChange={handleDocPick("addressProof")}
+          />
+        </div>
+        {renderDocUploadStatus("addressProof", formData.addressProofPdf)}
+        <p className="img-size-info">
+          Max size: 4MB. PDF only.
         </p>
       </div>
     </div>
@@ -512,20 +641,24 @@ const BookingDetail = () => {
                           </div>
                           <div className="col-md-12">
                             <div className="input-block m-0">
-                              <label className="custom_check d-inline-flex location-check m-0">
-                                <span>
-                                  I have Read and Accept Terms &amp; Conditions
-                                </span>{" "}
-                                <span className="text-danger"> *</span>
+                              <label className="custom_check d-inline-flex location-check m-0 align-items-center">
                                 <input
                                   type="checkbox"
-                                  name="remeber"
+                                  name="termsAccepted"
+                                  id="booking_terms_accepted"
                                   checked={termsAccepted}
                                   onChange={(e) =>
                                     setTermsAccepted(e.target.checked)
                                   }
                                 />
                                 <span className="checkmark" />
+                                <span className="ms-2" style={{ color: "#212529" }}>
+                                  I have Read and Accept Terms &amp; Conditions
+                                </span>
+                                <span className="text-danger" style={{ color: "#dc3545" }}>
+                                  {" "}
+                                  *
+                                </span>
                               </label>
                             </div>
                           </div>
@@ -540,8 +673,11 @@ const BookingDetail = () => {
                         Back to Location & Time
                       </Link>
                       <button
-                        onClick={handleSave}
-                        className="btn btn-primary continue-book-btn"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          void handleSave(e);
+                        }}
+                        className="btn btn-dark text-white continue-book-btn"
                         type="submit"
                       >
                         Confirm &amp; Pay Now

@@ -49,3 +49,44 @@ export const createImageUpload = (folder = "common") => {
         },
     });
 };
+
+const DOCUMENT_MIMES = ["application/pdf", "application/x-pdf"];
+
+const documentFileFilter = (req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    if (ext === ".pdf") {
+        cb(null, true);
+        return;
+    }
+    if (DOCUMENT_MIMES.includes(file.mimetype)) {
+        cb(null, true);
+        return;
+    }
+    cb(new Error("Only PDF files are allowed"), false);
+};
+
+/** User KYC uploads (Aadhaar, address proof, optional DL) — PDF only, 4MB. */
+export const createDocumentUpload = (folder = "users") => {
+    const uploadPath = path.join(process.cwd(), "uploads", folder);
+    ensureFolderExists(uploadPath);
+
+    const storage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+            const fileName = `${uuidv4()}${ext}`;
+            file.relativePath = `/uploads/${folder}/${fileName}`;
+            cb(null, fileName);
+        },
+    });
+
+    return multer({
+        storage,
+        fileFilter: documentFileFilter,
+        limits: {
+            fileSize: 4 * 1024 * 1024,
+        },
+    });
+};

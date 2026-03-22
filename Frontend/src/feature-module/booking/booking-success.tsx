@@ -4,47 +4,11 @@ import Breadcrumbs from '../common/breadcrumbs'
 import { useSelector } from 'react-redux';
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
-import jsPDF from "jspdf";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
-import html2canvas from "html2canvas";
-import { useRef, useState } from "react";
 
 const BookingSuccess = () => {
   const bookingData = useSelector((state: any) => state.checkout.bookingData);
   const checkoutData = useSelector((state: any) => state.checkout);
-  const printRef = useRef<HTMLDivElement>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const handleDownloadInvoice = async () => {
-    if (!printRef.current) return;
-    setIsDownloading(true);
-
-    try {
-      const element = printRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2, // Higher scale for better resolution
-        useCORS: true, // Attempt to load cross-origin images
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      pdf.addImage(imgData, "PNG", 0, 10, pdfWidth, pdfHeight);
-      pdf.save(`Invoice_CD${bookingData.id.slice(-6).toUpperCase()}.pdf`);
-    } catch (error) {
-      console.error("Failed to generate PDF", error);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   if (!bookingData) {
     return (
@@ -62,7 +26,7 @@ const BookingSuccess = () => {
       <div className="booking-new-module">
         <div className="container">
           {/* ... (wizard head remains same) ... */}
-          <div className="booking-card" ref={printRef} style={{ padding: '20px', backgroundColor: '#fff' }}>
+          <div className="booking-card" style={{ padding: '20px', backgroundColor: '#fff' }}>
             <div className="success-book">
               <span className="success-icon">
                 <i className="fa-solid fa-check-double" />
@@ -158,15 +122,7 @@ const BookingSuccess = () => {
               {/* ... (rest of the sections can be simplified or hidden for now) ... */}
             </div>
           </div>
-          <div className="print-btn text-center d-flex justify-content-center gap-3 mt-4">
-            <button 
-              className="btn btn-primary" 
-              onClick={handleDownloadInvoice}
-              disabled={isDownloading}
-            >
-              <i className="feather icon-download me-2" />
-              {isDownloading ? "Generating..." : "Download Invoice"}
-            </button>
+          <div className="print-btn text-center d-flex justify-content-center mt-4">
             <Link to={all_routes.homeOne} className="btn btn-secondary">Back to Home</Link>
           </div>
         </div>

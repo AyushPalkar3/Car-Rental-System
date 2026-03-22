@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, generatePath, useParams } from "react-router-dom";
 import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../../router/all_routes";
@@ -38,10 +38,23 @@ const ReservationDetails = () => {
   const [cancelError, setCancelError] = useState<string | null>(null);
 
   const imageBaseUrl = useMemo(() => {
-    const base = (import.meta as unknown as { env?: { VITE_API_BASE_URL_IMAGE?: string } })
+    const fromEnv = (import.meta as unknown as { env?: { VITE_API_BASE_URL_IMAGE?: string } })
       .env?.VITE_API_BASE_URL_IMAGE;
-    return typeof base === "string" ? base.replace(/\/$/, "") : "";
+    if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.replace(/\/$/, "");
+    const api = import.meta.env.VITE_API_BASE_URL || "";
+    if (typeof api === "string" && api.trim()) {
+      return api.replace(/\/api\/?$/i, "").replace(/\/$/, "");
+    }
+    return "http://localhost:4000";
   }, []);
+
+  const absFileUrl = useCallback((path: string | null | undefined): string | null => {
+    const s = String(path || "").trim();
+    if (!s) return null;
+    if (/^https?:\/\//i.test(s)) return s;
+    const base = imageBaseUrl.replace(/\/$/, "");
+    return s.startsWith("/") ? `${base}${s}` : `${base}/${s}`;
+  }, [imageBaseUrl]);
 
   useEffect(() => {
     if (!id) {
@@ -99,8 +112,8 @@ const ReservationDetails = () => {
   const carImg = useMemo(() => {
     if (!booking?.car) return null;
     const path = booking.car.thumbnail || booking.car.images?.[0];
-    return path ? `${imageBaseUrl}${path}` : null;
-  }, [booking, imageBaseUrl]);
+    return path ? absFileUrl(path) : null;
+  }, [booking, absFileUrl]);
 
   const statusLabel = booking ? displayStatus(booking) : "Requested";
 
@@ -291,6 +304,60 @@ const ReservationDetails = () => {
                             </div>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                    <div className="border-bottom mb-3 pb-3">
+                      <h6 className="fw-medium fs-14 mb-3">Customer documents</h6>
+                      <div className="row g-2">
+                        {(
+                          [
+                            {
+                              key: "dl",
+                              title: "Driving licence",
+                              href: absFileUrl(booking.user?.dlPdf),
+                            },
+                            {
+                              key: "aadhaar",
+                              title: "Aadhaar card",
+                              href: absFileUrl(booking.user?.aadhaarPdf),
+                            },
+                            {
+                              key: "address",
+                              title: "Address proof",
+                              href: absFileUrl(booking.user?.addressProofPdf),
+                            },
+                          ] as const
+                        ).map((doc) => (
+                          <div key={doc.key} className="col-md-4">
+                            <div className="border rounded p-3 h-100 bg-white">
+                              <div className="d-flex align-items-start gap-2">
+                                <ImageWithBasePath
+                                  src="assets/admin/img/icons/pdf-icon.svg"
+                                  alt=""
+                                  className="flex-shrink-0"
+                                  width={36}
+                                  height={36}
+                                />
+                                <div className="min-width-0 flex-grow-1">
+                                  <h6 className="fs-14 fw-medium mb-2">{doc.title}</h6>
+                                  {doc.href ? (
+                                    <a
+                                      href={doc.href}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-sm btn-outline-primary"
+                                    >
+                                      <i className="ti ti-external-link me-1" />
+                                      View PDF
+                                    </a>
+                                  ) : (
+                                    <span className="fs-13 text-muted">Not uploaded</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <div className="border-bottom mb-3 pb-2">

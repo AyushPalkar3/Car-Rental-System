@@ -42,7 +42,8 @@ app.use(cors({
   credentials: true,
 }))
  
-const PORT =  process.env.PORT || 3000
+// Default 4000 matches Frontend/.env.development (VITE_API_BASE_URL)
+const PORT = process.env.PORT || 4000
 
 app.get('/health',(req,res)=>{
     res.send("Ekal Server is Running");

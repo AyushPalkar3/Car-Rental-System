@@ -112,6 +112,13 @@ const BookingCheckout = () => {
     typeof v === "object" &&
     typeof (v as { hour?: unknown }).hour === "function";
 
+  /** AntD TimePicker uses Dayjs; persisted Redux may store `{ hour, minute }`. */
+  const resolvePickerTime = (v: unknown): Dayjs | null => {
+    if (v == null || v === "") return null;
+    if (isDayjsTime(v)) return v as Dayjs;
+    return hmToDayjs(v);
+  };
+
   // Hydrate form from Redux once per car (includes sessionStorage restore on refresh).
   useLayoutEffect(() => {
     if (!bookingData?.car?.id) return;
@@ -163,8 +170,8 @@ const BookingCheckout = () => {
           returnLocation,
           startDate: dateToIso(startDate),
           endDate: dateToIso(endDate),
-          startTime: dayjsToHm(startTime),
-          endTime: dayjsToHm(returnTime),
+          startTime: dayjsToHm(resolvePickerTime(startTime)),
+          endTime: dayjsToHm(resolvePickerTime(returnTime)),
           distanceKM,
           deliveryFee,
           priceBreakdown,
@@ -198,12 +205,16 @@ const BookingCheckout = () => {
   // ✅ Safe Price Calculation
   const calculateTotalPrice = () => {
     try {
+      const st = resolvePickerTime(startTime);
+      const rt = resolvePickerTime(returnTime);
+      const pricingList = bookingData?.car?.pricing;
       if (
         !startDate ||
         !endDate ||
-        !startTime ||
-        !returnTime ||
-        !bookingData?.car?.pricing
+        !st ||
+        !rt ||
+        !Array.isArray(pricingList) ||
+        pricingList.length === 0
       ) {
         setTotalPrice(0);
         setPriceBreakdown(null);
@@ -214,12 +225,12 @@ const BookingCheckout = () => {
       const end = new Date(endDate);
 
       // ✅ Extract time from AntD TimePicker (dayjs)
-      start.setHours(startTime.hour());
-      start.setMinutes(startTime.minute());
+      start.setHours(st.hour());
+      start.setMinutes(st.minute());
       start.setSeconds(0);
 
-      end.setHours(returnTime.hour());
-      end.setMinutes(returnTime.minute());
+      end.setHours(rt.hour());
+      end.setMinutes(rt.minute());
       end.setSeconds(0);
 
       if (end <= start) {
@@ -237,7 +248,7 @@ const BookingCheckout = () => {
         return;
       }
 
-      const pricing = bookingData.car.pricing;
+      const pricing = pricingList;
 
       const hourPrice =
         pricing.find((p: any) => p.duration === "HOUR")?.price || 0;
@@ -248,13 +259,27 @@ const BookingCheckout = () => {
       const monthPrice =
         pricing.find((p: any) => p.duration === "MONTH")?.price || 0;
 
+      /** If HOUR tier is missing/zero, derive an hourly rate from longer tiers so short rentals still price correctly. */
+      const effectiveHourRate =
+        hourPrice > 0
+          ? hourPrice
+          : dayPrice > 0
+            ? dayPrice / 24
+            : weekPrice > 0
+              ? weekPrice / 168
+              : monthPrice > 0
+                ? monthPrice / 720
+                : 0;
+
+      const proratedHourFromDay = dayPrice > 0 ? dayPrice / 24 : effectiveHourRate;
+
       let total = 0;
       const breakdown: Record<string, number | undefined> = {
         hours: 0,
         days: 0,
         weeks: 0,
         months: 0,
-        hourRate: hourPrice,
+        hourRate: effectiveHourRate,
         dayRate: dayPrice,
         weekRate: weekPrice,
         monthRate: monthPrice,
@@ -263,7 +288,7 @@ const BookingCheckout = () => {
 
       // <= 24 hours
       if (totalHours <= 24) {
-        total = totalHours * hourPrice;
+        total = totalHours * effectiveHourRate;
         breakdown.hours = totalHours;
       }
 
@@ -271,30 +296,34 @@ const BookingCheckout = () => {
       else if (totalHours < 168) {
         const fullDays = Math.floor(totalHours / 24);
         const remainingHours = totalHours % 24;
-        total = fullDays * dayPrice + remainingHours * (dayPrice / 24);
+        const dayPart = dayPrice > 0 ? fullDays * dayPrice : fullDays * 24 * effectiveHourRate;
+        total = dayPart + remainingHours * proratedHourFromDay;
         breakdown.days = fullDays;
         breakdown.hours = remainingHours;
-        breakdown.proratedHourRate = dayPrice / 24;
+        breakdown.proratedHourRate = proratedHourFromDay;
       }
 
       // < 1 month
       else if (totalHours < 720) {
         const fullWeeks = Math.floor(totalHours / 168);
         const remainingHours = totalHours % 168;
-        total = fullWeeks * weekPrice + remainingHours * (dayPrice / 24);
+        const weekPart = weekPrice > 0 ? fullWeeks * weekPrice : fullWeeks * 168 * effectiveHourRate;
+        total = weekPart + remainingHours * proratedHourFromDay;
         breakdown.weeks = fullWeeks;
         breakdown.hours = remainingHours;
-        breakdown.proratedHourRate = dayPrice / 24;
+        breakdown.proratedHourRate = proratedHourFromDay;
       }
 
       // >= 1 month
       else {
         const fullMonths = Math.floor(totalHours / 720);
         const remainingHours = totalHours % 720;
-        total = fullMonths * monthPrice + remainingHours * (dayPrice / 24);
+        const monthPart =
+          monthPrice > 0 ? fullMonths * monthPrice : fullMonths * 720 * effectiveHourRate;
+        total = monthPart + remainingHours * proratedHourFromDay;
         breakdown.months = fullMonths;
         breakdown.hours = remainingHours;
-        breakdown.proratedHourRate = dayPrice / 24;
+        breakdown.proratedHourRate = proratedHourFromDay;
       }
 
       // Calculate Delivery Fee if Home Delivery is selected
@@ -319,22 +348,24 @@ const BookingCheckout = () => {
   }, [startDate, endDate, startTime, returnTime, bookingData?.car?.pricing, bookingType, distanceKM]);
 
   const buildPickupReturnIso = () => {
+    const st = resolvePickerTime(startTime);
+    const rt = resolvePickerTime(returnTime);
     if (
       !startDate ||
       !endDate ||
-      !startTime ||
-      !returnTime ||
+      !st ||
+      !rt ||
       !bookingData?.car?.id
     ) {
       return null;
     }
     const start = new Date(startDate);
-    start.setHours(startTime.hour());
-    start.setMinutes(startTime.minute());
+    start.setHours(st.hour());
+    start.setMinutes(st.minute());
     start.setSeconds(0);
     const end = new Date(endDate);
-    end.setHours(returnTime.hour());
-    end.setMinutes(returnTime.minute());
+    end.setHours(rt.hour());
+    end.setMinutes(rt.minute());
     end.setSeconds(0);
     if (end.getTime() <= start.getTime()) return null;
     return {
@@ -408,7 +439,7 @@ const BookingCheckout = () => {
   const finalDisplayTotal = Math.max(0, Math.round(totalPrice - discountAmt));
 
   const validateLocationTimeStep = (): string | null => {
-    const uid = userInfo?.user?.id || userInfo?.id;
+    const uid = userInfo?.user?.id || userInfo?.id || bookingData?.userId;
     if (!uid) {
       return "Please sign in to continue with your booking.";
     }
@@ -417,13 +448,15 @@ const BookingCheckout = () => {
     }
     if (!startDate) return "Please select a start date.";
     if (!endDate) return "Please select a return date.";
-    if (!isDayjsTime(startTime)) return "Please select a start time.";
-    if (!isDayjsTime(returnTime)) return "Please select a return time.";
+    const st = resolvePickerTime(startTime);
+    const rt = resolvePickerTime(returnTime);
+    if (!st) return "Please select a start time.";
+    if (!rt) return "Please select a return time.";
 
     const start = new Date(startDate);
-    start.setHours(startTime.hour(), startTime.minute(), 0, 0);
+    start.setHours(st.hour(), st.minute(), 0, 0);
     const end = new Date(endDate);
-    end.setHours(returnTime.hour(), returnTime.minute(), 0, 0);
+    end.setHours(rt.hour(), rt.minute(), 0, 0);
     if (end.getTime() <= start.getTime()) {
       return "Return date and time must be after pickup.";
     }
@@ -444,8 +477,11 @@ const BookingCheckout = () => {
       }
     }
 
-    if (totalPrice <= 0 || !priceBreakdown) {
-      return "Rental total is invalid. Check your dates — pricing may be missing for this car.";
+    if (!priceBreakdown) {
+      return "Rental total could not be calculated. Check your dates and that this car has pricing.";
+    }
+    if (totalPrice <= 0) {
+      return "Rental total is zero — this car may need hourly/daily prices in admin.";
     }
     return null;
   };
@@ -465,11 +501,11 @@ const BookingCheckout = () => {
     dispatch(
       setBookingDetails({
         carId: bookingData?.car?.id,
-        userId: userInfo?.user?.id || userInfo?.id, // Handle nested user object
+        userId: userInfo?.user?.id || userInfo?.id || bookingData?.userId,
         pickupDate: dt.pickupDate,
         returnDate: dt.returnDate,
-        startTime: dayjsToHm(startTime),
-        endTime: dayjsToHm(returnTime),
+        startTime: dayjsToHm(resolvePickerTime(startTime)),
+        endTime: dayjsToHm(resolvePickerTime(returnTime)),
         deliveryAddress: deliveryLocation,
         returnAddress: returnLocation,
         bookingType: bookingType,

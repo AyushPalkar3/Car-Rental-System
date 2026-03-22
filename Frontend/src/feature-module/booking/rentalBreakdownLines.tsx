@@ -94,7 +94,7 @@ export function RentalBreakdownLines({ breakdown, className }: Props) {
             }}
             aria-hidden
           />
-          <span className="text-muted">{r.text}</span>
+          <span className="text-dark">{r.text}</span>
         </li>
       ))}
     </ul>

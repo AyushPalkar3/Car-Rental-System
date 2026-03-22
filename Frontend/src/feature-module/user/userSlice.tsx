@@ -9,6 +9,7 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   aadhaarPdf: string | null;
+  addressProofPdf: string | null;
   dlNumber: string | null;
   dlPdf: string | null;
   email: string | null;
@@ -38,32 +39,44 @@ const initialState: AuthState = {
 
 /* ================= Get Profile ================= */
 
-export const getProfile = createAsyncThunk("user/getProfile", async (_,thunkAPI) => {
+function messageFromApiError(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const o = error as Record<string, unknown>;
+    if (typeof o.message === "string" && o.message) return o.message;
+    if (typeof o.error === "string" && o.error) return o.error;
+  }
+  return "";
+}
+
+export const getProfile = createAsyncThunk("user/getProfile", async (_, thunkAPI) => {
   try {
-    console.log("userSlice")
     const res = await userAPI.getMe();
-    console.log("userSlice",res)
     return res.data as User;
-  } catch (error: any) {
-    return  thunkAPI.rejectWithValue(
-      error.response?.data?.message || "Fetching profile failed"
-    );
+  } catch (error: unknown) {
+    const msg = messageFromApiError(error);
+    return thunkAPI.rejectWithValue(msg || "Fetching profile failed");
   }
 });
 
-
-export const updateUser = createAsyncThunk("user/updateUser", async (userData:any,thunkAPI) => {
-  try {
-    console.log("userSlice")
-    const res = await userAPI.updateMe(userData);
-    console.log("userSlice",res)
-    return res.data as User;
-  } catch (error: any) {
-    return  thunkAPI.rejectWithValue(
-      error.response?.data?.message || "Updating profile failed"
-    );
+export const updateUser = createAsyncThunk(
+  "user/updateUser",
+  async (userData: unknown, thunkAPI) => {
+    try {
+      const res = await userAPI.updateMe(userData as any);
+      const body = res.data as { user?: unknown; message?: string };
+      if (body?.user == null) {
+        return thunkAPI.rejectWithValue(
+          (typeof body?.message === "string" && body.message) || "Updating profile failed"
+        );
+      }
+      return { user: body.user };
+    } catch (error: unknown) {
+      const msg = messageFromApiError(error);
+      return thunkAPI.rejectWithValue(msg || "Updating profile failed");
+    }
   }
-});
+);
 
 
 /* ================= SLICE ================= */

@@ -60,9 +60,10 @@ model User {
   firstName     String?
   lastName      String?
   email         String?
-  dlNumber    String?
-  aadhaarPdf  String?
-  dlPdf       String?
+  dlNumber        String?
+  aadhaarPdf      String?
+  addressProofPdf String?
+  dlPdf           String?
   isBlocked     Boolean  @default(false)
 
   isVerified    Boolean  @default(false)

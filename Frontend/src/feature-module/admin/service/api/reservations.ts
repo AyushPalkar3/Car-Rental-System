@@ -40,6 +40,9 @@ export type AdminReservation = {
     firstName?: string | null;
     lastName?: string | null;
     email?: string | null;
+    dlPdf?: string | null;
+    aadhaarPdf?: string | null;
+    addressProofPdf?: string | null;
   };
   pricing?: { id: string; duration: DurationType; price: number };
   payment?: { id: string } | null;

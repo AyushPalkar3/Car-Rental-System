@@ -168,7 +168,24 @@ const CustomerDetails = () => {
                             </div>
                           </div>
                         )}
-                        {!user.dlPdf && !user.aadhaarPdf && <p>No documents uploaded</p>}
+                        {user.addressProofPdf && (
+                          <div className="d-flex align-items-center">
+                            <span className="me-2">
+                              <ImageWithBasePath
+                                src="assets/admin/img/icons/pdf-icon.svg"
+                                alt="img"
+                              />
+                            </span>
+                            <div>
+                              <h6 className="fs-14 fw-medium">
+                                <a href={user.addressProofPdf} target="_blank" rel="noopener noreferrer">Address Proof</a>
+                              </h6>
+                            </div>
+                          </div>
+                        )}
+                        {!user.dlPdf && !user.aadhaarPdf && !user.addressProofPdf && (
+                          <p>No documents uploaded</p>
+                        )}
                       </div>
                     </div>
                   </div>
