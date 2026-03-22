@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Breadcrumbs from "../common/breadcrumbs";
 import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -27,6 +27,114 @@ import { RelatedCarsSlider } from "./relatedCarsSlider";
 
 const CAR_IMAGE_BASE =
   import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
+const SPEC_DASH = "—";
+
+function specStr(v: unknown): string {
+  if (v == null) return SPEC_DASH;
+  const s = String(v).trim();
+  return s || SPEC_DASH;
+}
+
+function formatCarTransmission(t: string | undefined): string {
+  if (!t) return SPEC_DASH;
+  const m: Record<string, string> = {
+    AUTO: "Automatic",
+    MANUAL: "Manual",
+    SEMI_AUTO: "Semi-Automatic",
+  };
+  return m[t] || t.replace(/_/g, " ");
+}
+
+function formatCarFuel(f: string | undefined): string {
+  if (!f) return SPEC_DASH;
+  return f
+    .split("_")
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatCarPowerType(p: string | undefined): string {
+  if (!p) return SPEC_DASH;
+  const m: Record<string, string> = { POWER: "Power", MANUAL: "Manual" };
+  return m[p] || p.replace(/_/g, " ");
+}
+
+function buildSpecificationRows(car: Record<string, any> | null) {
+  if (!car) return [];
+  const mileage =
+    car.mileageKm != null && !Number.isNaN(Number(car.mileageKm))
+      ? `${Number(car.mileageKm).toLocaleString("en-IN")} km`
+      : SPEC_DASH;
+  const doors =
+    car.doors != null && !Number.isNaN(Number(car.doors))
+      ? `${car.doors} ${Number(car.doors) === 1 ? "Door" : "Doors"}`
+      : SPEC_DASH;
+  const plateOrId = specStr(car.plateNumber || car.carNumber);
+
+  return [
+    {
+      label: "Body",
+      value: specStr(car.category),
+      icon: "assets/img/specification/specification-icon-1.svg",
+    },
+    {
+      label: "Make",
+      value: specStr(car.brand),
+      icon: "assets/img/specification/specification-icon-2.svg",
+    },
+    {
+      label: "Transmission",
+      value: formatCarTransmission(car.transmission),
+      icon: "assets/img/specification/specification-icon-3.svg",
+    },
+    {
+      label: "Fuel Type",
+      value: formatCarFuel(car.fuelType),
+      icon: "assets/img/specification/specification-icon-4.svg",
+    },
+    {
+      label: "Mileage",
+      value: mileage,
+      icon: "assets/img/specification/specification-icon-5.svg",
+    },
+    {
+      label: "Power type",
+      value: formatCarPowerType(car.powerType),
+      icon: "assets/img/specification/specification-icon-6.svg",
+    },
+    {
+      label: "Year",
+      value: car.modelYear != null ? String(car.modelYear) : SPEC_DASH,
+      icon: "assets/img/specification/specification-icon-7.svg",
+    },
+    {
+      label: "AC",
+      value: specStr(car.ac),
+      icon: "assets/img/specification/specification-icon-8.svg",
+    },
+    {
+      label: "Plate / ID",
+      value: plateOrId,
+      icon: "assets/img/specification/specification-icon-9.svg",
+    },
+    {
+      label: "Door",
+      value: doors,
+      icon: "assets/img/specification/specification-icon-10.svg",
+    },
+    {
+      label: "Brake",
+      value: specStr(car.brakes),
+      icon: "assets/img/specification/specification-icon-11.svg",
+    },
+    {
+      label: "Engine",
+      value: specStr(car.engine),
+      icon: "assets/img/specification/specification-icon-12.svg",
+    },
+  ];
+}
 
 function MiniBookingCalendar({ blocks }: { blocks: AvailabilityBlock[] }) {
   const [cursor, setCursor] = useState(() => {
@@ -329,6 +437,7 @@ const listingDetails = () => {
   };
 
   const galleryImages = Array.isArray(car?.images) ? car.images : [];
+  const specificationRows = useMemo(() => buildSpecificationRows(car), [car]);
 
   if (!id) {
     return (
@@ -397,11 +506,13 @@ const listingDetails = () => {
                             alt="img"
                           />
                         </span>
-                        Sedan
+                        {car?.category?.trim() || SPEC_DASH}
                       </div>
                     </li>
                     <li>
-                      <span className="year">2023</span>
+                      <span className="year">
+                        {car?.modelYear != null ? car.modelYear : SPEC_DASH}
+                      </span>
                     </li>
                     {/* <li className="ratings">
                       <i className="fas fa-star filled" />
@@ -415,7 +526,7 @@ const listingDetails = () => {
                     </li> */}
                   </ul>
                   <div className="camaro-info">
-                    <h3>Tata Nexon</h3>
+                    <h3>{car?.name?.trim() || "Car details"}</h3>
                     {/* <div className="camaro-location">
                       <div className="camaro-location-inner">
                         <i className="bx bx-map" />
@@ -728,150 +839,20 @@ const listingDetails = () => {
                   <div className="card-body">
                     <div className="lisiting-featues">
                       <div className="row">
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-1.svg"
-                              alt="Icon"
-                            />
+                        {specificationRows.map((row, idx) => (
+                          <div
+                            className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6"
+                            key={`${row.label}-${idx}`}
+                          >
+                            <div className="feature-img">
+                              <ImageWithBasePath src={row.icon} alt="" />
+                            </div>
+                            <div className="featues-info">
+                              <span>{row.label} </span>
+                              <h6>{row.value}</h6>
+                            </div>
                           </div>
-                          <div className="featues-info">
-                            <span>Body </span>
-                            <h6> Sedan</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-2.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Make </span>
-                            <h6> Nisssan</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-3.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Transmission </span>
-                            <h6> Automatic</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-4.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Fuel Type </span>
-                            <h6> Diesel</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-5.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Mileage </span>
-                            <h6>16 Km</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-6.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Drivetrian </span>
-                            <h6>Front Wheel</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-7.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Year</span>
-                            <h6> 2018</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-8.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>AC </span>
-                            <h6> Air Condition</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-9.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>VIN </span>
-                            <h6> 45456444</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-10.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Door </span>
-                            <h6> 4 Doors</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-11.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Brake </span>
-                            <h6> ABS</h6>
-                          </div>
-                        </div>
-                        <div className="featureslist d-flex align-items-center col-xl-3 col-md-4 col-sm-6">
-                          <div className="feature-img">
-                            <ImageWithBasePath
-                              src="assets/img/specification/specification-icon-12.svg"
-                              alt="Icon"
-                            />
-                          </div>
-                          <div className="featues-info">
-                            <span>Engine (Hp) </span>
-                            <h6> 3,000</h6>
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
