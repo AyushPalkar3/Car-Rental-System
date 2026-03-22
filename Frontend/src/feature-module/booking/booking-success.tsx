@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
 import jsPDF from "jspdf";
+import { RentalBreakdownLines } from "./rentalBreakdownLines";
 import html2canvas from "html2canvas";
 import { useRef, useState } from "react";
 
@@ -93,22 +94,20 @@ const BookingSuccess = () => {
                   </div>
                   <div className="book-body">
                     <ul className="pricing-lists">
-                      <li>
-                        <div>
-                          <p>Rental Charge</p>
-                          <div className="small text-muted mb-1">
-                            {bookingData?.priceBreakdown?.months > 0 && <div>{bookingData.priceBreakdown.months} Month(s) x ₹{bookingData.priceBreakdown.monthRate}</div>}
-                            {bookingData?.priceBreakdown?.weeks > 0 && <div>{bookingData.priceBreakdown.weeks} Week(s) x ₹{bookingData.priceBreakdown.weekRate}</div>}
-                            {bookingData?.priceBreakdown?.days > 0 && <div>{bookingData.priceBreakdown.days} Day(s) x ₹{bookingData.priceBreakdown.dayRate}</div>}
-                            {bookingData?.priceBreakdown?.hours > 0 && (
-                              <div>
-                                {Math.floor(bookingData.priceBreakdown.hours)} Hour(s) x ₹{bookingData.priceBreakdown.hourRate || Math.ceil(bookingData.priceBreakdown.dayRate / 24)}
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-danger">(This does not include fuel)</p>
+                      <li className="d-flex justify-content-between align-items-start gap-3 py-2">
+                        <div className="flex-grow-1 min-width-0">
+                          <p className="fw-semibold mb-2 mb-md-1">Rental charge</p>
+                          <RentalBreakdownLines breakdown={bookingData?.priceBreakdown} />
+                          <p className="text-danger small mb-0 mt-2">
+                            Fuel not included.
+                          </p>
                         </div>
-                        <span> ₹{bookingData.totalPrice - (bookingData.deliveryFee || 0)}</span>
+                        <span className="fw-bold text-nowrap flex-shrink-0">
+                          ₹
+                          {Math.round(
+                            bookingData.totalPrice - (bookingData.deliveryFee || 0)
+                          )}
+                        </span>
                       </li>
                       {bookingData.deliveryFee > 0 && (
                         <li>

@@ -7,10 +7,12 @@ import { Dropdown } from "primereact/dropdown";
 import { TimePicker } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { all_routes, listingDetailsPath } from "../../router/all_routes";
+import dayjs, { type Dayjs } from "dayjs";
 
 import { useDispatch, useSelector } from "react-redux";
 import { setBookingDetails } from "./checkoutSlice";
 import { couponAPI } from "../../api/user/coupon.api";
+import { RentalBreakdownLines } from "./rentalBreakdownLines";
 
 const BookingCheckout = () => {
   const routes = all_routes;
@@ -60,10 +62,49 @@ const BookingCheckout = () => {
   const navigate = useNavigate();
 
   const toDate = (v: unknown): Date | null => {
-    if (v == null) return null;
+    if (v == null || v === "") return null;
     if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v;
     const d = new Date(v as string);
     return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  /** Calendar controls: use date in local timezone, ignore time-of-day from stored ISO. */
+  const toCalendarDate = (v: unknown): Date | null => {
+    const d = toDate(v);
+    if (!d) return null;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+
+  const hmToDayjs = (v: unknown): Dayjs | null => {
+    if (v != null && typeof v === "object" && typeof (v as Dayjs).hour === "function") {
+      const t = v as Dayjs;
+      return dayjs().hour(t.hour()).minute(t.minute()).second(0).millisecond(0);
+    }
+    const o = v as { hour?: number; minute?: number } | null;
+    if (o && typeof o.hour === "number" && typeof o.minute === "number") {
+      return dayjs().hour(o.hour).minute(o.minute).second(0).millisecond(0);
+    }
+    return null;
+  };
+
+  const dayjsToHm = (t: unknown): { hour: number; minute: number } | null => {
+    if (!t || typeof t !== "object" || typeof (t as Dayjs).hour !== "function") {
+      return null;
+    }
+    const d = t as Dayjs;
+    return { hour: d.hour(), minute: d.minute() };
+  };
+
+  const dateToIso = (d: unknown): string | null => {
+    if (!d) return null;
+    if (d instanceof Date) {
+      return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    }
+    if (typeof d === "string" && d.trim()) {
+      const x = new Date(d);
+      return Number.isNaN(x.getTime()) ? null : x.toISOString();
+    }
+    return null;
   };
 
   const isDayjsTime = (v: unknown): v is { hour: () => number; minute: () => number } =>
@@ -77,10 +118,10 @@ const BookingCheckout = () => {
     setBookingType(bookingData.rentalType || "delivery");
     setDeliveryLocation(bookingData.deliveryLocation || "");
     setReturnLocation(bookingData.returnLocation || "");
-    setStartDate(toDate(bookingData.startDate));
-    setEndDate(toDate(bookingData.endDate));
-    setStartTime(isDayjsTime(bookingData.startTime) ? bookingData.startTime : null);
-    setReturnTime(isDayjsTime(bookingData.endTime) ? bookingData.endTime : null);
+    setStartDate(toCalendarDate(bookingData.startDate));
+    setEndDate(toCalendarDate(bookingData.endDate));
+    setStartTime(hmToDayjs(bookingData.startTime));
+    setReturnTime(hmToDayjs(bookingData.endTime));
     setDistanceKM(bookingData.distanceKM ?? 0);
     setDeliveryFee(bookingData.deliveryFee ?? 0);
     setPriceBreakdown(bookingData.priceBreakdown ?? null);
@@ -120,10 +161,10 @@ const BookingCheckout = () => {
           rentalType: bookingType,
           deliveryLocation,
           returnLocation,
-          startDate,
-          endDate,
-          startTime,
-          endTime: returnTime,
+          startDate: dateToIso(startDate),
+          endDate: dateToIso(endDate),
+          startTime: dayjsToHm(startTime),
+          endTime: dayjsToHm(returnTime),
           distanceKM,
           deliveryFee,
           priceBreakdown,
@@ -208,7 +249,7 @@ const BookingCheckout = () => {
         pricing.find((p: any) => p.duration === "MONTH")?.price || 0;
 
       let total = 0;
-      let breakdown = {
+      const breakdown: Record<string, number | undefined> = {
         hours: 0,
         days: 0,
         weeks: 0,
@@ -216,7 +257,8 @@ const BookingCheckout = () => {
         hourRate: hourPrice,
         dayRate: dayPrice,
         weekRate: weekPrice,
-        monthRate: monthPrice
+        monthRate: monthPrice,
+        proratedHourRate: undefined,
       };
 
       // <= 24 hours
@@ -232,6 +274,7 @@ const BookingCheckout = () => {
         total = fullDays * dayPrice + remainingHours * (dayPrice / 24);
         breakdown.days = fullDays;
         breakdown.hours = remainingHours;
+        breakdown.proratedHourRate = dayPrice / 24;
       }
 
       // < 1 month
@@ -241,6 +284,7 @@ const BookingCheckout = () => {
         total = fullWeeks * weekPrice + remainingHours * (dayPrice / 24);
         breakdown.weeks = fullWeeks;
         breakdown.hours = remainingHours;
+        breakdown.proratedHourRate = dayPrice / 24;
       }
 
       // >= 1 month
@@ -250,6 +294,7 @@ const BookingCheckout = () => {
         total = fullMonths * monthPrice + remainingHours * (dayPrice / 24);
         breakdown.months = fullMonths;
         breakdown.hours = remainingHours;
+        breakdown.proratedHourRate = dayPrice / 24;
       }
 
       // Calculate Delivery Fee if Home Delivery is selected
@@ -260,7 +305,7 @@ const BookingCheckout = () => {
       setDeliveryFee(fee);
       setPriceBreakdown(breakdown);
 
-      setTotalPrice(Math.ceil(total + fee));
+      setTotalPrice(Math.round(total + fee));
     } catch (error) {
       console.error("Price calculation error:", error);
       setTotalPrice(0);
@@ -360,7 +405,7 @@ const BookingCheckout = () => {
   };
 
   const discountAmt = appliedCoupon?.discountAmount ?? 0;
-  const finalDisplayTotal = Math.max(0, Math.ceil(totalPrice - discountAmt));
+  const finalDisplayTotal = Math.max(0, Math.round(totalPrice - discountAmt));
 
   const validateLocationTimeStep = (): string | null => {
     const uid = userInfo?.user?.id || userInfo?.id;
@@ -412,14 +457,19 @@ const BookingCheckout = () => {
       toast.error(err);
       return;
     }
+    const dt = buildPickupReturnIso();
+    if (!dt) {
+      toast.error("Pickup or return date/time is invalid.");
+      return;
+    }
     dispatch(
       setBookingDetails({
         carId: bookingData?.car?.id,
         userId: userInfo?.user?.id || userInfo?.id, // Handle nested user object
-        pickupDate: startDate,
-        returnDate: endDate,
-        startTime: startTime,
-        endTime: returnTime,
+        pickupDate: dt.pickupDate,
+        returnDate: dt.returnDate,
+        startTime: dayjsToHm(startTime),
+        endTime: dayjsToHm(returnTime),
         deliveryAddress: deliveryLocation,
         returnAddress: returnLocation,
         bookingType: bookingType,
@@ -437,9 +487,9 @@ const BookingCheckout = () => {
         couponCode: appliedCoupon?.code ?? null,
         discountAmount: appliedCoupon ? appliedCoupon.discountAmount : 0,
 
-        // keeping original names for UI usage
-        startDate: startDate,
-        endDate: endDate,
+        // keeping original names for UI usage (serializable)
+        startDate: dt.pickupDate,
+        endDate: dt.returnDate,
         deliveryLocation: deliveryLocation,
         returnLocation: returnLocation,
         totalAmount: finalDisplayTotal,
@@ -734,9 +784,11 @@ const BookingCheckout = () => {
                                 <label className="form-label">Start Date</label>
                                 <div className="group-img">
                                   <Calendar
+                                    className="datetimepicker bg-custom w-100"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.value)}
                                     placeholder="Select start date"
+                                    inputClassName="w-100"
                                   />
                                   <span className="input-cal-icon">
                                     <i className="bx bx-calendar" />
@@ -762,10 +814,11 @@ const BookingCheckout = () => {
                                 </label>
                                 <div className="group-img">
                                   <Calendar
-                                    className="datetimepicker bg-custom"
+                                    className="datetimepicker bg-custom w-100"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.value)}
-                                    placeholder="Choose Date"
+                                    placeholder="Select return date"
+                                    inputClassName="w-100"
                                   />
                                   <span className="input-cal-icon">
                                     <i className="bx bx-calendar" />
@@ -815,6 +868,7 @@ const BookingCheckout = () => {
               <div className="col-lg-4 theiaStickySidebar">
                 <div className="stickybar">
                   <div className="booking-sidebar">
+                                  <h5>₹{totalPrice - deliveryFee}</h5>
                     <div className="booking-sidebar-card">
                       <div className="accordion-item border-0 mb-4">
                         <div className="accordion-header">
@@ -848,26 +902,19 @@ const BookingCheckout = () => {
                             </div>
                             <div className="booking-vehicle-rates">
                               <ul>
-                                <li>
-                                  <div className="rental-charge">
-                                    <h6>
-                                      Rental Charges
-                                    </h6>
-                                    <div className="small text-muted mt-1">
-                                      {priceBreakdown?.months > 0 && <div>{priceBreakdown.months} Month(s) x ₹{priceBreakdown.monthRate}</div>}
-                                      {priceBreakdown?.weeks > 0 && <div>{priceBreakdown.weeks} Week(s) x ₹{priceBreakdown.weekRate}</div>}
-                                      {priceBreakdown?.days > 0 && <div>{priceBreakdown.days} Day(s) x ₹{priceBreakdown.dayRate}</div>}
-                                      {priceBreakdown?.hours > 0 && (
-                                        <div>
-                                          {Math.floor(priceBreakdown.hours)} Hour(s) x ₹{priceBreakdown.hourRate || Math.ceil(priceBreakdown.dayRate / 24)}
-                                        </div>
-                                      )}
+                                <li className="pb-3 mb-2 border-bottom border-light">
+                                  <div className="d-flex justify-content-between align-items-start gap-3">
+                                    <div className="flex-grow-1 min-width-0">
+                                      <h6 className="fw-semibold mb-2">Rental charges</h6>
+                                      <RentalBreakdownLines breakdown={priceBreakdown} />
+                                      <p className="text-danger small mb-0 mt-2">
+                                        Fuel not included in this amount.
+                                      </p>
                                     </div>
-                                    <span className="text-danger">
-                                      (This does not include fuel)
-                                    </span>
+                                    <h5 className="fw-bold mb-0 text-nowrap flex-shrink-0 pt-1">
+                                      ₹{Math.round(totalPrice - deliveryFee)}
+                                    </h5>
                                   </div>
-                                  <h5>₹{totalPrice - deliveryFee}</h5>
                                 </li>
                                 {bookingType === 'delivery' && (
                                   <li>

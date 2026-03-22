@@ -34,12 +34,7 @@ const store = configureStore({
   preloadedState: preloadedCheckout
     ? { checkout: preloadedCheckout }
     : undefined,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredPaths: ["checkout.startTime", "checkout.endTime"],
-      },
-    }),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
 });
 
 let checkoutSaveTimer: ReturnType<typeof setTimeout> | null = null;

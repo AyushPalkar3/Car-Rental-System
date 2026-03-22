@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { all_routes, listingDetailsPath } from "../../router/all_routes";
 import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "../user/userSlice";
+import { RentalBreakdownLines } from "./rentalBreakdownLines";
 const BookingDetail = () => {
   const routes = all_routes;
 
@@ -584,25 +585,26 @@ const BookingDetail = () => {
                             </div>
                             <div className="booking-vehicle-rates">
                               <ul>
-                                <li>
-                                  <div className="rental-charge">
-                                    <h6>
-                                      Rental Charges
-                                    </h6>
-                                    <div className="small text-muted mt-1">
-                                      {checkoutData?.priceBreakdown?.months > 0 && <div>{checkoutData.priceBreakdown.months} Month(s) x ₹{checkoutData.priceBreakdown.monthRate}</div>}
-                                      {checkoutData?.priceBreakdown?.weeks > 0 && <div>{checkoutData.priceBreakdown.weeks} Week(s) x ₹{checkoutData.priceBreakdown.weekRate}</div>}
-                                      {checkoutData?.priceBreakdown?.days > 0 && <div>{checkoutData.priceBreakdown.days} Day(s) x ₹{checkoutData.priceBreakdown.dayRate}</div>}
-                                      {checkoutData?.priceBreakdown?.hours > 0 && (
-                                        <div>
-                                          {Math.floor(checkoutData.priceBreakdown.hours)} Hour(s) x ₹{checkoutData.priceBreakdown.hourRate || Math.ceil(checkoutData.priceBreakdown.dayRate / 24)}
-                                        </div>
-                                      )}
+                                <li className="pb-3 mb-2 border-bottom border-light">
+                                  <div className="d-flex justify-content-between align-items-start gap-3">
+                                    <div className="flex-grow-1 min-width-0">
+                                      <h6 className="fw-semibold mb-2">Rental charges</h6>
+                                      <RentalBreakdownLines
+                                        breakdown={checkoutData?.priceBreakdown}
+                                      />
+                                      <p className="text-danger small mb-0 mt-2">
+                                        Fuel not included in this amount.
+                                      </p>
                                     </div>
-                                    <span className="text-danger">
-                                      (This does not include fuel)
-                                    </span>
-                                  </div>
+                                    <h5 className="fw-bold mb-0 text-nowrap flex-shrink-0 pt-1">
+                                      ₹
+                                      {Math.round(
+                                        (checkoutData?.preDiscountTotal != null
+                                          ? checkoutData.preDiscountTotal
+                                          : checkoutData?.totalAmount ?? 0) -
+                                          (checkoutData?.deliveryFee || 0)
+                                      )}
+                                    </h5>
                                   <h5>
                                     ₹
                                     {(checkoutData?.preDiscountTotal != null
@@ -610,6 +612,7 @@ const BookingDetail = () => {
                                       : checkoutData?.totalAmount ?? 0) -
                                       (checkoutData?.deliveryFee || 0)}
                                   </h5>
+                                  </div>
                                 </li>
                                 {checkoutData?.deliveryFee > 0 && (
                                   <li>
