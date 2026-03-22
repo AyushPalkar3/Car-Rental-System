@@ -21,7 +21,7 @@ const CustomersCompaniesList = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.companyDetails}
+            to={all_routes.carPartnerCompanyDetails}
             className="avatar rounded-circle me-2 flex-shrink-0"
           >
             <ImageWithBasePath
@@ -31,7 +31,7 @@ const CustomersCompaniesList = () => {
             />
           </Link>
           <h6 className="fs-14 fw-semibold">
-            <Link to={all_routes.companyDetails}>{text}</Link>
+            <Link to={all_routes.carPartnerCompanyDetails}>{text}</Link>
           </h6>
         </div>
       ),
@@ -43,7 +43,7 @@ const CustomersCompaniesList = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.customerDetails}
+            to={all_routes.carPartnerCustomerDetails}
             className="avatar rounded-circle me-2 flex-shrink-0"
           >
             <ImageWithBasePath
@@ -54,7 +54,7 @@ const CustomersCompaniesList = () => {
           </Link>
           <div>
             <h6 className="fs-14 fw-semibold">
-              <Link to={all_routes.customerDetails}>{text}</Link>
+              <Link to={all_routes.carPartnerCustomerDetails}>{text}</Link>
             </h6>
             <p>{record.PHONE}</p>
           </div>
@@ -121,7 +121,7 @@ const CustomersCompaniesList = () => {
             <li>
               <Link
                 className="dropdown-item rounded-1"
-                to={all_routes.companyDetails}
+                to={all_routes.carPartnerCompanyDetails}
               >
                 <i className="ti ti-eye me-1" />
                 View Details
@@ -152,7 +152,7 @@ const CustomersCompaniesList = () => {
             <li>
               <Link
                 className="dropdown-item rounded-1"
-                to={all_routes.adminAddReservations}
+                to={all_routes.carPartnerAddReservation}
               >
                 <i className="ti ti-calendar me-1" />
                 Book a Car
@@ -174,7 +174,7 @@ const CustomersCompaniesList = () => {
             <nav>
               <ol className="breadcrumb mb-0">
                 <li className="breadcrumb-item">
-                  <Link to={all_routes.adminDashboard}>Home</Link>
+                  <Link to={all_routes.carPartnerDashboard}>Home</Link>
                 </li>
                 <li className="breadcrumb-item active" aria-current="page">
                   Customers

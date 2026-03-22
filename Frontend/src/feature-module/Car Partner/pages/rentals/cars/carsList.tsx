@@ -392,7 +392,7 @@ const CarsList = () => {
             <nav>
               <ol className="breadcrumb mb-0">
                 <li className="breadcrumb-item">
-                  <Link to={all_routes.adminDashboard}>Home</Link>
+                  <Link to={all_routes.carPartnerDashboard}>Home</Link>
                 </li>
                 <li className="breadcrumb-item active" aria-current="page">
                   All Cars

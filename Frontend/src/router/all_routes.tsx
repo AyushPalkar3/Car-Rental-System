@@ -171,6 +171,8 @@ export const all_routes = {
   carPartnerResetPassword: "/car-partner/reset-password",
   carPartnerDashboard: "/car-partner/dashboard",
   carPartnerReservationsList: "/car-partner/reservations",
+  carPartnerAddReservation: "/car-partner/add-reservation",
+  carPartnerEditReservation: "/car-partner/edit-reservation",
   carPartnerReservationDetails: "/car-partner/reservation-details",
   carPartnerCarsList: "/car-partner/cars",
   carPartnerCarDetails: "/car-partner/car-details",
@@ -180,6 +182,10 @@ export const all_routes = {
   carPartnerIntegrationsSettings: "/car-partner/account-settings/integrations-settings",
   carPartnerTrackerSetting: "/car-partner/account-settings/tracker-settings",
   carPartnerPaymentsList: "/car-partner/payments",
+  carPartnerCustomersList: "/car-partner/customers",
+  carPartnerCustomerDetails: "/car-partner/customer-details",
+  carPartnerCompaniesList: "/car-partner/companies",
+  carPartnerCompanyDetails: "/car-partner/company-details",
 
 
   //UI Pages

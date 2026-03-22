@@ -20,7 +20,7 @@ const QuotationsList = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.companyDetails}
+            to={all_routes.carPartnerCustomersList}
             className="avatar avatar-rounded me-2 flex-shrink-0"
           >
             <ImageWithBasePath
@@ -30,7 +30,7 @@ const QuotationsList = () => {
           </Link>
           <div>
             <h6 className="mb-1 fs-14">
-              <Link to={all_routes.companyDetails}>{text}</Link>
+              <Link to={all_routes.carPartnerCustomersList}>{text}</Link>
             </h6>
             <span
               className={`badge  ${record.BADGE === "Client" ? "bg-secondary-transparent" : "bg-violet-transparent"} rounded-pill`}
@@ -48,7 +48,7 @@ const QuotationsList = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.carDetails}
+            to={all_routes.carPartnerCarsList}
             className="avatar me-2 flex-shrink-0"
           >
             <ImageWithBasePath
@@ -57,7 +57,7 @@ const QuotationsList = () => {
             />
           </Link>
           <div>
-            <Link to={all_routes.carDetails} className="fw-semibold d-block">
+            <Link to={all_routes.carPartnerCarsList} className="fw-semibold d-block">
               {text}
             </Link>
             <span className="fs-13">{record.CAR_TYPE}</span>
@@ -177,7 +177,7 @@ const QuotationsList = () => {
             <li>
               <Link
                 className="dropdown-item rounded-1"
-                to={all_routes.adminAddReservations}
+                to={all_routes.carPartnerAddReservation}
               >
                 <i className="ti ti-calendar me-1" />
                 Convert to Bookings
@@ -211,7 +211,7 @@ const QuotationsList = () => {
             <nav>
               <ol className="breadcrumb mb-0">
                 <li className="breadcrumb-item">
-                  <Link to={all_routes.adminDashboard}>Home</Link>
+                  <Link to={all_routes.carPartnerDashboard}>Home</Link>
                 </li>
                 <li className="breadcrumb-item active" aria-current="page">
                   Quotations

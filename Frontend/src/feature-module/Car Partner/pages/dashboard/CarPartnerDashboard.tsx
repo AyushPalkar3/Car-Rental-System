@@ -385,14 +385,14 @@ const CarPartnerDashboard = () => {
                   </div>
                   <div className="d-flex align-items-center gap-3 flex-wrap">
                     <Link
-                      to={all_routes.reservationsList}
+                      to={all_routes.carPartnerReservationsList}
                       className="btn btn-primary d-flex align-items-center"
                     >
                       <i className="ti ti-eye me-1" />
                       Reservations
                     </Link>
                     <Link
-                      to={all_routes.addCar}
+                      to={all_routes.carPartnerAddCar}
                       className="btn btn-dark d-flex align-items-center"
                     >
                       <i className="ti ti-plus me-1" />
@@ -538,7 +538,11 @@ const CarPartnerDashboard = () => {
                     </span>
                   </div>
                   <Link
-                    to={all_routes.carDetails}
+                    to={
+                      newestCar?.id
+                        ? `${all_routes.carPartnerCarDetails}?id=${newestCar.id}`
+                        : all_routes.carPartnerCarsList
+                    }
                     className="btn btn-white d-flex align-items-center justify-content-center"
                   >
                     View Details
@@ -564,7 +568,7 @@ const CarPartnerDashboard = () => {
               <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                 <h5>Recent Reservations</h5>
                 <Link
-                  to={all_routes.reservationsList}
+                  to={all_routes.carPartnerReservationsList}
                   className="text-decoration-underline fw-medium"
                 >
                   View All
@@ -651,7 +655,7 @@ const CarPartnerDashboard = () => {
               <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                 <h5>Cars</h5>
                 <Link
-                  to={all_routes.adminCarList}
+                  to={all_routes.carPartnerCarsList}
                   className="text-decoration-underline fw-medium"
                 >
                   View All

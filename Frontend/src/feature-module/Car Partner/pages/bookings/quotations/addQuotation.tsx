@@ -308,7 +308,7 @@ const AddQuotation = () => {
                                     </div>
                                     <div>
                                       <Link
-                                        to={all_routes.addCar}
+                                        to={all_routes.carPartnerAddCar}
                                         className="btn btn-dark d-inline-flex min-width-100 align-items-center"
                                       >
                                         <i className="ti ti-plus me-1" />

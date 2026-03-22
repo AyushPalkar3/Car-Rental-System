@@ -77,6 +77,7 @@ const ReservationsList = () => {
           return {
             key: booking.id,
             originalData: booking,
+            CAR_ID: booking.car?.id,
             CAR_IMG: booking.car?.images?.[0] || "",
             CAR_NO: booking.orderId || booking.id.substring(0, 8), // Show short ID if no orderId
             CAR: booking.car?.name || "Unknown Car",
@@ -142,7 +143,11 @@ const ReservationsList = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.carDetails}
+            to={
+              record.CAR_ID
+                ? `${all_routes.carPartnerCarDetails}?id=${record.CAR_ID}`
+                : all_routes.carPartnerCarsList
+            }
             className="avatar me-2 flex-shrink-0"
           >
             <img
@@ -159,7 +164,15 @@ const ReservationsList = () => {
               #{record.CAR_NO}
             </Link>
             <h6 className="fs-14">
-              <Link to={all_routes.carDetails}>{text}</Link>
+              <Link
+                to={
+                  record.CAR_ID
+                    ? `${all_routes.carPartnerCarDetails}?id=${record.CAR_ID}`
+                    : all_routes.carPartnerCarsList
+                }
+              >
+                {text}
+              </Link>
             </h6>
           </div>
         </div>
@@ -172,7 +185,7 @@ const ReservationsList = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.companyDetails}
+            to={`${all_routes.carPartnerReservationDetails}/${record.key}`}
             className="avatar avatar-rounded me-2 flex-shrink-0"
           >
              <ImageWithBasePath
@@ -182,7 +195,7 @@ const ReservationsList = () => {
           </Link>
           <div>
             <h6 className="mb-1 fs-14">
-              <Link to={all_routes.companyDetails}>{text}</Link>
+              <Link to={`${all_routes.carPartnerReservationDetails}/${record.key}`}>{text}</Link>
             </h6>
             <span
               className={`badge  ${record.BADGE === "Client" ? "bg-secondary-transparent" : "bg-violet-transparent"} rounded-pill`}

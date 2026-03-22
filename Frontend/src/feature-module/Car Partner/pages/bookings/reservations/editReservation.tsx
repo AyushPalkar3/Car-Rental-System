@@ -27,7 +27,7 @@ const EditReservation = () => {
       <div className="content me-4 pb-0">
         <div className="mb-3">
           <Link
-            to={all_routes.adminReservationsList}
+            to={all_routes.carPartnerReservationsList}
             className="d-inline-flex align-items-center fw-medium"
           >
             <i className="ti ti-arrow-narrow-left me-2" />

@@ -252,7 +252,7 @@ const CarBookingModal = () => {
             >
               Cancel
             </Link>
-            <Link to={all_routes.addCar} className="btn btn-primary">
+            <Link to={all_routes.carPartnerAddCar} className="btn btn-primary">
               Yes, Delete
             </Link>
           </div>
@@ -1138,7 +1138,7 @@ const CarBookingModal = () => {
             >
               Cancel
             </Link>
-            <Link to={all_routes.addCar} className="btn btn-primary">
+            <Link to={all_routes.carPartnerAddCar} className="btn btn-primary">
               Yes, Delete
             </Link>
           </div>
@@ -1165,7 +1165,7 @@ const CarBookingModal = () => {
             >
               Cancel
             </Link>
-            <Link to={all_routes.addCar} className="btn btn-primary">
+            <Link to={all_routes.carPartnerAddCar} className="btn btn-primary">
               Yes, Delete
             </Link>
           </div>
@@ -1508,7 +1508,7 @@ const CarBookingModal = () => {
             >
               Cancel
             </Link>
-            <Link to={all_routes.addCar} className="btn btn-primary">
+            <Link to={all_routes.carPartnerAddCar} className="btn btn-primary">
               Yes, Delete
             </Link>
           </div>
