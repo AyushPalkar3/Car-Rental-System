@@ -24,6 +24,15 @@
             i {
                 color: variables.$gray-500;
             }
+            // Step tabs use <button> for real click handling
+            &[type="button"] {
+                appearance: none;
+                cursor: pointer;
+                font-family: inherit;
+                font-size: inherit;
+                line-height: inherit;
+                text-align: center;
+            }
         }
         &.active {
             .nav-link {
@@ -240,4 +249,25 @@
             }
         }
     }
+}
+
+// Admin edit car: keep wizard actions tappable above page footer / mobile chrome
+.edit-car-page {
+    .card-body {
+        @include mixins.respond-below(lg) {
+            padding-bottom: 1.5rem;
+        }
+    }
+}
+
+.edit-car-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 25;
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    background-color: variables.$white;
+    border-top: 1px solid variables.$border-color;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Breadcrumbs from "../common/breadcrumbs";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -15,6 +15,9 @@ import {
   applyDateFilter,
   applySort,
   BookingModal,
+  ExtendBookingModal,
+  canExtendInProgressBooking,
+  BookingTableSkeleton,
 } from "./common/bookingUtils";
 
 export const UserBookingInprogress = () => {
@@ -26,31 +29,41 @@ export const UserBookingInprogress = () => {
   const [dateFilter, setDateFilter] = useState("all");
   const [sortMode, setSortMode] = useState("desc");
   const [loading, setLoading] = useState(false);
+  const [extendBooking, setExtendBooking] = useState<any>(null);
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      const userId = userInfo?.user?.id || userInfo?.id;
+      if (!userId) return;
+      setLoading(true);
+      const res = await axios.get(
+        `http://localhost:4000/api/bookings/user/${userId}`,
+        { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+      );
+      const formatted = res.data
+        .filter((b: any) => b.status === "CONFIRMED")
+        .map(formatBooking);
+      setAllBookings(formatted);
+    } catch (e) {
+      console.error("Failed to fetch inprogress bookings:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [userInfo]);
 
   useEffect(() => {
     Aos.init({ duration: 1200, once: true });
-    const fetchBookings = async () => {
-      try {
-        const userId = userInfo?.user?.id || userInfo?.id;
-        if (!userId) return;
-        setLoading(true);
-        const res = await axios.get(
-          `http://localhost:4000/api/bookings/user/${userId}`,
-          { headers: { Authorization: `Bearer ${getAccessToken()}` } }
-        );
-        // CONFIRMED status = Inprogress
-        const formatted = res.data
-          .filter((b: any) => b.status === "CONFIRMED")
-          .map(formatBooking);
-        setAllBookings(formatted);
-      } catch (e) {
-        console.error("Failed to fetch inprogress bookings:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchBookings();
-  }, [userInfo]);
+  }, [fetchBookings]);
+
+  const openExtendModal = (raw: any) => {
+    setExtendBooking(raw);
+    setTimeout(() => {
+      const el = document.getElementById("extend_booking_modal");
+      const B = (window as unknown as { bootstrap?: { Modal: { getOrCreateInstance: (n: HTMLElement) => { show: () => void } } } }).bootstrap;
+      if (el && B) B.Modal.getOrCreateInstance(el).show();
+    }, 0);
+  };
 
   const filteredData = applySort(
     applyDateFilter(allBookings, dateFilter).filter((b) => {
@@ -62,13 +75,6 @@ export const UserBookingInprogress = () => {
       );
     }),
     sortMode
-  );
-
-  const checkbox = () => (
-    <label className="custom_check w-100">
-      <input type="checkbox" name="username" />
-      <span className="checkmark" />
-    </label>
   );
 
   const BookingId = (res: any) => (
@@ -133,6 +139,18 @@ export const UserBookingInprogress = () => {
         >
           <i className="feather icon-eye" /> View
         </Link>
+        {canExtendInProgressBooking(res.originalData) ? (
+          <Link
+            className="dropdown-item"
+            to="#"
+            onClick={(e) => {
+              e.preventDefault();
+              openExtendModal(res.originalData);
+            }}
+          >
+            <i className="feather icon-clock" /> Extend
+          </Link>
+        ) : null}
       </div>
     </div>
   );
@@ -280,18 +298,14 @@ export const UserBookingInprogress = () => {
                 </div>
                 <div className="card-body">
                   {loading ? (
-                    <p className="text-center py-4">Loading in-progress bookings...</p>
+                    <BookingTableSkeleton pickupHeader="Pickup / Delivery Location" />
                   ) : (
                     <div className="table-responsive dashboard-table">
                       <DataTable
                         className="table datatable"
                         value={filteredData}
-                        paginator
-                        rows={10}
-                        rowsPerPageOptions={[10, 25, 50]}
                         emptyMessage="No in-progress bookings found."
                       >
-                        <Column body={checkbox} header={checkbox} />
                         <Column
                           field="bookingId"
                           header="Booking ID"
@@ -339,6 +353,12 @@ export const UserBookingInprogress = () => {
         booking={selectedBooking}
         userInfo={userInfo}
         modalId="inprogress_detail_modal"
+      />
+      <ExtendBookingModal
+        booking={extendBooking}
+        userInfo={userInfo}
+        onSuccess={fetchBookings}
+        onClose={() => setExtendBooking(null)}
       />
     </>
   );

@@ -19,16 +19,12 @@ import { setBookingCar } from "../booking/checkoutSlice";
 
 import {
   type AvailabilityBlock,
-  type DayCalendarStatus,
   classifyDayCalendarStatus,
 } from "../../utils/bookingAvailability";
-
-const CALENDAR_STYLES: Record<DayCalendarStatus, { bg: string; color: string }> = {
-  available: { bg: "#e8f5e9", color: "#1b5e20" },
-  unavailable_booked: { bg: "#c62828", color: "#fff" },
-  unavailable_blocked: { bg: "#e65100", color: "#fff" },
-  unavailable_buffer: { bg: "#ffab91", color: "#4e342e" },
-};
+import {
+  BOOKING_CALENDAR_CELL_STYLES,
+  BookingCalendarLegend,
+} from "./booking-calendar-legend";
 
 function MiniBookingCalendar({ blocks }: { blocks: AvailabilityBlock[] }) {
   const [cursor, setCursor] = useState(() => {
@@ -45,24 +41,32 @@ function MiniBookingCalendar({ blocks }: { blocks: AvailabilityBlock[] }) {
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   const weekdayLabels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const now = new Date();
+  const isToday = (day: number) =>
+    day === now.getDate() &&
+    m === now.getMonth() &&
+    y === now.getFullYear();
 
   return (
-    <div className="mini-booking-calendar border rounded p-3 mb-3 bg-light">
-      <div className="d-flex justify-content-between align-items-center mb-2">
+    <div className="avail-cal">
+      <div className="avail-cal__head">
         <button
           type="button"
-          className="btn btn-sm btn-outline-secondary"
+          className="avail-cal__nav"
           onClick={() => setCursor(new Date(y, m - 1, 1))}
           aria-label="Previous month"
         >
           ‹
         </button>
-        <span className="fw-semibold small">
-          {cursor.toLocaleString(undefined, { month: "long", year: "numeric" })}
-        </span>
+        <div className="avail-cal__title-wrap">
+          <span className="avail-cal__title">
+            {cursor.toLocaleString(undefined, { month: "long", year: "numeric" })}
+          </span>
+          <span className="avail-cal__title-accent" aria-hidden />
+        </div>
         <button
           type="button"
-          className="btn btn-sm btn-outline-secondary"
+          className="avail-cal__nav"
           onClick={() => setCursor(new Date(y, m + 1, 1))}
           aria-label="Next month"
         >
@@ -70,53 +74,45 @@ function MiniBookingCalendar({ blocks }: { blocks: AvailabilityBlock[] }) {
         </button>
       </div>
 
-      <div
-        className="d-grid gap-1 mb-2"
-        style={{
-          gridTemplateColumns: "repeat(7, 1fr)",
-          fontSize: "11px",
-        }}
-      >
-        {weekdayLabels.map((w) => (
-          <div key={w} className="text-center text-muted fw-semibold py-1">
-            {w}
-          </div>
-        ))}
-        {cells.map((day, idx) => {
-          if (day === null) {
-            return <div key={`e-${idx}`} />;
-          }
-          const cellDate = new Date(y, m, day);
-          const status = classifyDayCalendarStatus(cellDate, blocks);
-          const st = CALENDAR_STYLES[status];
-          const ariaHint =
-            status === "available"
-              ? "available"
-              : status === "unavailable_booked"
-                ? "unavailable, booked"
-                : status === "unavailable_blocked"
-                  ? "unavailable, blocked"
-                  : "unavailable, buffer";
-          return (
-            <div
-              key={day}
-              className="text-center rounded py-1 border"
-              style={{
-                background: st.bg,
-                color: st.color,
-                minHeight: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 600,
-                fontSize: "13px",
-              }}
-              aria-label={`${day}, ${ariaHint}`}
-            >
-              {day}
+      <div className="avail-cal__body">
+        <div className="avail-cal__grid">
+          {weekdayLabels.map((w) => (
+            <div key={w} className="avail-cal__weekday">
+              {w}
             </div>
-          );
-        })}
+          ))}
+          {cells.map((day, idx) => {
+            if (day === null) {
+              return <div key={`e-${idx}`} />;
+            }
+            const cellDate = new Date(y, m, day);
+            const status = classifyDayCalendarStatus(cellDate, blocks);
+            const st = BOOKING_CALENDAR_CELL_STYLES[status];
+            const ariaHint =
+              status === "available"
+                ? "available"
+                : status === "unavailable_booked"
+                  ? "unavailable, booked"
+                  : status === "unavailable_blocked"
+                    ? "unavailable, blocked"
+                    : "unavailable, buffer";
+            const today = isToday(day);
+            return (
+              <div
+                key={day}
+                className={`avail-cal__day${today ? " avail-cal__day--today" : ""}`}
+                style={{
+                  background: st.bg,
+                  color: st.color,
+                }}
+                aria-label={`${day}, ${ariaHint}${today ? ", today" : ""}`}
+              >
+                {day}
+              </div>
+            );
+          })}
+        </div>
+        <BookingCalendarLegend embedded className="mt-3 pt-3" />
       </div>
     </div>
   );

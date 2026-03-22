@@ -376,26 +376,41 @@ const EditCar = () => {
                 <li
                   className={`nav-item ${currentStep === 1 ? "active" : currentStep > 1 ? "activated" : ""}`}
                 >
-                  <Link to="#" className="nav-link d-flex align-items-center">
+                  <button
+                    type="button"
+                    className="nav-link d-flex align-items-center car-step-tab"
+                    onClick={() => setCurrentStep(1)}
+                    aria-current={currentStep === 1 ? "step" : undefined}
+                  >
                     <i className="ti ti-info-circle me-1" />
                     Basic
-                  </Link>
+                  </button>
                 </li>
                 <li
                   className={`nav-item ${currentStep === 2 ? "active" : currentStep > 2 ? "activated" : ""}`}
                 >
-                  <Link to="#" className="nav-link d-flex align-items-center">
+                  <button
+                    type="button"
+                    className="nav-link d-flex align-items-center car-step-tab"
+                    onClick={() => setCurrentStep(2)}
+                    aria-current={currentStep === 2 ? "step" : undefined}
+                  >
                     <i className="ti ti-flame me-1" />
                     Features
-                  </Link>
+                  </button>
                 </li>
                 <li
                   className={`nav-item ${currentStep === 3 ? "active" : currentStep > 3 ? "activated" : ""}`}
                 >
-                  <Link to="#" className="nav-link d-flex align-items-center">
+                  <button
+                    type="button"
+                    className="nav-link d-flex align-items-center car-step-tab"
+                    onClick={() => setCurrentStep(3)}
+                    aria-current={currentStep === 3 ? "step" : undefined}
+                  >
                     <i className="ti ti-file-invoice me-1" />
                     Uploads
-                  </Link>
+                  </button>
                 </li>
               </ul>
 

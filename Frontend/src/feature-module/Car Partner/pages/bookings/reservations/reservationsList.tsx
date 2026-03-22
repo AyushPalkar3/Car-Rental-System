@@ -416,6 +416,7 @@ const ReservationsList = () => {
             dataSource={filteredData}
             columns={columns}
             searchValue={searchValue}
+            showRowSelection={false}
           />
         )}
       </div>

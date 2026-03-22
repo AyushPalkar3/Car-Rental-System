@@ -295,10 +295,70 @@ export const updateAdminCar = async (req, res) => {
       data.documents = parseJsonField(req.body.replaceDocuments, existing.documents);
     }
 
-    const car = await prisma.car.update({
-      where: { id: req.params.id },
-      data,
-      include: { pricing: true, seasonalPricing: true },
+    const carId = req.params.id;
+
+    const car = await prisma.$transaction(async (tx) => {
+      await tx.car.update({
+        where: { id: carId },
+        data,
+      });
+
+      // Base pricing: upsert by (carId, duration) so existing Pricing rows / booking FKs stay valid
+      const pricingPayload = parseJsonField(req.body.pricing, null);
+      if (Array.isArray(pricingPayload)) {
+        for (const p of pricingPayload) {
+          if (!p?.duration) continue;
+          if (p.price === "" || p.price == null) continue;
+          const price = Math.round(Number(p.price));
+          if (!Number.isFinite(price)) continue;
+          const row = await tx.pricing.findFirst({
+            where: { carId, duration: p.duration },
+          });
+          if (row) {
+            await tx.pricing.update({
+              where: { id: row.id },
+              data: { price },
+            });
+          } else {
+            await tx.pricing.create({
+              data: { carId, duration: p.duration, price },
+            });
+          }
+        }
+      }
+
+      // Seasonal pricing: replace set when client sends seasonalPricing (same as create semantics)
+      if (
+        req.body.seasonalPricing !== undefined &&
+        req.body.seasonalPricing !== null &&
+        String(req.body.seasonalPricing).trim() !== ""
+      ) {
+        const seasonalPayload = parseJsonField(req.body.seasonalPricing, []);
+        if (Array.isArray(seasonalPayload)) {
+          await tx.seasonalPricing.deleteMany({ where: { carId } });
+          for (const s of seasonalPayload) {
+            if (!s?.name || !s?.startDate || !s?.endDate) continue;
+            await tx.seasonalPricing.create({
+              data: {
+                carId,
+                name: s.name,
+                startDate: new Date(s.startDate),
+                endDate: new Date(s.endDate),
+                hourPrice: s.hourPrice != null && s.hourPrice !== "" ? parseFloat(String(s.hourPrice)) : null,
+                dayPrice: s.dayPrice != null && s.dayPrice !== "" ? parseFloat(String(s.dayPrice)) : null,
+                weekPrice: s.weekPrice != null && s.weekPrice !== "" ? parseFloat(String(s.weekPrice)) : null,
+                monthPrice: s.monthPrice != null && s.monthPrice !== "" ? parseFloat(String(s.monthPrice)) : null,
+                isActive: true,
+              },
+            });
+          }
+        }
+      }
+
+      return tx.car.findUnique({
+        where: { id: carId },
+        include: { pricing: true, seasonalPricing: true },
+      });
     });
 
     res.status(200).json({ message: "Car updated", data: car });

@@ -112,6 +112,108 @@ export const updateBookingStatus = async (req, res) => {
   }
 };
 
+/**
+ * Extend an in-progress (CONFIRMED) booking's return time.
+ * If other customers' active bookings on the same car overlap the new window, they are cancelled (extension wins).
+ */
+export const extendBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, returnDate, endDate } = req.body;
+    const finalUserId = userId || req.user?.id;
+    const newEndRaw = returnDate ?? endDate;
+
+    if (!finalUserId) {
+      return res.status(400).json({ message: "userId is required." });
+    }
+    if (!newEndRaw) {
+      return res.status(400).json({ message: "returnDate is required." });
+    }
+
+    const newReturnDate = new Date(newEndRaw);
+    if (Number.isNaN(newReturnDate.getTime())) {
+      return res.status(400).json({ message: "returnDate must be a valid date." });
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        userId: true,
+        carId: true,
+        pickupDate: true,
+        returnDate: true,
+        status: true,
+      },
+    });
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+    if (booking.userId !== finalUserId) {
+      return res.status(403).json({ message: "You can only extend your own booking." });
+    }
+    if (booking.status !== "CONFIRMED") {
+      return res.status(400).json({
+        message: "Only in-progress (confirmed) bookings can be extended.",
+      });
+    }
+
+    const pickup = new Date(booking.pickupDate);
+    const currentReturn = new Date(booking.returnDate);
+
+    if (newReturnDate.getTime() <= currentReturn.getTime()) {
+      return res.status(400).json({
+        message: "New return time must be after the current return time.",
+      });
+    }
+    if (newReturnDate.getTime() <= pickup.getTime()) {
+      return res.status(400).json({
+        message: "Return time must be after pickup time.",
+      });
+    }
+
+    const conflicts = await prisma.booking.findMany({
+      where: {
+        carId: booking.carId,
+        userId: { not: booking.userId },
+        id: { not: booking.id },
+        status: { in: ["PENDING", "CONFIRMED"] },
+        pickupDate: { lt: newReturnDate },
+        returnDate: { gt: pickup },
+      },
+      select: { id: true },
+    });
+
+    const conflictIds = conflicts.map((c) => c.id);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (conflictIds.length > 0) {
+        await tx.booking.updateMany({
+          where: { id: { in: conflictIds } },
+          data: { status: "CANCELLED" },
+        });
+      }
+      return tx.booking.update({
+        where: { id: booking.id },
+        data: { returnDate: newReturnDate },
+        include: { car: true, pricing: true },
+      });
+    });
+
+    res.json({
+      booking: updated,
+      cancelledBookingIds: conflictIds,
+      message:
+        conflictIds.length > 0
+          ? `Booking extended. ${conflictIds.length} conflicting booking(s) were cancelled.`
+          : "Booking extended successfully.",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;

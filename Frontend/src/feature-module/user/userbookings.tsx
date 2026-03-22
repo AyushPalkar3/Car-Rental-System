@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Aos from "aos";
 import Breadcrumbs from "../common/breadcrumbs";
 import DashboardMenu from "./common/dashboard-menu";
@@ -15,6 +15,8 @@ import {
   applyDateFilter,
   applySort,
   BookingModal,
+  ExtendBookingModal,
+  BookingTableSkeleton,
 } from "./common/bookingUtils";
 
 const UserBookings = () => {
@@ -22,31 +24,44 @@ const UserBookings = () => {
   const userInfo = useSelector((state: any) => state.user.userInfo);
   const [allBookings, setAllBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [extendBooking, setExtendBooking] = useState<any>(null);
   const [searchInput, setSearchInput] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [sortMode, setSortMode] = useState("desc");
   const [loading, setLoading] = useState(false);
 
+  const fetchBookings = useCallback(async () => {
+    try {
+      const userId = userInfo?.user?.id || userInfo?.id;
+      if (!userId) return;
+      setLoading(true);
+      const res = await axios.get(
+        `http://localhost:4000/api/bookings/user/${userId}`,
+        { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+      );
+      setAllBookings(res.data.map(formatBooking));
+    } catch (e) {
+      console.error("Failed to fetch bookings:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [userInfo]);
+
   useEffect(() => {
     Aos.init({ duration: 1200, once: true });
-    const fetchBookings = async () => {
-      try {
-        const userId = userInfo?.user?.id || userInfo?.id;
-        if (!userId) return;
-        setLoading(true);
-        const res = await axios.get(
-          `http://localhost:4000/api/bookings/user/${userId}`,
-          { headers: { Authorization: `Bearer ${getAccessToken()}` } }
-        );
-        setAllBookings(res.data.map(formatBooking));
-      } catch (e) {
-        console.error("Failed to fetch bookings:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchBookings();
-  }, [userInfo]);
+  }, [fetchBookings]);
+
+  const openExtendModal = (raw: any) => {
+    setExtendBooking(raw);
+    setTimeout(() => {
+      const el = document.getElementById("extend_booking_modal");
+      const B = (window as unknown as {
+        bootstrap?: { Modal: { getOrCreateInstance: (n: HTMLElement) => { show: () => void } } };
+      }).bootstrap;
+      if (el && B) B.Modal.getOrCreateInstance(el).show();
+    }, 0);
+  };
 
   const filteredData = applySort(
     applyDateFilter(allBookings, dateFilter).filter((b) => {
@@ -59,13 +74,6 @@ const UserBookings = () => {
       );
     }),
     sortMode
-  );
-
-  const checkbox = () => (
-    <label className="custom_check w-100">
-      <input type="checkbox" name="username" />
-      <span className="checkmark" />
-    </label>
   );
 
   const BookingId = (res: any) => (
@@ -142,6 +150,18 @@ const UserBookings = () => {
         >
           <i className="feather icon-eye" /> View
         </Link>
+        {res.originalData?.status === "CONFIRMED" ? (
+          <Link
+            className="dropdown-item"
+            to="#"
+            onClick={(e) => {
+              e.preventDefault();
+              openExtendModal(res.originalData);
+            }}
+          >
+            <i className="feather icon-clock" /> Extend
+          </Link>
+        ) : null}
       </div>
     </div>
   );
@@ -173,7 +193,6 @@ const UserBookings = () => {
           <div className="content-header">
             <h4>My Bookings</h4>
           </div>
-          {/* Sort & Filter Bar */}
           <div className="row">
             <div className="col-lg-12">
               <div className="sorting-info">
@@ -181,11 +200,23 @@ const UserBookings = () => {
                   <div className="col-xl-7 col-lg-8 col-sm-12 col-12">
                     <div className="booking-lists">
                       <ul className="nav">
-                        <li><Link className="active" to={routes.userBookings}>All Bookings</Link></li>
-                        <li><Link to={routes.userBookingUpcoming}>Upcoming</Link></li>
-                        <li><Link to={routes.userBookingInprogress}>Inprogress</Link></li>
-                        <li><Link to={routes.userBookingComplete}>Completed</Link></li>
-                        <li><Link to={routes.userBookingCancelled}>Cancelled</Link></li>
+                        <li>
+                          <Link className="active" to={routes.userBookings}>
+                            All Bookings
+                          </Link>
+                        </li>
+                        <li>
+                          <Link to={routes.userBookingUpcoming}>Upcoming</Link>
+                        </li>
+                        <li>
+                          <Link to={routes.userBookingInprogress}>Inprogress</Link>
+                        </li>
+                        <li>
+                          <Link to={routes.userBookingComplete}>Completed</Link>
+                        </li>
+                        <li>
+                          <Link to={routes.userBookingCancelled}>Cancelled</Link>
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -197,8 +228,19 @@ const UserBookings = () => {
                             {dateLabel} <i className="fas fa-chevron-down" />
                           </Link>
                           <div className="dropdown-menu dropdown-menu-end">
-                            {[["all","All Time"],["week","This Week"],["month","This Month"],["30days","Last 30 Days"]].map(([val,label]) => (
-                              <button key={val} className="dropdown-item" onClick={() => setDateFilter(val)}>{label}</button>
+                            {[
+                              ["all", "All Time"],
+                              ["week", "This Week"],
+                              ["month", "This Month"],
+                              ["30days", "Last 30 Days"],
+                            ].map(([val, label]) => (
+                              <button
+                                key={val}
+                                className="dropdown-item"
+                                onClick={() => setDateFilter(val)}
+                              >
+                                {label}
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -209,8 +251,18 @@ const UserBookings = () => {
                             {sortLabel} <i className="fas fa-chevron-down" />
                           </Link>
                           <div className="dropdown-menu dropdown-menu-end">
-                            {[["desc","Sort By Relevance"],["asc","Sort By Ascending"],["alpha","Sort By Alphabet"]].map(([val,label]) => (
-                              <button key={val} className="dropdown-item" onClick={() => setSortMode(val)}>{label}</button>
+                            {[
+                              ["desc", "Sort By Relevance"],
+                              ["asc", "Sort By Ascending"],
+                              ["alpha", "Sort By Alphabet"],
+                            ].map(([val, label]) => (
+                              <button
+                                key={val}
+                                className="dropdown-item"
+                                onClick={() => setSortMode(val)}
+                              >
+                                {label}
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -228,7 +280,9 @@ const UserBookings = () => {
                 <div className="card-header">
                   <div className="row align-items-center">
                     <div className="col-md-5">
-                      <h4>All Bookings <span>{filteredData.length}</span></h4>
+                      <h4>
+                        All Bookings <span>{filteredData.length}</span>
+                      </h4>
                     </div>
                     <div className="col-md-7 text-md-end">
                       <div className="table-search">
@@ -252,22 +306,22 @@ const UserBookings = () => {
                 </div>
                 <div className="card-body">
                   {loading ? (
-                    <p className="text-center py-4">Loading bookings...</p>
+                    <BookingTableSkeleton />
                   ) : (
                     <div className="table-responsive dashboard-table">
                       <DataTable
                         className="table datatable"
                         value={filteredData}
-                        paginator
-                        rows={10}
-                        rowsPerPageOptions={[10, 25, 50]}
                         emptyMessage="No bookings found."
                       >
-                        <Column body={checkbox} header={checkbox} />
                         <Column field="bookingId" header="Booking ID" body={BookingId} />
                         <Column field="carName" header="Car Name" body={carName} />
                         <Column field="rentalType" header="Rental Type" />
-                        <Column field="deliveryStatus" header="Pickup / Delivery" body={delivery} />
+                        <Column
+                          field="deliveryStatus"
+                          header="Pickup / Delivery"
+                          body={delivery}
+                        />
                         <Column field="location" header="Dropoff Location" body={location} />
                         <Column field="bookedOn" header="Booked On" />
                         <Column field="total" header="Total" />
@@ -284,6 +338,12 @@ const UserBookings = () => {
       </div>
 
       <BookingModal booking={selectedBooking} userInfo={userInfo} modalId="booking_detail_modal" />
+      <ExtendBookingModal
+        booking={extendBooking}
+        userInfo={userInfo}
+        onSuccess={fetchBookings}
+        onClose={() => setExtendBooking(null)}
+      />
     </>
   );
 };

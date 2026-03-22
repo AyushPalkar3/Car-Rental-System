@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 // Shared utility for formatting booking data from backend for DataTable
 export const getAccessToken = (): string => {
   const value = `; ${document.cookie}`;
@@ -39,6 +42,10 @@ export const formatBooking = (booking: any) => ({
       : "Completed",
 });
 
+/** Backend + UI treat CONFIRMED as in-progress; only those may be extended. */
+export const canExtendInProgressBooking = (booking: any) =>
+  booking?.status === "CONFIRMED";
+
 export const applyDateFilter = (bookings: any[], dateFilter: string) => {
   const now = new Date();
   return bookings.filter((b) => {
@@ -68,6 +75,232 @@ export const applySort = (bookings: any[], sort: string) => {
   if (sort === "desc") return arr.sort((a, b) => b.bookedOnRaw - a.bookedOnRaw);
   if (sort === "alpha") return arr.sort((a, b) => a.carName.localeCompare(b.carName));
   return arr; // relevance = default (newest first)
+};
+
+/** Bootstrap placeholder “skeleton” rows matching user booking DataTables. */
+export const BookingTableSkeleton = ({
+  rows = 8,
+  pickupHeader = "Pickup / Delivery",
+}: {
+  rows?: number;
+  pickupHeader?: string;
+}) => {
+  const keys = Array.from({ length: rows }, (_, i) => i);
+  const bar = (w: string, h = 14) => (
+    <span
+      className="placeholder d-block rounded"
+      style={{ width: w, height: h }}
+    />
+  );
+  return (
+    <div className="table-responsive dashboard-table">
+      <table className="table datatable mb-0">
+        <thead>
+          <tr>
+            <th>Booking ID</th>
+            <th>Car Name</th>
+            <th>Rental Type</th>
+            <th>{pickupHeader}</th>
+            <th>Dropoff Location</th>
+            <th>Booked On</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {keys.map((k) => (
+            <tr key={k} className="placeholder-glow">
+              <td className="align-middle">{bar("5.5rem")}</td>
+              <td className="align-middle">
+                <div className="d-flex align-items-center gap-2">
+                  <span
+                    className="placeholder rounded-circle flex-shrink-0"
+                    style={{ width: 42, height: 42 }}
+                  />
+                  <div className="flex-grow-1" style={{ minWidth: 120 }}>
+                    {bar("100%", 14)}
+                  </div>
+                </div>
+              </td>
+              <td className="align-middle">{bar("3rem")}</td>
+              <td className="align-middle">
+                {bar("11rem", 12)}
+                <span className="d-block mt-2">{bar("8rem", 12)}</span>
+              </td>
+              <td className="align-middle">
+                {bar("11rem", 12)}
+                <span className="d-block mt-2">{bar("8rem", 12)}</span>
+              </td>
+              <td className="align-middle">{bar("9rem", 12)}</td>
+              <td className="align-middle">{bar("3.5rem")}</td>
+              <td className="align-middle">
+                <span
+                  className="placeholder rounded-pill d-inline-block"
+                  style={{ width: 88, height: 22 }}
+                />
+              </td>
+              <td className="align-middle">
+                <span
+                  className="placeholder rounded d-inline-block"
+                  style={{ width: 22, height: 22 }}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const toDatetimeLocalValue = (iso: string | Date) => {
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+};
+
+export const ExtendBookingModal = ({
+  booking,
+  userInfo,
+  modalId = "extend_booking_modal",
+  onSuccess,
+  onClose,
+}: {
+  booking: any | null;
+  userInfo: any;
+  modalId?: string;
+  onSuccess?: () => void;
+  onClose?: () => void;
+}) => {
+  const [endInput, setEndInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!booking) return;
+    setEndInput(toDatetimeLocalValue(booking.returnDate));
+    setError("");
+  }, [booking]);
+
+  useEffect(() => {
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    const onHidden = () => {
+      onClose?.();
+    };
+    el.addEventListener("hidden.bs.modal", onHidden);
+    return () => el.removeEventListener("hidden.bs.modal", onHidden);
+  }, [modalId, onClose]);
+
+  if (!booking) return null;
+
+  const userId = userInfo?.user?.id || userInfo?.id;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!userId) {
+      setError("You must be logged in.");
+      return;
+    }
+    const newEnd = new Date(endInput);
+    if (Number.isNaN(newEnd.getTime())) {
+      setError("Please choose a valid end date and time.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await axios.patch(
+        `http://localhost:4000/api/bookings/${booking.id}/extend`,
+        { userId, returnDate: newEnd.toISOString() },
+        { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+      );
+      const modalEl = document.getElementById(modalId);
+      const B = (window as unknown as { bootstrap?: { Modal: { getInstance: (n: HTMLElement) => { hide: () => void } | null } } }).bootstrap;
+      if (modalEl && B) B.Modal.getInstance(modalEl)?.hide();
+      onSuccess?.();
+      const cancelled = res.data?.cancelledBookingIds?.length ?? 0;
+      if (cancelled > 0 && res.data?.message) {
+        window.alert(res.data.message);
+      }
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg =
+        ax.response?.data?.message || ax.message || "Extension failed.";
+      setError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="modal new-modal multi-step fade"
+      id={modalId}
+      tabIndex={-1}
+      data-keyboard="false"
+      data-backdrop="static"
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header border-0 pb-0">
+            <h5 className="modal-title">Extend booking</h5>
+            <button type="button" className="close-btn" data-bs-dismiss="modal">
+              <span>×</span>
+            </button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="modal-body">
+              <div className="mb-3">
+                <label className="form-label">Pickup (start)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  readOnly
+                  value={new Date(booking.pickupDate).toLocaleString()}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Drop-off (end)</label>
+                <input
+                  type="datetime-local"
+                  className="form-control"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  required
+                />
+              </div>
+              {error ? (
+                <p className="text-danger small mb-0" role="alert">
+                  {error}
+                </p>
+              ) : null}
+            </div>
+            <div className="modal-footer border-0 pt-0">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={submitting}
+              >
+                {submitting ? "Saving…" : "Save extension"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export const BookingModal = ({

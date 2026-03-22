@@ -683,6 +683,7 @@ const ReservationsList = () => {
           dataSource={data}
           columns={columns}
           searchValue={searchValue}
+          showRowSelection={false}
         />
       </div>
       <div className="modal fade" id="delete_modal">

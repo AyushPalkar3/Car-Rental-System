@@ -1011,6 +1011,10 @@ ul.slick-dots li button:before {
 }
 .antd-custom-table {
   position: relative;
+  // Horizontal scroll here so inner wrappers can stay overflow:visible (Bootstrap dropdowns in cells)
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
   &.custom-table {
     border: none;
   }
@@ -1020,7 +1024,7 @@ ul.slick-dots li button:before {
     right: 0;
   }
   .ant-table-wrapper {
-    overflow: hidden;
+    overflow: visible;
     font-family: "Albert Sans", serif;
     .ant-table-tbody > tr > td {
       padding: 10px 20px;
@@ -1036,7 +1040,23 @@ ul.slick-dots li button:before {
   .ant-table {
     border-radius: 10px;
     border: 1px solid #e7e7e7;
-    overflow-x: auto;
+    overflow: visible;
+  }
+  // Ant Design nested wrappers can still clip; allow menus to escape
+  .ant-spin-nested-loading,
+  .ant-spin-container,
+  .ant-table-container,
+  .ant-table-content,
+  .ant-table-body {
+    overflow: visible !important;
+  }
+  .dropdown-menu {
+    z-index: 1060;
+  }
+  // Lift row while Bootstrap dropdown is open so the menu paints above following rows
+  .ant-table-tbody > tr:has(.dropdown.show) {
+    position: relative;
+    z-index: 5;
   }
   .input-icon-addon {
     top: 20px;

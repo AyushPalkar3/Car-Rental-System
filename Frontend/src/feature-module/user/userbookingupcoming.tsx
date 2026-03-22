@@ -15,6 +15,7 @@ import {
   applyDateFilter,
   applySort,
   BookingModal,
+  BookingTableSkeleton,
 } from "./common/bookingUtils";
 
 const UserBookingUpcoming = () => {
@@ -62,13 +63,6 @@ const UserBookingUpcoming = () => {
       );
     }),
     sortMode
-  );
-
-  const checkbox = () => (
-    <label className="custom_check w-100">
-      <input type="checkbox" name="username" />
-      <span className="checkmark" />
-    </label>
   );
 
   const BookingId = (res: any) => (
@@ -276,18 +270,14 @@ const UserBookingUpcoming = () => {
                 </div>
                 <div className="card-body">
                   {loading ? (
-                    <p className="text-center py-4">Loading upcoming bookings...</p>
+                    <BookingTableSkeleton pickupHeader="Pickup / Delivery Location" />
                   ) : (
                     <div className="table-responsive dashboard-table">
                       <DataTable
                         className="table datatable"
                         value={filteredData}
-                        paginator
-                        rows={10}
-                        rowsPerPageOptions={[10, 25, 50]}
                         emptyMessage="No upcoming bookings found."
                       >
-                        <Column body={checkbox} header={checkbox} />
                         <Column
                           field="bookingId"
                           header="Booking ID"

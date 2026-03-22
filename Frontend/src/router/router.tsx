@@ -15,7 +15,6 @@ import {
   carPartnerRoutes,
   carPartnerSettingsRoute,
 } from "./router.link";
-<HomeNew/>
 
 import { Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { useDispatch,useSelector } from "react-redux";

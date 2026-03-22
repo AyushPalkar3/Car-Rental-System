@@ -15,6 +15,7 @@ import {
   applyDateFilter,
   applySort,
   BookingModal,
+  BookingTableSkeleton,
 } from "./common/bookingUtils";
 
 const UserBookingUpcoming = () => {
@@ -58,10 +59,6 @@ const UserBookingUpcoming = () => {
       return b.bookingId.toLowerCase().includes(q) || b.carName.toLowerCase().includes(q);
     }),
     sortMode
-  );
-
-  const checkbox = () => (
-    <label className="custom_check w-100"><input type="checkbox" name="username" /><span className="checkmark" /></label>
   );
 
   const BookingId = (res: any) => (
@@ -170,10 +167,11 @@ const UserBookingUpcoming = () => {
                   </div>
                 </div>
                 <div className="card-body">
-                  {loading ? <p className="text-center py-4">Loading...</p> : (
+                  {loading ? (
+                    <BookingTableSkeleton />
+                  ) : (
                     <div className="table-responsive dashboard-table">
-                      <DataTable className="table datatable" value={filteredData} paginator rows={10} rowsPerPageOptions={[10,25,50]} emptyMessage="No upcoming bookings.">
-                        <Column body={checkbox} header={checkbox} />
+                      <DataTable className="table datatable" value={filteredData} emptyMessage="No upcoming bookings.">
                         <Column field="bookingId" header="Booking ID" body={BookingId} />
                         <Column field="carName" header="Car Name" body={carName} />
                         <Column field="rentalType" header="Rental Type" />

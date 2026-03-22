@@ -18,6 +18,7 @@ import { carAPI, type CarListSearchParams } from "../../api/user/car.api";
 import { BOOKING_BUFFER_HOURS } from "../../utils/bookingAvailability";
 import { carfilterData } from "./carFilter";
 import { FaCogs, FaRoad, FaGasPump, FaBolt, FaCalendarAlt, FaUsers } from "react-icons/fa";
+import { BookingCalendarLegend } from "./booking-calendar-legend";
 
 
 const ListingGrid = () => {
@@ -507,6 +508,16 @@ const ListingGrid = () => {
                 ? " “Booked” means another reservation (or approved downtime) overlaps your range including that buffer."
                 : " Run Search with dates and times to see which cars are free for that window."}
             </p>
+            <div className="mt-4 px-1 pb-1">
+              <p
+                className="small mb-3"
+                style={{ maxWidth: "42rem", color: "#495057", lineHeight: 1.5 }}
+              >
+                On each car’s detail page, the availability calendar uses the colors
+                below.
+              </p>
+              <BookingCalendarLegend showKeyHeading />
+            </div>
           </div>
         </div>
       </div>

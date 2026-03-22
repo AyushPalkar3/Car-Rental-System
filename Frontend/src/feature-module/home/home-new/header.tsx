@@ -155,7 +155,7 @@ const NewHeader = () => {
                 {/* Dropdown */}
                 <ul className="dropdown-menu dropdown-menu-end shadow">
                   <li>
-                    <Link className="dropdown-item" to="/">
+                    <Link className="dropdown-item" to={all_routes.userDashboard}>
                       <i className="bx bx-grid-alt me-2"></i>
                       Dashboard
                     </Link>

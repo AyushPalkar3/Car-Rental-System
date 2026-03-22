@@ -22,10 +22,182 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelled",
 };
 
+const DashboardSkeleton = () => (
+  <>
+    <div className="row">
+      <div className="col-xl-8 d-flex flex-column">
+        <div className="card flex-fill">
+          <div className="card-body">
+            <div className="row align-items-center row-gap-3">
+              <div className="col-sm-7 placeholder-glow">
+                <span className="placeholder col-8 mb-3 d-block rounded" style={{ height: 28 }} />
+                <span className="placeholder col-6 mb-3 d-block rounded" style={{ height: 16 }} />
+                <div className="d-flex align-items-center flex-wrap gap-4 mb-3">
+                  <div>
+                    <span className="placeholder col-12 mb-2 d-block rounded" style={{ height: 14 }} />
+                    <span className="placeholder col-3 rounded" style={{ height: 34 }} />
+                  </div>
+                  <div className="flex-grow-1">
+                    <span className="placeholder col-10 mb-2 d-block rounded" style={{ height: 14 }} />
+                    <span className="placeholder col-10 d-block rounded" style={{ height: 14 }} />
+                  </div>
+                </div>
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  <span className="placeholder rounded" style={{ width: 140, height: 40 }} />
+                  <span className="placeholder rounded" style={{ width: 140, height: 40 }} />
+                </div>
+              </div>
+              <div className="col-sm-5 placeholder-glow">
+                <span className="placeholder w-100 rounded" style={{ height: 180, minHeight: 120 }} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="row">
+          {[1, 2, 3].map((key) => (
+            <div key={key} className="col-md-4 d-flex">
+              <div className="card flex-fill">
+                <div className="card-body pb-1">
+                  <div className="border-bottom mb-0 pb-2 placeholder-glow">
+                    <span className="placeholder col-9 rounded" style={{ height: 22 }} />
+                  </div>
+                  <div className="d-flex align-items-center justify-content-between gap-2">
+                    <div className="py-2 flex-grow-1 placeholder-glow">
+                      <span className="placeholder col-5 mb-2 d-block rounded" style={{ height: 26 }} />
+                      <span className="placeholder col-7 d-block rounded" style={{ height: 14 }} />
+                    </div>
+                    <div className="placeholder-glow flex-shrink-0">
+                      <span className="placeholder rounded" style={{ width: 60, height: 45 }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="col-xl-4 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body">
+            <div className="placeholder-glow mb-3">
+              <span className="placeholder col-7 rounded" style={{ height: 22 }} />
+            </div>
+            <div className="placeholder-glow mb-3">
+              <span className="placeholder w-100 rounded" style={{ height: 180 }} />
+            </div>
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 placeholder-glow">
+              <div className="flex-grow-1">
+                <span className="placeholder col-11 mb-2 d-block rounded" style={{ height: 12 }} />
+                <span className="placeholder col-6 rounded" style={{ height: 18 }} />
+              </div>
+              <span className="placeholder rounded" style={{ width: 88, height: 26 }} />
+            </div>
+            <span className="placeholder w-100 rounded placeholder-glow d-block" style={{ height: 42 }} />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-xl-12 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body pb-1">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 placeholder-glow">
+              <span className="placeholder col-4 col-sm-3 rounded" style={{ height: 22 }} />
+              <span className="placeholder col-2 rounded" style={{ height: 18 }} />
+            </div>
+            <div className="table-responsive">
+              <table className="table custom-table1">
+                <tbody>
+                  {[1, 2, 3, 4].map((key) => (
+                    <tr key={key}>
+                      <td>
+                        <div className="d-flex align-items-center placeholder-glow">
+                          <span className="placeholder rounded-circle flex-shrink-0 me-2" style={{ width: 48, height: 48 }} />
+                          <div className="w-100" style={{ maxWidth: 220 }}>
+                            <span className="placeholder col-12 mb-2 d-block rounded" style={{ height: 12 }} />
+                            <span className="placeholder col-8 rounded" style={{ height: 16 }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="placeholder-glow">
+                          <span className="placeholder col-12 mb-2 d-block rounded" style={{ height: 14 }} />
+                          <span className="placeholder col-5 rounded" style={{ height: 12 }} />
+                        </div>
+                      </td>
+                      <td>
+                        <div className="placeholder-glow">
+                          <span className="placeholder col-8 mb-2 d-block rounded" style={{ height: 14 }} />
+                          <span className="placeholder col-10 rounded" style={{ height: 24 }} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-xl-4 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body pb-1">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 placeholder-glow">
+              <span className="placeholder col-3 rounded" style={{ height: 22 }} />
+              <span className="placeholder col-2 rounded" style={{ height: 18 }} />
+            </div>
+            <div className="table-responsive">
+              <table className="table custom-table1">
+                <tbody>
+                  {[1, 2, 3].map((key) => (
+                    <tr key={key}>
+                      <td>
+                        <div className="d-flex align-items-center placeholder-glow">
+                          <span className="placeholder rounded flex-shrink-0 me-2" style={{ width: 40, height: 40 }} />
+                          <div>
+                            <span className="placeholder col-10 mb-2 d-block rounded" style={{ height: 14 }} />
+                            <span className="placeholder col-5 rounded" style={{ height: 12 }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-end">
+                        <div className="placeholder-glow d-inline-block text-end" style={{ minWidth: 72 }}>
+                          <span className="placeholder col-12 mb-2 d-block rounded ms-auto" style={{ height: 12 }} />
+                          <span className="placeholder col-8 rounded ms-auto d-block" style={{ height: 16 }} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="col-xl-8 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body pb-0">
+            <div className="placeholder-glow mb-3">
+              <span className="placeholder col-3 rounded" style={{ height: 22 }} />
+            </div>
+            <div className="placeholder-glow mb-3">
+              <span className="placeholder col-5 rounded" style={{ height: 48 }} />
+            </div>
+            <span className="placeholder w-100 rounded placeholder-glow d-block" style={{ height: 290 }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  </>
+);
+
 const CarPartnerDashboard = () => {
   const token = Cookies.get("carPartnerAccessToken");
 
   const [dashData, setDashData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   const [reservationChart] = useState<any>({
     series: [{ name: "Net Profit", data: [9, 4, 7, 7, 4, 9, 8] }],
@@ -92,7 +264,11 @@ const CarPartnerDashboard = () => {
 
   useEffect(() => {
     const fetchDashboard = async () => {
-      if (!token) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
       try {
         const res = await axios.get(`${API_BASE}/api/car-partner/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -113,6 +289,8 @@ const CarPartnerDashboard = () => {
         }
       } catch (err) {
         console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchDashboard();
@@ -143,6 +321,10 @@ const CarPartnerDashboard = () => {
         </div>
       </div>
       {/* /Breadcrumb */}
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+      <>
       <div className="row">
         <div className="col-xl-8 d-flex flex-column">
           {/* Welcome Wrap */}
@@ -538,6 +720,8 @@ const CarPartnerDashboard = () => {
         </div>
         {/* /Income */}
       </div>
+      </>
+      )}
     </div>
   );
 };

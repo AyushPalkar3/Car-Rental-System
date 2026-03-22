@@ -250,10 +250,17 @@ const EditCar = () => {
             fd.append("isVerified", isVerified ? "true" : "false");
 
             const pricing: Array<{ duration: string; price: number }> = [];
-            if (hourPrice)  pricing.push({ duration: "HOUR",  price: Number(hourPrice) });
-            if (dayPrice)   pricing.push({ duration: "DAY",   price: Number(dayPrice) });
-            if (weekPrice)  pricing.push({ duration: "WEEK",  price: Number(weekPrice) });
-            if (monthPrice) pricing.push({ duration: "MONTH", price: Number(monthPrice) });
+            const pushRate = (raw: string, duration: string) => {
+                const t = String(raw ?? "").trim();
+                if (t === "") return;
+                const n = Number(t);
+                if (Number.isNaN(n)) return;
+                pricing.push({ duration, price: n });
+            };
+            pushRate(hourPrice, "HOUR");
+            pushRate(dayPrice, "DAY");
+            pushRate(weekPrice, "WEEK");
+            pushRate(monthPrice, "MONTH");
             if (pricing.length) fd.append("pricing", JSON.stringify(pricing));
 
             if (seasonalPricings.length) {
@@ -302,7 +309,7 @@ const EditCar = () => {
     const handlePrev = () => setCurrentStep(s => s - 1);
 
     return (
-        <div className="content me-0">
+        <div className="content me-0 edit-car-page">
             <div className="mb-3">
                 <Link to={all_routes.adminCarsList} className="d-inline-flex align-items-center fw-medium">
                     <i className="ti ti-arrow-left me-1" />Back to List
@@ -326,9 +333,14 @@ const EditCar = () => {
                                     { step: 4, icon: "ti-file-invoice",label: "Uploads" },
                                 ].map(({ step, icon, label }) => (
                                     <li key={step} className={`nav-item ${currentStep === step ? "active" : currentStep > step ? "activated" : ""}`}>
-                                        <Link to="#" className="nav-link d-flex align-items-center">
+                                        <button
+                                            type="button"
+                                            className="nav-link d-flex align-items-center car-step-tab"
+                                            onClick={() => setCurrentStep(step)}
+                                            aria-current={currentStep === step ? "step" : undefined}
+                                        >
                                             <i className={`ti ${icon} me-1`} />{label}
-                                        </Link>
+                                        </button>
                                     </li>
                                 ))}
                             </ul>
@@ -523,11 +535,11 @@ const EditCar = () => {
                                         </div>
                                     </div>
 
-                                    <div className="d-flex align-items-center justify-content-end pt-3">
+                                    <div className="d-flex align-items-center justify-content-end flex-wrap gap-2 pt-3 edit-car-actions">
                                         <Link to={all_routes.adminCarsList} className="btn btn-light d-flex align-items-center me-2">
                                             <i className="ti ti-chevron-left me-1" />Cancel
                                         </Link>
-                                        <button className="btn btn-primary d-flex align-items-center" type="button" onClick={handleNext}>
+                                        <button className="btn btn-primary d-flex align-items-center" type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNext(); }}>
                                             Add Features <i className="ti ti-chevron-right ms-1" />
                                         </button>
                                     </div>
@@ -569,11 +581,11 @@ const EditCar = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="d-flex align-items-center justify-content-end pt-3">
+                                    <div className="d-flex align-items-center justify-content-end flex-wrap gap-2 pt-3 edit-car-actions">
                                         <button type="button" className="btn btn-outline-light border me-2" onClick={handlePrev}>
                                             <i className="ti ti-chevron-left me-1" />Back
                                         </button>
-                                        <button type="button" className="btn btn-primary d-flex align-items-center" onClick={handleNext}>
+                                        <button type="button" className="btn btn-primary d-flex align-items-center" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNext(); }}>
                                             Add Pricing <i className="ti ti-chevron-right ms-1" />
                                         </button>
                                     </div>
@@ -680,11 +692,11 @@ const EditCar = () => {
                                         </div>
                                     </div>
 
-                                    <div className="d-flex align-items-center justify-content-end pt-3">
+                                    <div className="d-flex align-items-center justify-content-end flex-wrap gap-2 pt-3 edit-car-actions">
                                         <button type="button" className="btn btn-outline-light border me-2" onClick={handlePrev}>
                                             <i className="ti ti-chevron-left me-1" />Back
                                         </button>
-                                        <button type="button" className="btn btn-primary d-flex align-items-center" onClick={handleNext}>
+                                        <button type="button" className="btn btn-primary d-flex align-items-center" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNext(); }}>
                                             Add Uploads <i className="ti ti-chevron-right ms-1" />
                                         </button>
                                     </div>
@@ -823,11 +835,17 @@ const EditCar = () => {
                                         </div>
                                     </div>
 
-                                    <div className="d-flex align-items-center justify-content-end pt-3">
+                                    <div className="d-flex align-items-center justify-content-end flex-wrap gap-2 pt-3 edit-car-actions">
                                         <button type="button" className="btn btn-outline-light border me-2" onClick={handlePrev}>
                                             <i className="ti ti-chevron-left me-1" />Back
                                         </button>
-                                        <button type="button" className="btn btn-primary d-flex align-items-center" onClick={handleNext} disabled={isSubmitting}>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary d-flex align-items-center"
+                                            style={{ touchAction: "manipulation" }}
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNext(); }}
+                                            disabled={isSubmitting}
+                                        >
                                             {isSubmitting
                                                 ? <><span className="spinner-border spinner-border-sm me-2" />Updating...</>
                                                 : <>Update Car <i className="ti ti-check ms-1" /></>
