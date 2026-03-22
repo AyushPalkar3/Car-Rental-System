@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Breadcrumbs from "../common/breadcrumbs";
 import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -13,10 +13,8 @@ import { TimePicker } from "antd";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { carAPI } from "../../api/user/car.api";
-import { bookingAPI } from "../../api/user/booking.api";
 import { useDispatch } from "react-redux";
 import { setBookingCar } from "../booking/checkoutSlice";
-
 import {
   type AvailabilityBlock,
   classifyDayCalendarStatus,
@@ -25,6 +23,10 @@ import {
   BOOKING_CALENDAR_CELL_STYLES,
   BookingCalendarLegend,
 } from "./booking-calendar-legend";
+import { RelatedCarsSlider } from "./relatedCarsSlider";
+
+const CAR_IMAGE_BASE =
+  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
 
 function MiniBookingCalendar({ blocks }: { blocks: AvailabilityBlock[] }) {
   const [cursor, setCursor] = useState(() => {
@@ -130,9 +132,12 @@ const listingDetails = () => {
   const [date2, setDate2] = useState<any>();
   const [date3, setDate3] = useState<any>();
   const [car, setCar] = useState<any>(null);
-  const [isLoading, setLoading] = useState(false)
+  const [isLoading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [relatedCars, setRelatedCars] = useState<any[]>([]);
   const [priceId, setPriceId] = useState();
   const dispatch:any = useDispatch();
+  const requestedCarIdRef = useRef<string | undefined>(undefined);
 
   
   
@@ -148,19 +153,25 @@ const listingDetails = () => {
 
 
 
-  const fetchCar = async (id: any) => {
+  const fetchCar = async (carId: string) => {
+    setFetchError(null);
+    setCar(null);
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await carAPI.getCar(id);
+      const res = await carAPI.getCar(carId);
+      if (requestedCarIdRef.current !== carId) return;
       setCar(res.data);
+    } catch (error) {
+      console.error(error);
+      if (requestedCarIdRef.current !== carId) return;
+      setCar(null);
+      setFetchError("We couldn’t load this car. It may have been removed or the link is invalid.");
+    } finally {
+      if (requestedCarIdRef.current === carId) {
+        setLoading(false);
+      }
     }
-    catch (error) {
-      console.log(error)
-    }
-    finally {
-      setLoading(false);
-    }
-  }
+  };
 
 
   const onBooking = async () => {
@@ -176,20 +187,44 @@ const listingDetails = () => {
 
 
 
+  useLayoutEffect(() => {
+    if (!id) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id]);
+
   useEffect(() => {
     if (!id) return;
-    console.log(id)
-    fetchCar(id)
-  }, [id])
+    requestedCarIdRef.current = id;
+    void fetchCar(id);
+  }, [id]);
 
-  const [selectedItems, setSelectedItems] = useState(Array(10).fill(false));
-  const handleItemClick = (index: number) => {
-    setSelectedItems((prevSelectedItems) => {
-      const updatedSelectedItems = [...prevSelectedItems];
-      updatedSelectedItems[index] = !updatedSelectedItems[index];
-      return updatedSelectedItems;
-    });
-  };
+  useEffect(() => {
+    if (!car?.id) {
+      setRelatedCars([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await carAPI.getAllCars();
+        const list: any[] = res.data?.data ?? [];
+        const others = list.filter((row) => row.id !== car.id);
+        const score = (row: any) => {
+          let s = 0;
+          if (car.category && row.category === car.category) s += 3;
+          if (car.brand && row.brand === car.brand) s += 2;
+          return s;
+        };
+        others.sort((a, b) => score(b) - score(a));
+        if (!cancelled) setRelatedCars(others.slice(0, 12));
+      } catch {
+        if (!cancelled) setRelatedCars([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [car?.id, car?.category, car?.brand]);
 
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -293,6 +328,54 @@ const listingDetails = () => {
 
   };
 
+  const galleryImages = Array.isArray(car?.images) ? car.images : [];
+
+  if (!id) {
+    return (
+      <div className="main-wrapper">
+        <div className="breadcrumb-bar" />
+        <div className="container py-5">
+          <p className="text-muted mb-3">Missing car id in the URL.</p>
+          <Link to={all_routes.listingGrid} className="btn btn-primary">
+            Back to listings
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading && !car) {
+    return (
+      <div className="main-wrapper">
+        <div className="breadcrumb-bar" />
+        <div
+          className="container py-5 d-flex flex-column align-items-center justify-content-center gap-3"
+          style={{ minHeight: "52vh" }}
+        >
+          <div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }}>
+            <span className="visually-hidden">Loading vehicle…</span>
+          </div>
+          <p className="text-muted mb-0">Loading vehicle…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError && !isLoading) {
+    return (
+      <div className="main-wrapper">
+        <div className="breadcrumb-bar" />
+        <div className="container py-5">
+          <div className="alert alert-warning" role="alert">
+            {fetchError}
+          </div>
+          <Link to={all_routes.listingGrid} className="btn btn-primary">
+            Back to listings
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="main-wrapper">
@@ -320,7 +403,7 @@ const listingDetails = () => {
                     <li>
                       <span className="year">2023</span>
                     </li>
-                    <li className="ratings">
+                    {/* <li className="ratings">
                       <i className="fas fa-star filled" />
                       <i className="fas fa-star filled" />
                       <i className="fas fa-star filled" />
@@ -329,7 +412,7 @@ const listingDetails = () => {
                       <span className="d-inline-block average-list-rating">
                         (5.0)
                       </span>
-                    </li>
+                    </li> */}
                   </ul>
                   <div className="camaro-info">
                     <h3>Tata Nexon</h3>
@@ -350,13 +433,12 @@ const listingDetails = () => {
                   </div>
                 </div>
               </div>
-              <div className="details-btn">
+              {/* <div className="details-btn">
                 <span className="total-badge">
                   <i className="bx bx-calendar-edit" />
                   Total Booking : 300
                 </span>
-
-              </div>
+              </div> */}
             </div>
           </div>
         </section>
@@ -418,11 +500,30 @@ const listingDetails = () => {
 
                 <div className="slider detail-bigimg">
                   <Slider {...settings1}>
-                    {car && car.images.map((element: any) => {
-                      return <div className="product-img">
-                        <img src={`http://localhost:4000${element}`} alt="Slider" />
+                    {isLoading ? (
+                      <div
+                        key="gallery-loading"
+                        className="product-img d-flex align-items-center justify-content-center bg-light"
+                        style={{ minHeight: 360 }}
+                      >
+                        <div className="spinner-border text-primary" role="status">
+                          <span className="visually-hidden">Loading…</span>
+                        </div>
                       </div>
-                    })}
+                    ) : galleryImages.length > 0 ? (
+                      galleryImages.map((element: string, idx: number) => (
+                        <div key={idx} className="product-img">
+                          <img src={`${CAR_IMAGE_BASE}${element}`} alt="" />
+                        </div>
+                      ))
+                    ) : (
+                      <div key="gallery-fallback" className="product-img">
+                        <ImageWithBasePath
+                          src="assets/img/cars/slider-01.jpg"
+                          alt="Car"
+                        />
+                      </div>
+                    )}
                     {/* <div className="product-img">
                     <ImageWithBasePath src="assets/img/cars/slider-01.jpg" alt="Slider" />
                     </div>
@@ -442,14 +543,33 @@ const listingDetails = () => {
                 </div>
                 <div className="slider slider-nav-thumbnails">
                   <Slider {...settings2}>
-                    {car && car.images.map((element: any) => {
-                      return <div>
-                        <img
-                          src={`http://localhost:4000${element}`}
-                          alt="product image"
+                    {isLoading ? (
+                      <div
+                        key="th-loading"
+                        className="d-flex align-items-center justify-content-center p-3"
+                        style={{ minHeight: 80 }}
+                      >
+                        <div className="spinner-border spinner-border-sm text-secondary" role="status">
+                          <span className="visually-hidden">Loading…</span>
+                        </div>
+                      </div>
+                    ) : galleryImages.length > 0 ? (
+                      galleryImages.map((element: string, idx: number) => (
+                        <div key={idx}>
+                          <img
+                            src={`${CAR_IMAGE_BASE}${element}`}
+                            alt=""
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <div key="th-fallback">
+                        <ImageWithBasePath
+                          src="assets/img/cars/slider-thum-01.jpg"
+                          alt=""
                         />
                       </div>
-                    })}
+                    )}
                     {/* <div>
                     <ImageWithBasePath
                         src="assets/img/cars/slider-thum-01.jpg"
@@ -1012,7 +1132,8 @@ const listingDetails = () => {
                   </div>
                 </div>
                 {/* /Policies */}
-                {/* Reviews */}
+                {/* Reviews section — disabled in UI; set to `true` to show again */}
+                {false && (
                 <div className="review-sec listing-review">
                   <div className="review-header">
                     <h4>Reviews</h4>
@@ -1260,8 +1381,9 @@ const listingDetails = () => {
                     </ul>
                   </div>
                 </div>
-                {/* /Reviews */}
-                {/* Leave a Reply */}
+                )}
+                {/* Leave a Reply — disabled in UI; set to `true` to show again */}
+                {false && (
                 <div className="review-sec leave-reply-form mb-0">
                   <div className="review-header">
                     <h4>Leave a Reply</h4>
@@ -1453,7 +1575,7 @@ const listingDetails = () => {
                     </div>
                   </div>
                 </div>
-                {/* /Leave a Reply */}
+                )}
               </>
             </div>
             <div className="col-lg-4 theiaStickySidebar">
@@ -1881,756 +2003,21 @@ const listingDetails = () => {
               </div>
             </div>
           </div>
+          {relatedCars.length > 0 ? (
           <div className="row">
             <div className="col-md-12">
               <div className="details-car-grid">
                 <div className="details-slider-heading">
                   <h3>You May be Interested in</h3>
                 </div>
-                <div className="rental-deal-slider details-car owl-carousel">
-                  <Slider {...settings}>
-                    <div className="rental-car-item">
-                      <div className="listing-item pb-0">
-                        <div className="listing-img">
-                          <Link to={routes.listingDetails}>
-                            <ImageWithBasePath
-                              src="assets/img/cars/car-03.jpg"
-                              className="img-fluid"
-                              alt="Audi"
-                            />
-                          </Link>
-                          <div
-                            className="fav-item justify-content-end"
-                            key={2}
-                            onClick={() => handleItemClick(2)}
-                          >
-                            <Link
-                              to="#"
-                              className={`fav-icon ${selectedItems[2] ? "selected" : ""
-                                }`}
-                            >
-                              <i className="feather icon-heart" />
-                            </Link>
-                          </div>
-                          <span className="featured-text">Audi</span>
-                        </div>
-                        <div className="listing-content">
-                          <div className="listing-features d-flex align-items-end justify-content-between">
-                            <div className="list-rating">
-                              <Link
-                                to="#"
-                                className="author-img"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-03.jpg"
-                                  alt="author"
-                                />
-                              </Link>
-                              <h3 className="listing-title">
-                                <Link to={routes.listingDetails}>
-                                  Audi A3 2019 new
-                                </Link>
-                              </h3>
-                              <div className="list-rating">
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star" />
-                                <span>(4.0) 150 Reviews</span>
-                              </div>
-                            </div>
-                            <div className="list-km">
-                              <span className="km-count">
-                                <ImageWithBasePath
-                                  src="assets/img/icons/map-pin.svg"
-                                  alt="author"
-                                />
-                                3.5m
-                              </span>
-                            </div>
-                          </div>
-                          <div className="listing-details-group">
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="Manual"
-                                  />
-                                </span>
-                                <p>Manual</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-02.svg"
-                                    alt="10 KM"
-                                  />
-                                </span>
-                                <p>10 KM</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-03.svg"
-                                    alt="Petrol"
-                                  />
-                                </span>
-                                <p>Petrol</p>
-                              </li>
-                            </ul>
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-04.svg"
-                                    alt="Power"
-                                  />
-                                </span>
-                                <p>Power</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="Icons"
-                                  />
-                                </span>
-                                <p>2019</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-06.svg"
-                                    alt="Persons"
-                                  />
-                                </span>
-                                <p>4 Persons</p>
-                              </li>
-                            </ul>
-                          </div>
-                          <div className="listing-location-details">
-                            <div className="listing-price">
-                              <span>
-                                <i className="feather-map-pin" />
-                              </span>
-                              Newyork, USA
-                            </div>
-                            <div className="listing-price">
-                              <h6>
-                                ₹45 <span>/ Day</span>
-                              </h6>
-                            </div>
-                          </div>
-                          <div className="listing-button">
-                            <Link
-                              to={routes.listingDetails}
-                              className="btn btn-order"
-                            >
-                              <span>
-                                <i className="feather-calendar me-2" />
-                              </span>
-                              Rent Now
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rental-car-item">
-                      <div className="listing-item pb-0">
-                        <Link to={routes.listingDetails}>
-                          <ImageWithBasePath
-                            src="assets/img/cars/car-01.jpg"
-                            className="img-fluid"
-                            alt="Toyota"
-                          />
-                        </Link>
-                        <div className="listing-content">
-                          <div className="listing-features d-flex align-items-end justify-content-between">
-                            <div className="list-rating">
-                              <Link
-                                to="#"
-                                className="author-img"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-04.jpg"
-                                  alt="author"
-                                />
-                              </Link>
-                              <h3 className="listing-title">
-                                <Link to={routes.listingDetails}>
-                                  Toyota Camry SE 350
-                                </Link>
-                              </h3>
-                              <div className="list-rating">
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star" />
-                                <span>(4.0) 138 Reviews</span>
-                              </div>
-                            </div>
-                            <div className="list-km">
-                              <span className="km-count">
-                                <ImageWithBasePath
-                                  src="assets/img/icons/map-pin.svg"
-                                  alt="author"
-                                />
-                                3.2m
-                              </span>
-                            </div>
-                          </div>
-                          <div className="listing-details-group">
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-01.svg"
-                                    alt="Auto"
-                                  />
-                                </span>
-                                <p>Auto</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-02.svg"
-                                    alt="10 KM"
-                                  />
-                                </span>
-                                <p>10 KM</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-03.svg"
-                                    alt="Petrol"
-                                  />
-                                </span>
-                                <p>Petrol</p>
-                              </li>
-                            </ul>
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-04.svg"
-                                    alt="Power"
-                                  />
-                                </span>
-                                <p>Power</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="{2018}"
-                                  />
-                                </span>
-                                <p>2018</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-06.svg"
-                                    alt="Persons"
-                                  />
-                                </span>
-                                <p>5 Persons</p>
-                              </li>
-                            </ul>
-                          </div>
-                          <div className="listing-location-details">
-                            <div className="listing-price">
-                              <span>
-                                <i className="feather-map-pin" />
-                              </span>
-                              Washington
-                            </div>
-                            <div className="listing-price">
-                              <h6>
-                                ₹160 <span>/ Day</span>
-                              </h6>
-                            </div>
-                          </div>
-                          <div className="listing-button">
-                            <Link
-                              to={routes.listingDetails}
-                              className="btn btn-order"
-                            >
-                              <span>
-                                <i className="feather-calendar me-2" />
-                              </span>
-                              Rent Now
-                            </Link>
-                          </div>
-                        </div>
-                        <div className="feature-text">
-                          <span className="bg-danger">Featured</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rental-car-item">
-                      <div className="listing-item pb-0">
-                        <div className="listing-img">
-                          <Link to={routes.listingDetails}>
-                            <ImageWithBasePath
-                              src="assets/img/cars/car-04.jpg"
-                              className="img-fluid"
-                              alt="Audi"
-                            />
-                          </Link>
-                          <div
-                            className="fav-item justify-content-end"
-                            key={3}
-                            onClick={() => handleItemClick(3)}
-                          >
-                            <Link
-                              to="#"
-                              className={`fav-icon ${selectedItems[3] ? "selected" : ""
-                                }`}
-                            >
-                              <i className="feather icon-heart" />
-                            </Link>
-                          </div>
-                          <span className="featured-text">Ferrai</span>
-                        </div>
-                        <div className="listing-content">
-                          <div className="listing-features d-flex align-items-end justify-content-between">
-                            <div className="list-rating">
-                              <Link
-                                to="#"
-                                className="author-img"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-04.jpg"
-                                  alt="author"
-                                />
-                              </Link>
-                              <h3 className="listing-title">
-                                <Link to={routes.listingDetails}>
-                                  Ferrari 458 MM Speciale
-                                </Link>
-                              </h3>
-                              <div className="list-rating">
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star" />
-                                <span>(4.0) 160 Reviews</span>
-                              </div>
-                            </div>
-                            <div className="list-km">
-                              <span className="km-count">
-                                <ImageWithBasePath
-                                  src="assets/img/icons/map-pin.svg"
-                                  alt="author"
-                                />
-                                3.5m
-                              </span>
-                            </div>
-                          </div>
-                          <div className="listing-details-group">
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="Manual"
-                                  />
-                                </span>
-                                <p>Manual</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-02.svg"
-                                    alt="14 KM"
-                                  />
-                                </span>
-                                <p>14 KM</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-03.svg"
-                                    alt="Diesel"
-                                  />
-                                </span>
-                                <p>Diesel</p>
-                              </li>
-                            </ul>
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-04.svg"
-                                    alt="Basic"
-                                  />
-                                </span>
-                                <p>Basic</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="{2022}"
-                                  />
-                                </span>
-                                <p>2022</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-06.svg"
-                                    alt="Persons"
-                                  />
-                                </span>
-                                <p>5 Persons</p>
-                              </li>
-                            </ul>
-                          </div>
-                          <div className="listing-location-details">
-                            <div className="listing-price">
-                              <span>
-                                <i className="feather-map-pin" />
-                              </span>
-                              Newyork, USA
-                            </div>
-                            <div className="listing-price">
-                              <h6>
-                                ₹160 <span>/ Day</span>
-                              </h6>
-                            </div>
-                          </div>
-                          <div className="listing-button">
-                            <Link
-                              to={routes.listingDetails}
-                              className="btn btn-order"
-                            >
-                              <span>
-                                <i className="feather-calendar me-2" />
-                              </span>
-                              Rent Now
-                            </Link>
-                          </div>
-                        </div>
-                        <div className="feature-text">
-                          <span className="bg-danger">Featured</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rental-car-item">
-                      <div className="listing-item pb-0">
-                        <div className="listing-img">
-                          <Link to={routes.listingDetails}>
-                            <ImageWithBasePath
-                              src="assets/img/cars/car-05.jpg"
-                              className="img-fluid"
-                              alt="Audi"
-                            />
-                          </Link>
-                          <div
-                            className="fav-item justify-content-end"
-                            key={4}
-                            onClick={() => handleItemClick(4)}
-                          >
-                            <Link
-                              to="#"
-                              className={`fav-icon ${selectedItems[4] ? "selected" : ""
-                                }`}
-                            >
-                              <i className="feather icon-heart" />
-                            </Link>
-                          </div>
-                          <span className="featured-text">Chevrolet</span>
-                        </div>
-                        <div className="listing-content">
-                          <div className="listing-features d-flex align-items-end justify-content-between">
-                            <div className="list-rating">
-                              <Link
-                                to="#"
-                                className="author-img"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-05.jpg"
-                                  alt="author"
-                                />
-                              </Link>
-                              <h3 className="listing-title">
-                                <Link to={routes.listingDetails}>
-                                  2018 Chevrolet Camaro
-                                </Link>
-                              </h3>
-                              <div className="list-rating">
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <span>(5.0) 200 Reviews</span>
-                              </div>
-                            </div>
-                            <div className="list-km">
-                              <span className="km-count">
-                                <ImageWithBasePath
-                                  src="assets/img/icons/map-pin.svg"
-                                  alt="author"
-                                />
-                                4.5m
-                              </span>
-                            </div>
-                          </div>
-                          <div className="listing-details-group">
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="Manual"
-                                  />
-                                </span>
-                                <p>Manual</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-02.svg"
-                                    alt="18 KM"
-                                  />
-                                </span>
-                                <p>18 KM</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-03.svg"
-                                    alt="Diesel"
-                                  />
-                                </span>
-                                <p>Diesel</p>
-                              </li>
-                            </ul>
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-04.svg"
-                                    alt="Power"
-                                  />
-                                </span>
-                                <p>Power</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="{2018}"
-                                  />
-                                </span>
-                                <p>2018</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-06.svg"
-                                    alt="Persons"
-                                  />
-                                </span>
-                                <p>4 Persons</p>
-                              </li>
-                            </ul>
-                          </div>
-                          <div className="listing-location-details">
-                            <div className="listing-price">
-                              <span>
-                                <i className="feather-map-pin" />
-                              </span>
-                              Germany
-                            </div>
-                            <div className="listing-price">
-                              <h6>
-                                ₹36 <span>/ Day</span>
-                              </h6>
-                            </div>
-                          </div>
-                          <div className="listing-button">
-                            <Link
-                              to={routes.listingDetails}
-                              className="btn btn-order"
-                            >
-                              <span>
-                                <i className="feather-calendar me-2" />
-                              </span>
-                              Rent Now
-                            </Link>
-                          </div>
-                        </div>
-                        <div className="feature-text">
-                          <span className="bg-warning">Top Rated</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rental-car-item">
-                      <div className="listing-item">
-                        <div className="listing-img">
-                          <Link to={routes.listingDetails}>
-                            <ImageWithBasePath
-                              src="assets/img/cars/car-06.jpg"
-                              className="img-fluid"
-                              alt="Audi"
-                            />
-                          </Link>
-                          <div
-                            className="fav-item justify-content-end"
-                            key={5}
-                            onClick={() => handleItemClick(5)}
-                          >
-                            <Link
-                              to="#"
-                              className={`fav-icon ${selectedItems[5] ? "selected" : ""
-                                }`}
-                            >
-                              <i className="feather icon-heart" />
-                            </Link>
-                          </div>
-                          <span className="featured-text">Acura</span>
-                        </div>
-                        <div className="listing-content">
-                          <div className="listing-features d-flex align-items-end justify-content-between">
-                            <div className="list-rating">
-                              <Link
-                                to="#"
-                                className="author-img"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-06.jpg"
-                                  alt="author"
-                                />
-                              </Link>
-                              <h3 className="listing-title">
-                                <Link to={routes.listingDetails}>
-                                  Acura Sport Version
-                                </Link>
-                              </h3>
-                              <div className="list-rating">
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star filled" />
-                                <i className="fas fa-star" />
-                                <span>(4.0) 125 Reviews</span>
-                              </div>
-                            </div>
-                            <div className="list-km">
-                              <span className="km-count">
-                                <ImageWithBasePath
-                                  src="assets/img/icons/map-pin.svg"
-                                  alt="author"
-                                />
-                                3.2m
-                              </span>
-                            </div>
-                          </div>
-                          <div className="listing-details-group">
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-01.svg"
-                                    alt="Auto"
-                                  />
-                                </span>
-                                <p>Auto</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-02.svg"
-                                    alt="12 KM"
-                                  />
-                                </span>
-                                <p>12 KM</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-03.svg"
-                                    alt="Diesel"
-                                  />
-                                </span>
-                                <p>Diesel</p>
-                              </li>
-                            </ul>
-                            <ul>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-04.svg"
-                                    alt="Power"
-                                  />
-                                </span>
-                                <p>Power</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-05.svg"
-                                    alt="{2013}"
-                                  />
-                                </span>
-                                <p>2013</p>
-                              </li>
-                              <li>
-                                <span>
-                                  <ImageWithBasePath
-                                    src="assets/img/icons/car-parts-06.svg"
-                                    alt="Persons"
-                                  />
-                                </span>
-                                <p>5 Persons</p>
-                              </li>
-                            </ul>
-                          </div>
-                          <div className="listing-location-details">
-                            <div className="listing-price">
-                              <span>
-                                <i className="feather-map-pin" />
-                              </span>
-                              Newyork, USA
-                            </div>
-                            <div className="listing-price">
-                              <h6>
-                                ₹30 <span>/ Day</span>
-                              </h6>
-                            </div>
-                          </div>
-                          <div className="listing-button">
-                            <Link
-                              to={routes.listingDetails}
-                              className="btn btn-order"
-                            >
-                              <span>
-                                <i className="feather-calendar me-2" />
-                              </span>
-                              Rent Now
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Slider>
-                </div>
+                <RelatedCarsSlider
+                  cars={relatedCars}
+                  sliderSettings={settings}
+                />
               </div>
             </div>
           </div>
+          ) : null}
         </div>
       </section>
 

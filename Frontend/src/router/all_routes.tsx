@@ -299,3 +299,7 @@ export const all_routes = {
   databaseBackup: "/admin/other-settings/database-backup",
   systemUpdate: "/admin/other-settings/insurance",
 };
+
+/** Use for <Link to={…}> — `listingDetails` alone is a route pattern, not a real URL. */
+export const listingDetailsPath = (id: string | number) =>
+  `/listings/listing-details/${encodeURIComponent(String(id))}`;

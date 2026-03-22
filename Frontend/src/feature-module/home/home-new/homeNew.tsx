@@ -4,7 +4,7 @@ import NewFooter from './footer'
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Link } from 'react-router-dom';
-import { all_routes } from '../../../router/all_routes';
+import { all_routes, listingDetailsPath } from '../../../router/all_routes';
 import { Dropdown } from "primereact/dropdown";
 import { DatePicker } from "antd";
 import Slider from "react-slick";
@@ -461,7 +461,7 @@ const HomeNew = () => {
                 <div className="col-lg-4 col-md-6" key={car.id}>
                   <div className="listing-item listing-item-two">
                     <div className="listing-img">
-                      <Link to={all_routes.listingDetails}>
+                      <Link to={listingDetailsPath(car.id)}>
                         <ImageWithBasePath
                           src={car.image}
                           className="img-fluid"
@@ -489,7 +489,7 @@ const HomeNew = () => {
                       <div className="listing-features d-flex align-items-center justify-content-between">
                         <div className="list-rating">
                           <h3 className="listing-title">
-                            <Link to={all_routes.listingDetails}>
+                            <Link to={listingDetailsPath(car.id)}>
                               {car.description}
                             </Link>
                           </h3>

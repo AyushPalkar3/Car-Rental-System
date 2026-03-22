@@ -3,7 +3,7 @@ import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import Breadcrumbs from "../common/breadcrumbs";
 import { Dropdown } from "primereact/dropdown";
 import { Link, useNavigate } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes, listingDetailsPath } from "../../router/all_routes";
 import { userAPI } from "../../api/user/user.api";
 import { useDispatch, useSelector } from "react-redux";
 import { setBookingDetails } from "./checkoutSlice";
@@ -504,7 +504,15 @@ const BookingDetail = () => {
                               <div className="care-more-info">
                                 <h5>{checkoutData?.car?.name}</h5>
                                 <p>{checkoutData?.deliveryLocation}</p>
-                                <Link to={routes.listingDetails}>View Car Details</Link>
+                                <Link
+                                  to={
+                                    checkoutData?.car?.id != null
+                                      ? listingDetailsPath(checkoutData.car.id)
+                                      : routes.listingGrid
+                                  }
+                                >
+                                  View Car Details
+                                </Link>
                               </div>
                             </div>
                             <div className="booking-vehicle-rates">

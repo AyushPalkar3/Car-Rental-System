@@ -7,7 +7,7 @@ export const BOOKING_CALENDAR_CELL_STYLES: Record<
 > = {
   available: { bg: "#e8f5e9", color: "#1b5e20" },
   unavailable_booked: { bg: "#c62828", color: "#fff" },
-  unavailable_blocked: { bg: "#e65100", color: "#fff" },
+  unavailable_blocked: { bg: "#f97316", color: "#fff" },
   unavailable_buffer: { bg: "#ffab91", color: "#4e342e" },
 };
 

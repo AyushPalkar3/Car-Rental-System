@@ -5,7 +5,7 @@ import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
 import { TimePicker } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes, listingDetailsPath } from "../../router/all_routes";
 
 import { useDispatch, useSelector } from "react-redux";
 import { setBookingDetails } from "./checkoutSlice";
@@ -553,7 +553,11 @@ const BookingCheckout = () => {
 
                     <div className="booking-info-btns d-flex justify-content-end">
                       <Link
-                        to={routes.listingDetails}
+                        to={
+                          bookingData?.car?.id != null
+                            ? listingDetailsPath(bookingData.car.id)
+                            : routes.listingGrid
+                        }
                         className="btn btn-secondary"
                       >
                         Back to Car details
@@ -591,7 +595,15 @@ const BookingCheckout = () => {
                               <div className="care-more-info">
                                 <h5>{bookingData?.car?.name}</h5>
 
-                                <Link to={routes.listingDetails}>View Car Details</Link>
+                                <Link
+                                  to={
+                                    bookingData?.car?.id != null
+                                      ? listingDetailsPath(bookingData.car.id)
+                                      : routes.listingGrid
+                                  }
+                                >
+                                  View Car Details
+                                </Link>
                               </div>
                             </div>
                             <div className="booking-vehicle-rates">

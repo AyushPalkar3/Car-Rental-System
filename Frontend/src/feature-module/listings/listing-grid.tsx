@@ -13,12 +13,12 @@ import "rc-slider/assets/index.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
-import { all_routes } from "../../router/all_routes";
+import { all_routes, listingDetailsPath } from "../../router/all_routes";
 import { carAPI, type CarListSearchParams } from "../../api/user/car.api";
 import { BOOKING_BUFFER_HOURS } from "../../utils/bookingAvailability";
+import { getCarDayRate } from "../../utils/carPricing";
 import { carfilterData } from "./carFilter";
 import { FaCogs, FaRoad, FaGasPump, FaBolt, FaCalendarAlt, FaUsers } from "react-icons/fa";
-import { BookingCalendarLegend } from "./booking-calendar-legend";
 
 
 const ListingGrid = () => {
@@ -508,16 +508,6 @@ const ListingGrid = () => {
                 ? " “Booked” means another reservation (or approved downtime) overlaps your range including that buffer."
                 : " Run Search with dates and times to see which cars are free for that window."}
             </p>
-            <div className="mt-4 px-1 pb-1">
-              <p
-                className="small mb-3"
-                style={{ maxWidth: "42rem", color: "#495057", lineHeight: 1.5 }}
-              >
-                On each car’s detail page, the availability calendar uses the colors
-                below.
-              </p>
-              <BookingCalendarLegend showKeyHeading />
-            </div>
           </div>
         </div>
       </div>
@@ -779,16 +769,17 @@ const ListingGrid = () => {
 
               : <div className="col-lg-9">
                 <div className="row">
-                  {paginatedCars?.map((car: any) => (
+                  {paginatedCars?.map((car: any) => {
+                    const dayRate = getCarDayRate(car.pricing);
+                    return (
                     <div key={car.id} className="col-xxl-4 col-lg-6 col-md-6 col-12">
                       <div className="listing-item">
                         <div className="listing-img">
                           <div className="img-slider listing-page-slider">
                             <Slider {...car.sliderSettings}>
                               {car.images.map((img: any, index: any) => (
-
                                 <div key={index} className="slide-images">
-                                  <Link to={routes.listingDetails}>
+                                  <Link to={listingDetailsPath(car.id)}>
                                     <img
                                       src={`${import.meta.env.VITE_API_BASE_URL_IMAGE}${img}`}
                                       className="img-fluid"
@@ -823,7 +814,7 @@ const ListingGrid = () => {
                           <div className="listing-features d-flex align-items-end justify-content-between">
                             <div className="list-rating">
                               <h3 className="listing-title">
-                                <Link to={routes.listingDetails}>{car.name}</Link>
+                                <Link to={listingDetailsPath(car.id)}>{car.name}</Link>
                               </h3>
 
                               {/* <div className="list-rating">
@@ -891,7 +882,15 @@ const ListingGrid = () => {
                             {car.location}
                           </div> */}
                             <div className="listing-price">
-                              <h6>₹{1000} <span>/ Day</span></h6>
+                              <h6>
+                                {dayRate != null ? (
+                                  <>
+                                    ₹{dayRate} <span>/ Day</span>
+                                  </>
+                                ) : (
+                                  <span className="text-muted">—</span>
+                                )}
+                              </h6>
                             </div>
                           </div>
 
@@ -905,7 +904,7 @@ const ListingGrid = () => {
                                 Booked
                               </span>
                             ) : (
-                              <Link to={`/listings/listing-details/${car.id}`} className="btn btn-order">
+                              <Link to={listingDetailsPath(car.id)} className="btn btn-order">
                                 <i className="feather icon-calendar me-2" />
                                 Rent Now
                               </Link>
@@ -920,7 +919,8 @@ const ListingGrid = () => {
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {/*Pagination*/}
                 {totalPages > 1 && (
