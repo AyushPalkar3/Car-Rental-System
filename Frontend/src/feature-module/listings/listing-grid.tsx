@@ -18,6 +18,7 @@ import { carAPI, type CarListSearchParams } from "../../api/user/car.api";
 import { BOOKING_BUFFER_HOURS } from "../../utils/bookingAvailability";
 import { getCarDayRate } from "../../utils/carPricing";
 import { carfilterData } from "./carFilter";
+import { fuelFilterToApi, transmissionFilterToApi } from "../../utils/listingCarFilters";
 import { FaCogs, FaRoad, FaGasPump, FaBolt, FaCalendarAlt, FaUsers } from "react-icons/fa";
 
 
@@ -35,19 +36,6 @@ const ListingGrid = () => {
     bookingBufferHours?: number;
     searchApplied?: boolean;
   } | null>(null);
-  const [activeHearts, setActiveHearts] = useState({
-    heart1: false,
-    heart2: false,
-    heart3: false,
-    heart4: false,
-    heart5: false,
-    heart6: false,
-    heart7: false,
-    heart8: false,
-    heart9: false,
-  });
-
-
   const [searchQuery, setSearchQuery] = useState("");
 
   const [filters, setFilters] = useState({
@@ -70,9 +58,10 @@ const ListingGrid = () => {
     checked: boolean
   ) => {
     setFilters((prev: any) => {
+      const current: unknown[] = Array.isArray(prev[field]) ? prev[field] : [];
       const updatedValues = checked
-        ? [...prev[field], value]
-        : prev[field].filter((item: any) => item !== value);
+        ? [...current, value]
+        : current.filter((item: unknown) => item !== value);
 
       return { ...prev, [field]: updatedValues };
     });
@@ -83,6 +72,16 @@ const ListingGrid = () => {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const isFilterArrayChecked = (key: string, value: string | number) => {
+    const arr = filters[key as keyof typeof filters];
+    return Array.isArray(arr) && arr.includes(value as never);
+  };
+
+  const isFilterRadioChecked = (key: string, value: string) => {
+    if (key !== "fuelType" && key !== "transmission") return false;
+    return filters[key] === value;
   };
 
 
@@ -149,23 +148,40 @@ const ListingGrid = () => {
 
     const categoryMatch =
       filters.categories.length === 0 ||
-      filters.categories.includes(car.category);
+      (typeof car.category === "string" &&
+        filters.categories.includes(car.category));
 
     const yearMatch =
       filters.years.length === 0 ||
-      filters.years.includes(car.modelYear);
+      filters.years.some(
+        (y) => Number(car.modelYear) === Number(y)
+      );
 
+    const fuelApi = filters.fuelType
+      ? fuelFilterToApi[filters.fuelType]
+      : null;
     const fuelMatch =
-      !filters.fuelType ||
-      car.fuelType === filters.fuelType;
+      !filters.fuelType || (fuelApi != null && car.fuelType === fuelApi);
 
     const seatingMatch =
       filters.seating.length === 0 ||
-      filters.seating.includes(car.seating);
+      filters.seating.some(
+        (s) => Number(car.seating) === Number(s)
+      );
 
+    const transmissionApi = filters.transmission
+      ? transmissionFilterToApi[filters.transmission]
+      : null;
     const transmissionMatch =
       !filters.transmission ||
-      car.transmission === filters.transmission;
+      (transmissionApi != null && car.transmission === transmissionApi);
+
+    const carFeatures: string[] = Array.isArray(car.features)
+      ? car.features.filter((f: unknown) => typeof f === "string")
+      : [];
+    const specificationMatch =
+      filters.specifications.length === 0 ||
+      filters.specifications.every((s) => carFeatures.includes(s));
 
     return (
       searchMatch &&
@@ -174,7 +190,8 @@ const ListingGrid = () => {
       yearMatch &&
       fuelMatch &&
       seatingMatch &&
-      transmissionMatch
+      transmissionMatch &&
+      specificationMatch
     );
   });
 
@@ -192,10 +209,6 @@ const ListingGrid = () => {
   useEffect(() => {
     fetchCarData();
   }, [])
-
-  const toggleLike = (key: string) => {
-    setActiveHearts((prevState: any) => ({ ...prevState, [key]: !prevState[key] }));
-  };
 
   const number = [
     { name: "5" },
@@ -589,7 +602,12 @@ const ListingGrid = () => {
           <div className="row">
             <div className="col-xl-3 col-lg-4 col-sm-12 col-12 theiaStickySidebar">
               <div className="stickybar">
-                <form action="#" autoComplete="off" className="sidebar-form">
+                <form
+                  action="#"
+                  autoComplete="off"
+                  className="sidebar-form"
+                  onSubmit={(e) => e.preventDefault()}
+                >
                   <div className="sidebar-heading">
                     <h3>What Are You Looking For</h3>
                   </div>
@@ -660,6 +678,10 @@ const ListingGrid = () => {
                                   <label className="custom_check w-100" key={i}>
                                     <input
                                       type="checkbox"
+                                      checked={isFilterArrayChecked(
+                                        section.key,
+                                        item.value
+                                      )}
                                       onChange={(e) =>
                                         handleCheckboxChange(
                                           section.key,
@@ -683,6 +705,10 @@ const ListingGrid = () => {
                                             type="radio"
                                             name={section.key}
                                             id={`${section.key}-${i}`}
+                                            checked={isFilterRadioChecked(
+                                              section.key,
+                                              item.value
+                                            )}
                                             onChange={() =>
                                               handleRadioChange(section.key, item.value)
                                             }
@@ -712,17 +738,22 @@ const ListingGrid = () => {
                     </span>
                     Filter results
                   </button>
-                  <Link to="#" className="reset-filter" onClick={() =>
-                    setFilters({
-                      brands: [],
-                      categories: [],
-                      years: [],
-                      fuelType: "",
-                      specifications: [],
-                      seating: [],
-                      transmission: "",
-                    })
-                  }>
+                  <Link
+                    to="#"
+                    className="reset-filter"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setFilters({
+                        brands: [],
+                        categories: [],
+                        years: [],
+                        fuelType: "",
+                        specifications: [],
+                        seating: [],
+                        transmission: "",
+                      });
+                    }}
+                  >
                     Reset Filter
                   </Link>
                 </form>
@@ -797,6 +828,7 @@ const ListingGrid = () => {
                               {car.images.length.toString().padStart(2, "0")}
                             </span>
 
+                            {/* Favorite (heart) icon hidden — match home popular cars
                             <Link
                               to="#"
                               className={`fav-icon ${activeHearts[car.heartKey] ? "selected" : ""
@@ -805,6 +837,7 @@ const ListingGrid = () => {
                             >
                               <i className="feather icon-heart" />
                             </Link>
+                            */}
                           </div>
 
                           <span className="featured-text">{car.brand}</span>

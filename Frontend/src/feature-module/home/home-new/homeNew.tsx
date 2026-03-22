@@ -462,15 +462,19 @@ const HomeNew = () => {
                             {car.isAvailable ? "Available" : "Unavailable"}
                           </span>
                         </div>
+                        {/* Favorite (heart) icon hidden per product request
                         <Link to="#" className="fav-icon">
                           <i className="feather icon-heart" />
                         </Link>
+                        */}
                       </div>
 
+                      {/* Location row hidden per product request
                       <span className="location">
                         <i className="bx bx-map me-1" />
                         {car.location?.trim() ? car.location : "—"}
                       </span>
+                      */}
                     </div>
 
                     <div className="listing-content">
