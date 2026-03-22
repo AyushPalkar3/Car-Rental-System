@@ -216,7 +216,9 @@ model Booking {
   pickupDate      DateTime
   returnDate      DateTime
 
-  status          BookingStatus @default(PENDING)
+  status              BookingStatus @default(PENDING)
+  cancellationReason  String?
+  cancelledAt         DateTime?
   couponId        String?       @db.ObjectId
   coupon          Coupon?       @relation(fields: [couponId], references: [id])
 

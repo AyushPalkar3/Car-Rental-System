@@ -171,6 +171,7 @@ export const all_routes = {
   carPartnerResetPassword: "/car-partner/reset-password",
   carPartnerDashboard: "/car-partner/dashboard",
   carPartnerReservationsList: "/car-partner/reservations",
+  carPartnerReservationDetails: "/car-partner/reservation-details",
   carPartnerCarsList: "/car-partner/cars",
   carPartnerCarDetails: "/car-partner/car-details",
   carPartnerProfileSettings: "/car-partner/account-settings/profile-settings",

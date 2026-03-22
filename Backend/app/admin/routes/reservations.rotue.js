@@ -5,16 +5,16 @@ import {
   getAdminReservationById,
   createAdminReservation,
   updateAdminReservation,
-  deleteAdminReservation,
+  cancelAdminReservation,
 } from "../controllers/reservations.controller.js";
 
 const router = express.Router();
 router.use(authMiddleware);
 
 router.get("/", listAdminReservations);
+router.post("/:id/cancel", cancelAdminReservation);
 router.get("/:id", getAdminReservationById);
 router.post("/", createAdminReservation);
 router.put("/:id", updateAdminReservation);
-router.delete("/:id", deleteAdminReservation);
 
 export default router;

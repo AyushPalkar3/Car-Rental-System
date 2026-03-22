@@ -20,7 +20,7 @@ export function displayStatus(booking: AdminReservation): string {
   const start = new Date(booking.pickupDate).getTime();
   const end = new Date(booking.returnDate).getTime();
   if (booking.status === "COMPLETED") return "Completed";
-  if (booking.status === "CANCELLED") return "Rejected";
+  if (booking.status === "CANCELLED") return "Cancelled";
   if (booking.status === "PENDING") return "Pending";
   if (booking.status === "CONFIRMED" && start <= now && now <= end) {
     return "In Rental";
@@ -76,5 +76,6 @@ export function mapReservationToTableRow(
     DROP_OFF_TIME: formatListTime(b.returnDate),
     DROP_OFF_DETAILS: b.returnAddress || "—",
     STATUS: displayStatus(b),
+    bookingStatus: b.status,
   };
 }

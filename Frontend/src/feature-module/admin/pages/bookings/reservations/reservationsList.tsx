@@ -2,17 +2,41 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../../../../router/all_routes";
 import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
-import PredefinedDateRanges from "../../../common/range-picker/datePicker";
 import CommonDatatable from "../../../common/dataTable";
-import { listReservations, deleteReservation } from "../../../service/api/reservations";
+import { listReservations, cancelReservation } from "../../../service/api/reservations";
 import { mapReservationToTableRow } from "./reservationUtils";
+
+const SHIMMER: React.CSSProperties = {
+  background: "linear-gradient(90deg,#e8e8e8 25%,#f5f5f5 50%,#e8e8e8 75%)",
+  backgroundSize: "200% 100%",
+  animation: "reservationsListShimmer 1.4s infinite",
+};
+
+type StatusFilterKey =
+  | "all"
+  | "Pending"
+  | "Confirmed"
+  | "In Rental"
+  | "Completed"
+  | "Cancelled";
+
+const STATUS_FILTERS: { key: StatusFilterKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "Pending", label: "Pending" },
+  { key: "Confirmed", label: "Confirmed" },
+  { key: "In Rental", label: "In rental" },
+  { key: "Completed", label: "Completed" },
+  { key: "Cancelled", label: "Cancelled" },
+];
 
 const ReservationsList = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilterKey>("all");
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const [searchValue, setSearchValue] = useState<string>("");
 
   const imageBaseUrl = useMemo(() => {
@@ -43,24 +67,41 @@ const ReservationsList = () => {
     refresh();
   }, [refresh]);
 
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    setDeleting(true);
+  const confirmCancel = async () => {
+    if (!cancelId) return;
+    const trimmed = cancelReason.trim();
+    if (!trimmed) {
+      setListError("Please enter a cancellation reason.");
+      return;
+    }
+    setListError(null);
+    setCancelling(true);
     try {
-      await deleteReservation(deleteId);
-      setDeleteId(null);
+      await cancelReservation(cancelId, trimmed);
+      setCancelId(null);
+      setCancelReason("");
       await refresh();
-      document.getElementById("delete_reservation_modal_hide")?.click();
-    } catch {
-      setListError("Could not delete reservation");
+      document.getElementById("cancel_reservation_modal_hide")?.click();
+    } catch (e: unknown) {
+      setListError(
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message: string }).message)
+          : "Could not cancel reservation"
+      );
     } finally {
-      setDeleting(false);
+      setCancelling(false);
     }
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value); // Update search state
   };
+
+  const filteredByStatus = useMemo(() => {
+    if (statusFilter === "all") return data;
+    return data.filter((row) => row.STATUS === statusFilter);
+  }, [data, statusFilter]);
+
   const columns = [
     {
       title: "CAR",
@@ -87,7 +128,7 @@ const ReservationsList = () => {
           </Link>
           <div>
             <Link
-              to={`${all_routes.reservationDetails}/${record.bookingId}`}
+              to={`${all_routes.carPartnerReservationDetails}/${record.bookingId}`}
               className="text-info d-block mb-1"
             >
               {record.CAR_NO}
@@ -199,13 +240,13 @@ const ReservationsList = () => {
             <li>
               <Link
                 className="dropdown-item rounded-1"
-                to={`${all_routes.reservationDetails}/${record.bookingId}`}
+                to={`${all_routes.carPartnerReservationDetails}/${record.bookingId}`}
               >
                 <i className="ti ti-eye me-1" />
                 View Details
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 className="dropdown-item rounded-1"
                 to={`${all_routes.adminEditReservations}/${record.bookingId}`}
@@ -213,19 +254,26 @@ const ReservationsList = () => {
                 <i className="ti ti-edit me-1" />
                 Edit
               </Link>
-            </li>
-            <li>
-              <Link
-                className="dropdown-item rounded-1"
-                to="#"
-                data-bs-toggle="modal"
-                data-bs-target="#delete_modal"
-                onClick={() => setDeleteId(record.bookingId)}
-              >
-                <i className="ti ti-trash me-1" />
-                Delete
-              </Link>
-            </li>
+            </li> */}
+            {record.bookingStatus !== "CANCELLED" &&
+              record.bookingStatus !== "COMPLETED" && (
+                <li>
+                  <Link
+                    className="dropdown-item rounded-1"
+                    to="#"
+                    data-bs-toggle="modal"
+                    data-bs-target="#cancel_reservation_modal"
+                    onClick={() => {
+                      setCancelId(record.bookingId);
+                      setCancelReason("");
+                      setListError(null);
+                    }}
+                  >
+                    <i className="ti ti-x me-1" />
+                    Cancel reservation
+                  </Link>
+                </li>
+              )}
           </ul>
         </div>
       ),
@@ -275,70 +323,91 @@ const ReservationsList = () => {
             {listError}
           </div>
         )}
-        {loading && (
-          <div className="text-muted small mb-2">Loading reservations…</div>
-        )}
+        <style>{`
+          .reservations-list-toolbar .reservations-status-select {
+            border-radius: 0.375rem;
+          }
+          .reservations-list-toolbar .reservations-status-select:focus {
+            border-color: #dee2e6;
+            box-shadow: 0 0 0 0.15rem rgba(73, 80, 87, 0.12);
+            outline: 0;
+          }
+        `}</style>
         {/* Table Header */}
         <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 mb-3">
-          <div className="d-flex align-items-center flex-wrap row-gap-3">
-            <div className="dropdown me-2">
-              <Link
-                to="#"
-                className="dropdown-toggle btn btn-white d-inline-flex align-items-center"
-                data-bs-toggle="dropdown"
-              >
-                <i className="ti ti-filter me-1" /> Sort By : Latest
-              </Link>
-              <ul className="dropdown-menu  dropdown-menu-end p-2">
-                <li>
-                  <Link to="#" className="dropdown-item rounded-1">
-                    Latest
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="dropdown-item rounded-1">
-                    Ascending
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="dropdown-item rounded-1">
-                    Desending
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="dropdown-item rounded-1">
-                    Last Month
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="dropdown-item rounded-1">
-                    Last 7 Days
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div className="me-2">
-              <div className="input-icon-start position-relative topdatepicker">
-                <span className="input-icon-addon">
-                  <i className="ti ti-calendar" />
+          <div className="d-flex align-items-center flex-wrap gap-3 gap-md-4">
+            <div className="reservations-list-toolbar d-flex align-items-center flex-wrap gap-2 gap-md-3 rounded-2 border bg-white px-3 py-2 shadow-sm">
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-gray-9 fs-13 fw-semibold mb-0 text-nowrap">
+                  Sort
                 </span>
-                <PredefinedDateRanges />
+                <div className="dropdown">
+                  <Link
+                    to="#"
+                    className="dropdown-toggle btn btn-white btn-sm d-inline-flex align-items-center gap-2 border shadow-sm"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <i className="ti ti-arrows-sort text-gray-6" aria-hidden />
+                    <span className="text-gray-9">Latest</span>
+                  </Link>
+                  <ul className="dropdown-menu dropdown-menu-end p-2 shadow-sm border-0">
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Latest
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Ascending
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Desending
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Last Month
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Last 7 Days
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
               </div>
-            </div>
-            <div className="dropdown">
-              <Link
-                to="#filtercollapse"
-                className="filtercollapse coloumn d-inline-flex align-items-center"
-                data-bs-toggle="collapse"
-                role="button"
-                aria-expanded="false"
-                aria-controls="filtercollapse"
-              >
-                <i className="ti ti-filter me-1" /> Filter{" "}
-                <span className="badge badge-xs rounded-pill bg-danger ms-2">
-                  0
-                </span>
-              </Link>
+              <div
+                className="vr d-none d-sm-block align-self-stretch my-1 opacity-25"
+                role="separator"
+                aria-orientation="vertical"
+              />
+              <div className="d-flex align-items-center gap-2">
+                <label
+                  htmlFor="reservation-status-filter"
+                  className="text-gray-9 fs-13 fw-semibold mb-0 text-nowrap"
+                >
+                  Status
+                </label>
+                <select
+                  id="reservation-status-filter"
+                  className="form-select form-select-sm reservations-status-select border bg-white shadow-sm text-gray-9"
+                  style={{ minWidth: 168, maxWidth: 220 }}
+                  value={statusFilter}
+                  onChange={(e) =>
+                    setStatusFilter(e.target.value as StatusFilterKey)
+                  }
+                >
+                  {STATUS_FILTERS.map(({ key, label }) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
           <div className="d-flex my-xl-auto right-content align-items-center flex-wrap row-gap-3">
@@ -356,369 +425,200 @@ const ReservationsList = () => {
                 />
               </div>
             </div>
-            <div className="dropdown">
-              <Link
-                to="#"
-                className="dropdown-toggle coloumn btn btn-white d-inline-flex align-items-center"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="outside"
-              >
-                <i className="ti ti-layout-board me-1" /> Columns
-              </Link>
-              <div className="dropdown-menu dropdown-menu-lg p-2">
-                <ul>
-                  <li>
-                    <div className="dropdown-item d-flex align-items-center justify-content-between rounded-1">
-                      <span className="d-inline-flex align-items-center">
-                        <i className="ti ti-grip-vertical me-1" />
-                        CAR
-                      </span>
-                      <div className="form-check form-check-sm form-switch mb-0">
-                        <input
-                          className="form-check-input form-label"
-                          type="checkbox"
-                          role="switch"
-                          defaultChecked
-                        />
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="dropdown-item d-flex align-items-center justify-content-between rounded-1">
-                      <span>
-                        <i className="ti ti-grip-vertical me-1" />
-                        CUSTOMER
-                      </span>
-                      <div className="form-check form-check-sm form-switch mb-0">
-                        <input
-                          className="form-check-input form-label"
-                          type="checkbox"
-                          role="switch"
-                          defaultChecked
-                        />
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="dropdown-item d-flex align-items-center justify-content-between rounded-1">
-                      <span>
-                        <i className="ti ti-grip-vertical me-1" />
-                        PICK UP DETAILS
-                      </span>
-                      <div className="form-check form-check-sm form-switch mb-0">
-                        <input
-                          className="form-check-input form-label"
-                          type="checkbox"
-                          role="switch"
-                          defaultChecked
-                        />
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="dropdown-item d-flex align-items-center justify-content-between rounded-1">
-                      <span>
-                        <i className="ti ti-grip-vertical me-1" />
-                        DROP OFF DETAILS
-                      </span>
-                      <div className="form-check form-check-sm form-switch mb-0">
-                        <input
-                          className="form-check-input form-label"
-                          type="checkbox"
-                          role="switch"
-                          defaultChecked
-                        />
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="dropdown-item d-flex align-items-center justify-content-between rounded-1">
-                      <span>
-                        <i className="ti ti-grip-vertical me-1" />
-                        STATUS
-                      </span>
-                      <div className="form-check form-check-sm form-switch mb-0">
-                        <input
-                          className="form-check-input form-label"
-                          type="checkbox"
-                          role="switch"
-                          defaultChecked
-                        />
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
           </div>
         </div>
         {/* /Table Header */}
-        <div className="collapse" id="filtercollapse">
-          <div className="filterbox mb-3 d-flex align-items-center">
-            <h6 className="me-3">Filters</h6>
-            <div className="dropdown me-2">
-              <Link
-                to="#"
-                className="dropdown-toggle btn btn-white d-inline-flex align-items-center"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="outside"
-              >
-                Pick Up Location
-              </Link>
-              <ul className="dropdown-menu dropdown-menu-lg p-2">
-                <li>
-                  <div className="top-search m-2">
-                    <div className="top-search-group">
-                      <span className="input-icon">
-                        <i className="ti ti-search" />
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search"
-                      />
-                    </div>
-                  </div>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Los Angles
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    New York City
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Houston
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Munich
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Montreal
-                  </label>
-                </li>
-              </ul>
-            </div>
-            <div className="dropdown me-2">
-              <Link
-                to="#"
-                className="dropdown-toggle btn btn-white d-inline-flex align-items-center"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="outside"
-              >
-                Drop Off Location
-              </Link>
-              <ul className="dropdown-menu dropdown-menu-lg p-2">
-                <li>
-                  <div className="top-search m-2">
-                    <div className="top-search-group">
-                      <span className="input-icon">
-                        <i className="ti ti-search" />
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search"
-                      />
-                    </div>
-                  </div>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Los Angles
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    New York City
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Houston
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Munich
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Montreal
-                  </label>
-                </li>
-              </ul>
-            </div>
-            <div className="dropdown me-3">
-              <Link
-                to="#"
-                className="dropdown-toggle btn btn-white d-inline-flex align-items-center"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="outside"
-              >
-                <i className="ti ti-badge me-1" />
-                Status
-              </Link>
-              <ul className="dropdown-menu dropdown-menu-lg p-2">
-                <li>
-                  <div className="top-search m-2">
-                    <div className="top-search-group">
-                      <span className="input-icon">
-                        <i className="ti ti-search" />
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search"
-                      />
-                    </div>
-                  </div>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Completed
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Confirmed
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    In Rental
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    Rejected
-                  </label>
-                </li>
-                <li>
-                  <label className="dropdown-item d-flex align-items-center rounded-1">
-                    <input
-                      className="form-check-input m-0 me-2"
-                      type="checkbox"
-                    />
-                    In Progress
-                  </label>
-                </li>
-              </ul>
-            </div>
-            <Link to="#" className="me-2 text-purple links">
-              Apply
-            </Link>
-            <Link to="#" className="text-danger links">
-              Clear All
-            </Link>
-          </div>
-        </div>
         {/* Custom Data Table */}
-        <CommonDatatable
-          dataSource={data}
-          columns={columns}
-          searchValue={searchValue}
-          showRowSelection={false}
-        />
+        {loading ? (
+          <div className="card mb-0">
+            <div className="card-body p-0">
+              <div className="table-responsive">
+                <table className="table table-nowrap mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      {[
+                        "CAR",
+                        "CUSTOMER",
+                        "PICK UP DETAILS",
+                        "DROP OFF DETAILS",
+                        "STATUS",
+                        "ACTION",
+                      ].map((h) => (
+                        <th key={h} className="px-3 py-3">
+                          <div
+                            style={{
+                              ...SHIMMER,
+                              height: 14,
+                              width: h === "PICK UP DETAILS" || h === "DROP OFF DETAILS" ? 110 : 72,
+                            }}
+                          />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 8 }).map((_, rowIdx) => (
+                      <tr key={rowIdx}>
+                        <td className="px-3 py-3">
+                          <div className="d-flex align-items-center gap-2">
+                            <div
+                              style={{
+                                ...SHIMMER,
+                                width: 40,
+                                height: 40,
+                                borderRadius: 8,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <div>
+                              <div
+                                style={{
+                                  ...SHIMMER,
+                                  height: 12,
+                                  width: 88,
+                                  marginBottom: 6,
+                                }}
+                              />
+                              <div style={{ ...SHIMMER, height: 10, width: 120 }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="d-flex align-items-center gap-2">
+                            <div
+                              style={{
+                                ...SHIMMER,
+                                width: 36,
+                                height: 36,
+                                borderRadius: "50%",
+                                flexShrink: 0,
+                              }}
+                            />
+                            <div>
+                              <div
+                                style={{
+                                  ...SHIMMER,
+                                  height: 12,
+                                  width: 100,
+                                  marginBottom: 6,
+                                }}
+                              />
+                              <div style={{ ...SHIMMER, height: 10, width: 48 }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="d-flex align-items-center gap-2">
+                            <div style={{ ...SHIMMER, width: 44, height: 48, borderRadius: 6 }} />
+                            <div className="flex-grow-1">
+                              <div
+                                style={{
+                                  ...SHIMMER,
+                                  height: 12,
+                                  width: "85%",
+                                  maxWidth: 140,
+                                  marginBottom: 6,
+                                }}
+                              />
+                              <div style={{ ...SHIMMER, height: 10, width: 64 }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="d-flex align-items-center gap-2">
+                            <div style={{ ...SHIMMER, width: 44, height: 48, borderRadius: 6 }} />
+                            <div className="flex-grow-1">
+                              <div
+                                style={{
+                                  ...SHIMMER,
+                                  height: 12,
+                                  width: "85%",
+                                  maxWidth: 140,
+                                  marginBottom: 6,
+                                }}
+                              />
+                              <div style={{ ...SHIMMER, height: 10, width: 64 }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div style={{ ...SHIMMER, height: 24, width: 88, borderRadius: 12 }} />
+                        </td>
+                        <td className="px-3 py-3">
+                          <div style={{ ...SHIMMER, height: 32, width: 32, borderRadius: 6 }} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <style>{`
+              @keyframes reservationsListShimmer {
+                0% { background-position: 200% 0; }
+                100% { background-position: -200% 0; }
+              }
+            `}</style>
+          </div>
+        ) : (
+          <CommonDatatable
+            dataSource={filteredByStatus}
+            columns={columns}
+            searchValue={searchValue}
+            showRowSelection={false}
+          />
+        )}
       </div>
-      <div className="modal fade" id="delete_modal">
-        <div className="modal-dialog modal-dialog-centered modal-sm">
+      <div className="modal fade" id="cancel_reservation_modal">
+        <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <div className="modal-body text-center">
+            <div className="modal-body">
               <button
                 type="button"
-                id="delete_reservation_modal_hide"
+                id="cancel_reservation_modal_hide"
                 className="d-none"
                 data-bs-dismiss="modal"
                 aria-hidden="true"
               />
-              <span className="avatar avatar-lg bg-transparent-danger rounded-circle text-danger mb-3">
-                <i className="ti ti-trash-x fs-26" />
-              </span>
-              <h4 className="mb-1">Delete Reservation</h4>
-              <p className="mb-3">
-                Are you sure you want to delete Reservation?
-              </p>
-              <div className="d-flex justify-content-center">
+              <div className="text-center mb-3">
+                <span className="avatar avatar-lg bg-transparent-danger rounded-circle text-danger mb-2 d-inline-flex align-items-center justify-content-center">
+                  <i className="ti ti-x fs-26" />
+                </span>
+                <h4 className="mb-1">Cancel reservation</h4>
+                <p className="text-muted mb-0">
+                  The booking will be marked cancelled and kept on record.
+                </p>
+              </div>
+              <div className="mb-3">
+                <label htmlFor="list_cancel_reason" className="form-label">
+                  Reason <span className="text-danger">*</span>
+                </label>
+                <textarea
+                  id="list_cancel_reason"
+                  className="form-control"
+                  rows={4}
+                  placeholder="Reason for cancellation…"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  disabled={cancelling}
+                />
+              </div>
+              <div className="d-flex justify-content-end gap-2">
                 <button
                   type="button"
-                  className="btn btn-light me-3"
+                  className="btn btn-light"
                   data-bs-dismiss="modal"
+                  disabled={cancelling}
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary"
-                  disabled={deleting}
-                  onClick={confirmDelete}
+                  className="btn btn-danger"
+                  disabled={cancelling}
+                  onClick={confirmCancel}
                 >
-                  {deleting ? "Deleting…" : "Yes, Delete"}
+                  {cancelling ? "Cancelling…" : "Confirm cancellation"}
                 </button>
               </div>
             </div>

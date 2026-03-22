@@ -1438,7 +1438,11 @@ export const carPartnerRoutes = [
     element: <CarPartnerEditReservation />,
   },
   {
-    path: "/car-partner/reservation-details",
+    path: routes.carPartnerReservationDetails,
+    element: <CarPartnerReservationDetails />,
+  },
+  {
+    path: `${routes.carPartnerReservationDetails}/:id`,
     element: <CarPartnerReservationDetails />,
   },
 

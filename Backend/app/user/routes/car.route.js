@@ -2,6 +2,7 @@ import express from "express";
 import {
   createCar,
   getAllCars,
+  getPopularCars,
   getCarById,
   updateCar,
   patchCar,
@@ -22,6 +23,7 @@ router.post(
   createCar
 );
 
+router.get("/popular", getPopularCars);
 router.get("/", getAllCars);
 router.get("/:id", getCarById);
 router.put("/:id", updateCar);

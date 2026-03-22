@@ -29,7 +29,7 @@ export const SidebarData = [
           label: "Reservations",
           link: all_routes.adminReservationsList,
           sublink:all_routes.adminAddReservations,
-          sublink2:all_routes.adminEditReservations,
+          // sublink2:all_routes.adminEditReservations,
           sublink3:all_routes.reservationDetails,
           icon: 'files',
           showSubRoute: false,

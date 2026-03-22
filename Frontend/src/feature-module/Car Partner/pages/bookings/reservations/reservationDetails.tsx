@@ -1,5 +1,4 @@
 import { Link, useParams } from "react-router-dom";
-import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../../router/all_routes";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -67,7 +66,7 @@ const ReservationDetails = () => {
           <div className="col-md-10">
             <div className="mb-3">
               <Link
-                to={all_routes.adminReservationsList}
+                to={all_routes.carPartnerReservationsList}
                 className="d-inline-flex align-items-center fw-medium"
               >
                 <i className="ti ti-arrow-narrow-left me-2" />
@@ -197,21 +196,13 @@ const ReservationDetails = () => {
                                 Customer
                               </h6>
                             </div>
-                            <div className="d-flex align-items-center mb-3">
-                              <span className="avatar avatar-rounded flex-shrink-0 me-2">
-                                <ImageWithBasePath
-                                  src="assets/admin/img/customer/customer-02.jpg"
-                                  alt=""
-                                />
-                              </span>
-                              <div>
-                                <h6 className="fs-14 fw-medium mb-1">
-                                  {user.firstName} {user.lastName}
-                                </h6>
-                                <p>{user.phoneNum}</p>
-                                <p>{user.email}</p>
-                                {user.dlNumber && <p className="mt-1">DL: {user.dlNumber}</p>}
-                              </div>
+                            <div className="mb-3">
+                              <h6 className="fs-14 fw-medium mb-1">
+                                {user.firstName} {user.lastName}
+                              </h6>
+                              <p className="mb-0">{user.phoneNum}</p>
+                              <p className="mb-0">{user.email}</p>
+                              {user.dlNumber && <p className="mt-1 mb-0">DL: {user.dlNumber}</p>}
                             </div>
                           </div>
                         </div>

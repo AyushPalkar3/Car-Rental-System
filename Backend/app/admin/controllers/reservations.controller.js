@@ -165,7 +165,15 @@ export const updateAdminReservation = async (req, res) => {
     if (sameReturn !== undefined) data.sameReturn = Boolean(sameReturn);
     if (pickupDate != null) data.pickupDate = new Date(pickupDate);
     if (returnDate != null) data.returnDate = new Date(returnDate);
-    if (status != null) data.status = status;
+    if (status != null) {
+      if (status === "CANCELLED" && existing.status !== "CANCELLED") {
+        return res.status(400).json({
+          message:
+            "Use cancel reservation with a reason instead of updating status",
+        });
+      }
+      data.status = status;
+    }
     if (color !== undefined) data.color = color;
     if (hexCode !== undefined) data.hexCode = hexCode;
     if (couponId !== undefined) data.couponId = couponId;
@@ -182,16 +190,41 @@ export const updateAdminReservation = async (req, res) => {
   }
 };
 
-export const deleteAdminReservation = async (req, res) => {
+export const cancelAdminReservation = async (req, res) => {
   try {
     const { id } = req.params;
+    const reason =
+      typeof req.body?.reason === "string" ? req.body.reason.trim() : "";
+    if (!reason) {
+      return res
+        .status(400)
+        .json({ message: "Cancellation reason is required" });
+    }
+
     const existing = await prisma.booking.findUnique({ where: { id } });
     if (!existing) {
       return res.status(404).json({ message: "Reservation not found" });
     }
-    await prisma.payment.deleteMany({ where: { bookingId: id } });
-    await prisma.booking.delete({ where: { id } });
-    res.status(200).json({ message: "Reservation deleted successfully" });
+    if (existing.status === "CANCELLED") {
+      return res.status(400).json({ message: "Reservation is already cancelled" });
+    }
+    if (existing.status === "COMPLETED") {
+      return res
+        .status(400)
+        .json({ message: "Cannot cancel a completed reservation" });
+    }
+
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: {
+        status: "CANCELLED",
+        cancellationReason: reason,
+        cancelledAt: new Date(),
+      },
+      include: bookingInclude,
+    });
+
+    res.status(200).json(booking);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

@@ -153,7 +153,7 @@ const ReservationsList = () => {
           </Link>
           <div>
             <Link
-              to={`${all_routes.reservationDetails.replace(':id', '')}${record.key}`}
+              to={`${all_routes.carPartnerReservationDetails}/${record.key}`}
               className="text-info d-block mb-1"
             >
               #{record.CAR_NO}
@@ -265,7 +265,7 @@ const ReservationsList = () => {
             <li>
               <Link
                 className="dropdown-item rounded-1"
-                to={`${all_routes.reservationDetails.replace(':id', '')}${record.key}`}
+                to={`${all_routes.carPartnerReservationDetails}/${record.key}`}
               >
                 <i className="ti ti-eye me-1" />
                 View Details

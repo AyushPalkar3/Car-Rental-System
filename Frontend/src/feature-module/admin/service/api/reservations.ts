@@ -19,6 +19,8 @@ export type AdminReservation = {
   pickupDate: string;
   returnDate: string;
   status: BookingStatus;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
   color?: string | null;
   hexCode?: string | null;
   couponId?: string | null;
@@ -40,6 +42,7 @@ export type AdminReservation = {
     email?: string | null;
   };
   pricing?: { id: string; duration: DurationType; price: number };
+  payment?: { id: string } | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -90,9 +93,13 @@ export const updateReservation = async (
   return response.data;
 };
 
-export const deleteReservation = async (id: string): Promise<{ message: string }> => {
-  const response = await apiClient.delete<{ message: string }>(
-    `/admin/reservations/${id}`
+export const cancelReservation = async (
+  id: string,
+  reason: string
+): Promise<AdminReservation> => {
+  const response = await apiClient.post<AdminReservation>(
+    `/admin/reservations/${id}/cancel`,
+    { reason }
   );
   return response.data;
 };

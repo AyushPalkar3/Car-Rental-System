@@ -87,6 +87,75 @@ export const createCar = async (req, res) => {
   }
 };
 
+/** Bookings that count toward “popularity” (excludes cancelled only). */
+const POPULAR_BOOKING_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED"];
+
+/**
+ * Top verified cars by booking volume, with aggregate review stats for the home grid.
+ */
+export const getPopularCars = async (req, res) => {
+  try {
+    const limitRaw = Number(req.query.limit);
+    const limit =
+      Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 24) : 6;
+
+    const cars = await prisma.car.findMany({
+      where: { isVerified: true },
+      include: {
+        pricing: true,
+        reviews: { select: { rating: true } },
+        _count: {
+          select: {
+            bookings: {
+              where: { status: { in: POPULAR_BOOKING_STATUSES } },
+            },
+          },
+        },
+      },
+    });
+
+    const scored = cars.map((car) => {
+      const bookingCount = car._count.bookings;
+      const reviewCount = car.reviews.length;
+      const averageRating =
+        reviewCount > 0
+          ? Math.round(
+              (car.reviews.reduce((s, r) => s + r.rating, 0) / reviewCount) *
+                10
+            ) / 10
+          : null;
+      return { car, bookingCount, averageRating, reviewCount };
+    });
+
+    scored.sort((a, b) => {
+      if (b.bookingCount !== a.bookingCount) {
+        return b.bookingCount - a.bookingCount;
+      }
+      const arA = a.averageRating ?? 0;
+      const arB = b.averageRating ?? 0;
+      if (arB !== arA) return arB - arA;
+      return b.reviewCount - a.reviewCount;
+    });
+
+    const data = scored.slice(0, limit).map(({ car, bookingCount, averageRating, reviewCount }) => {
+      const { reviews, _count, ...rest } = car;
+      return {
+        ...rest,
+        bookingCount,
+        averageRating,
+        reviewCount,
+      };
+    });
+
+    res.status(200).json({ count: data.length, data });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching popular cars",
+      error: error.message,
+    });
+  }
+};
+
 /**
  * GET ALL CARS
  */

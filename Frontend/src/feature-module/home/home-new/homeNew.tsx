@@ -10,92 +10,43 @@ import { DatePicker } from "antd";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { useDispatch } from 'react-redux';
-import { selectCar } from '../../../feature-module/listings/carSlice';  
 import ImageWithBasePath from '../../../core/data/img/ImageWithBasePath';
+import { carAPI } from '../../../api/user/car.api';
+import { getCarDayRate } from '../../../utils/carPricing';
+import { img_path } from '../../../environment';
+
+const API_IMAGE_BASE =
+  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
+function formatTransmission(t: string) {
+  const map: Record<string, string> = {
+    AUTO: "Automatic",
+    MANUAL: "Manual",
+    SEMI_AUTO: "Semi-Automatic",
+  };
+  return map[t] ?? t;
+}
+
+function formatFuelLabel(f: string) {
+  return f
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function popularCarImageSrc(car: {
+  thumbnail?: string | null;
+  images?: string[];
+}): string {
+  const raw = car.thumbnail || car.images?.[0];
+  if (!raw) return `${img_path}assets/img/cars/car-01.jpg`;
+  if (raw.startsWith("http")) return raw;
+  return `${API_IMAGE_BASE}${raw.startsWith("/") ? "" : "/"}${raw}`;
+}
+
 const HomeNew = () => {
-  const dispatch = useDispatch();
-  
-  const [bestCar, setBestCar] = useState([
-    {
-      "id": 1,
-      "company": "Mahindra",
-      "vehicle": "Thar",
-      "description": "Mahindra Thar 4x2 Black",
-      "transmission": "Manual",
-      "fuel": "Diesel",
-      "location": "Lasvegas",
-      "price": 1600,
-      "year": "2023",
-      "km": "10 KM",
-      "image": "assets/img/cars/black thar.png"
-    },
-    {
-      "id": 2,
-      "company": "Mahindra",
-      "vehicle": "Thar",
-      "description": "Mahindra Thar 4x4 Red",
-      "transmission": "Automatic",
-      "fuel": "Diesel",
-      "location": "Lasvegas",
-      "price": 1500,
-      "year": "2024",
-      "km": "12 KM",
-      "image": "assets/img/cars/black thar.png"
-    },
-    {
-      "id": 3,
-      "company": "Mahindra",
-      "vehicle": "XUV 700",
-      "description": "Mahindra XUV 700",
-      "transmission": "Manual",
-      "fuel": "Diesel",
-      "location": "Lasvegas",
-      "price": 2000,
-      "year": "2023",
-      "km": "15 KM",
-      "image": "assets/img/cars/xuv 700.png"
-    },
-    {
-      "id": 4,
-      "company": "Maruti Suzuki",
-      "vehicle": "Fronx",
-      "description": "Maruti Suzuki Fronx Delta Blue",
-      "transmission": "Manual",
-      "fuel": "CNG",
-      "location": "Spain",
-      "price": 1200,
-      "year": "2024",
-      "km": "18 KM",
-      "image": "assets/img/cars/fronx.png"
-    },
-    {
-      "id": 5,
-      "company": "Hyundai",
-      "vehicle": "Creta",
-      "description": "Hyundai Creta Red",
-      "transmission": "Manual",
-      "fuel": "Diesel",
-      "location": "Lasvegas",
-      "price": 1800,
-      "year": "2023",
-      "km": "14 KM",
-      "image": "assets/img/cars/creta red.png"
-    },
-    {
-      "id": 6,
-      "company": "Maruti Suzuki",
-      "vehicle": "Ertiga",
-      "description": "Maruti Suzuki Ertiga Vxi Smart Hybrid White",
-      "transmission": "Manual",
-      "fuel": "Petrol",
-      "location": "Newyork, USA",
-      "price": 1700,
-      "year": "2022",
-      "km": "16 KM",
-      "image": "assets/img/cars/ertiga.png"
-    }
-  ])
+  const [popularCars, setPopularCars] = useState<any[]>([]);
+  const [popularCarsLoading, setPopularCarsLoading] = useState(true);
   const CustomNextArrow = ({ onClick }: any) => (
     <div className="owl-nav right-nav">
       <button type="button" role="presentation" className="owl-next" onClick={onClick}>
@@ -238,6 +189,26 @@ const HomeNew = () => {
   useEffect(() => {
     AOS.init({ duration: 1200, once: true });
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await carAPI.getPopularCars({ limit: 6 });
+        if (!cancelled && res.status === 200 && Array.isArray(res.data?.data)) {
+          setPopularCars(res.data.data);
+        }
+      } catch (e) {
+        console.error("Failed to load popular cars", e);
+      } finally {
+        if (!cancelled) setPopularCarsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <>
       <NewHeader />
@@ -456,23 +427,40 @@ const HomeNew = () => {
               <h2>Explore Most Popular Cars</h2>
               <p>Here&apos;s a list of some of the most popular cars globally</p>
             </div>
+            {popularCarsLoading ? (
+              <p className="text-center text-muted py-4 mb-0">Loading popular cars…</p>
+            ) : popularCars.length === 0 ? (
+              <p className="text-center text-muted py-4 mb-0">No cars to show yet.</p>
+            ) : (
             <div className="row">
-              {bestCar?.map((car) => (
+              {popularCars.map((car) => {
+                const dayRate = getCarDayRate(car.pricing);
+                const reviewCount = Number(car.reviewCount) || 0;
+                const avg =
+                  car.averageRating != null ? Number(car.averageRating) : null;
+                const filledStars =
+                  avg != null && reviewCount > 0 ? Math.round(avg) : 0;
+                return (
                 <div className="col-lg-4 col-md-6" key={car.id}>
                   <div className="listing-item listing-item-two">
                     <div className="listing-img">
                       <Link to={listingDetailsPath(car.id)}>
-                        <ImageWithBasePath
-                          src={car.image}
+                        <img
+                          src={popularCarImageSrc(car)}
                           className="img-fluid"
-                          alt={car.vehicle}
+                          alt={car.name}
+                          onError={(e) => {
+                            e.currentTarget.src = `${img_path}assets/img/cars/car-01.jpg`;
+                          }}
                         />
                       </Link>
 
                       <div className="fav-item">
                         <div className="d-flex align-items-center gap-2">
-                          <span className="featured-text">{car.company}</span>
-                          <span className="availability">Available</span>
+                          <span className="featured-text">{car.brand}</span>
+                          <span className="availability">
+                            {car.isAvailable ? "Available" : "Unavailable"}
+                          </span>
                         </div>
                         <Link to="#" className="fav-icon">
                           <i className="feather icon-heart" />
@@ -481,7 +469,7 @@ const HomeNew = () => {
 
                       <span className="location">
                         <i className="bx bx-map me-1" />
-                        {car.location}
+                        {car.location?.trim() ? car.location : "—"}
                       </span>
                     </div>
 
@@ -490,23 +478,37 @@ const HomeNew = () => {
                         <div className="list-rating">
                           <h3 className="listing-title">
                             <Link to={listingDetailsPath(car.id)}>
-                              {car.description}
+                              {car.name}
                             </Link>
                           </h3>
 
-                          <div className="list-rating">
-                            <i className="fas fa-star filled" />
-                            <i className="fas fa-star filled" />
-                            <i className="fas fa-star filled" />
-                            <i className="fas fa-star filled" />
-                            <i className="fas fa-star" />
-                            <span>(4.0) 150 Reviews</span>
-                          </div>
+                          {/*
+                            Omit empty state (gray stars + "No reviews yet"); only show row when we have real reviews.
+                          */}
+                          {reviewCount > 0 && avg != null ? (
+                            <div className="list-rating">
+                              {[1, 2, 3, 4, 5].map((i) => (
+                                <i
+                                  key={i}
+                                  className={`fas fa-star${i <= filledStars ? " filled" : ""}`}
+                                />
+                              ))}
+                              <span>
+                                ({avg.toFixed(1)}) {reviewCount} Reviews
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
 
                         <div>
                           <h4 className="price">
-                            ₹{car.price} <span>/ Day</span>
+                            {dayRate != null ? (
+                              <>
+                                ₹{dayRate} <span>/ Day</span>
+                              </>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
                           </h4>
                         </div>
                       </div>
@@ -518,7 +520,7 @@ const HomeNew = () => {
                               src="assets/img/icons/car-parts-01.svg"
                               alt="Transmission"
                             />
-                            <p>{car.transmission}</p>
+                            <p>{formatTransmission(car.transmission)}</p>
                           </li>
 
                           <li>
@@ -526,7 +528,7 @@ const HomeNew = () => {
                               src="assets/img/icons/car-parts-02.svg"
                               alt="KM"
                             />
-                            <p>{car.km}</p>
+                            <p>{car.mileageKm} KM</p>
                           </li>
 
                           <li>
@@ -534,7 +536,7 @@ const HomeNew = () => {
                               src="assets/img/icons/car-parts-03.svg"
                               alt="Fuel"
                             />
-                            <p>{car.fuel}</p>
+                            <p>{formatFuelLabel(car.fuelType)}</p>
                           </li>
 
                           <li>
@@ -542,15 +544,17 @@ const HomeNew = () => {
                               src="assets/img/icons/car-parts-05.svg"
                               alt="Year"
                             />
-                            <p>{car.year}</p>
+                            <p>{car.modelYear}</p>
                           </li>
                         </ul>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
+            )}
             <div className="view-all-btn text-center aos" data-aos="fade-down">
               <Link
                 to={all_routes.listingGrid}

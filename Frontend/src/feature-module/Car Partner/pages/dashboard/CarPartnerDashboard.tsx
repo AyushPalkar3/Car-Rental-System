@@ -1,8 +1,8 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../../../router/all_routes";
 import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
-import PredefinedDateRanges from "../../common/range-picker/datePicker";
 import ReactApexChart from "react-apexcharts";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -22,6 +22,20 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelled",
 };
 
+const SHIMMER: CSSProperties = {
+  background: "linear-gradient(90deg,#e8e8e8 25%,#f5f5f5 50%,#e8e8e8 75%)",
+  backgroundSize: "200% 100%",
+  animation: "carPartnerDashShimmer 1.4s infinite",
+};
+
+const bar = (w: string | number, h: number, r = 6): CSSProperties => ({
+  ...SHIMMER,
+  width: w,
+  height: h,
+  borderRadius: r,
+  display: "block",
+});
+
 const DashboardSkeleton = () => (
   <>
     <div className="row">
@@ -29,26 +43,26 @@ const DashboardSkeleton = () => (
         <div className="card flex-fill">
           <div className="card-body">
             <div className="row align-items-center row-gap-3">
-              <div className="col-sm-7 placeholder-glow">
-                <span className="placeholder col-8 mb-3 d-block rounded" style={{ height: 28 }} />
-                <span className="placeholder col-6 mb-3 d-block rounded" style={{ height: 16 }} />
+              <div className="col-sm-7">
+                <span className="mb-3" style={bar("72%", 28, 6)} />
+                <span className="mb-3" style={bar("55%", 16, 4)} />
                 <div className="d-flex align-items-center flex-wrap gap-4 mb-3">
                   <div>
-                    <span className="placeholder col-12 mb-2 d-block rounded" style={{ height: 14 }} />
-                    <span className="placeholder col-3 rounded" style={{ height: 34 }} />
+                    <span className="mb-2" style={bar(120, 14, 4)} />
+                    <span style={bar(56, 36, 8)} />
                   </div>
                   <div className="flex-grow-1">
-                    <span className="placeholder col-10 mb-2 d-block rounded" style={{ height: 14 }} />
-                    <span className="placeholder col-10 d-block rounded" style={{ height: 14 }} />
+                    <span className="mb-2" style={bar("90%", 14, 4)} />
+                    <span style={bar("90%", 14, 4)} />
                   </div>
                 </div>
                 <div className="d-flex align-items-center gap-3 flex-wrap">
-                  <span className="placeholder rounded" style={{ width: 140, height: 40 }} />
-                  <span className="placeholder rounded" style={{ width: 140, height: 40 }} />
+                  <span style={bar(140, 40, 8)} />
+                  <span style={bar(140, 40, 8)} />
                 </div>
               </div>
-              <div className="col-sm-5 placeholder-glow">
-                <span className="placeholder w-100 rounded" style={{ height: 180, minHeight: 120 }} />
+              <div className="col-sm-5">
+                <span className="d-block w-100" style={{ ...SHIMMER, height: 180, minHeight: 120, borderRadius: 12 }} />
               </div>
             </div>
           </div>
@@ -58,16 +72,16 @@ const DashboardSkeleton = () => (
             <div key={key} className="col-md-4 d-flex">
               <div className="card flex-fill">
                 <div className="card-body pb-1">
-                  <div className="border-bottom mb-0 pb-2 placeholder-glow">
-                    <span className="placeholder col-9 rounded" style={{ height: 22 }} />
+                  <div className="border-bottom mb-0 pb-2">
+                    <span style={bar("85%", 22, 6)} />
                   </div>
                   <div className="d-flex align-items-center justify-content-between gap-2">
-                    <div className="py-2 flex-grow-1 placeholder-glow">
-                      <span className="placeholder col-5 mb-2 d-block rounded" style={{ height: 26 }} />
-                      <span className="placeholder col-7 d-block rounded" style={{ height: 14 }} />
+                    <div className="py-2 flex-grow-1">
+                      <span className="mb-2" style={bar("45%", 26, 6)} />
+                      <span style={bar("70%", 14, 4)} />
                     </div>
-                    <div className="placeholder-glow flex-shrink-0">
-                      <span className="placeholder rounded" style={{ width: 60, height: 45 }} />
+                    <div className="flex-shrink-0">
+                      <span style={bar(60, 45, 8)} />
                     </div>
                   </div>
                 </div>
@@ -79,20 +93,20 @@ const DashboardSkeleton = () => (
       <div className="col-xl-4 d-flex">
         <div className="card flex-fill">
           <div className="card-body">
-            <div className="placeholder-glow mb-3">
-              <span className="placeholder col-7 rounded" style={{ height: 22 }} />
+            <div className="mb-3">
+              <span style={bar("65%", 22, 6)} />
             </div>
-            <div className="placeholder-glow mb-3">
-              <span className="placeholder w-100 rounded" style={{ height: 180 }} />
+            <div className="mb-3">
+              <span className="d-block w-100" style={{ ...SHIMMER, height: 180, borderRadius: 12 }} />
             </div>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 placeholder-glow">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
               <div className="flex-grow-1">
-                <span className="placeholder col-11 mb-2 d-block rounded" style={{ height: 12 }} />
-                <span className="placeholder col-6 rounded" style={{ height: 18 }} />
+                <span className="mb-2" style={bar("95%", 12, 4)} />
+                <span style={bar("50%", 18, 6)} />
               </div>
-              <span className="placeholder rounded" style={{ width: 88, height: 26 }} />
+              <span style={bar(88, 26, 8)} />
             </div>
-            <span className="placeholder w-100 rounded placeholder-glow d-block" style={{ height: 42 }} />
+            <span className="d-block w-100" style={{ ...SHIMMER, height: 42, borderRadius: 8 }} />
           </div>
         </div>
       </div>
@@ -101,9 +115,9 @@ const DashboardSkeleton = () => (
       <div className="col-xl-12 d-flex">
         <div className="card flex-fill">
           <div className="card-body pb-1">
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 placeholder-glow">
-              <span className="placeholder col-4 col-sm-3 rounded" style={{ height: 22 }} />
-              <span className="placeholder col-2 rounded" style={{ height: 18 }} />
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <span style={bar("28%", 22, 6)} />
+              <span style={bar(72, 18, 6)} />
             </div>
             <div className="table-responsive">
               <table className="table custom-table1">
@@ -111,25 +125,24 @@ const DashboardSkeleton = () => (
                   {[1, 2, 3, 4].map((key) => (
                     <tr key={key}>
                       <td>
-                        <div className="d-flex align-items-center placeholder-glow">
-                          <span className="placeholder rounded-circle flex-shrink-0 me-2" style={{ width: 48, height: 48 }} />
+                        <div className="d-flex align-items-center">
+                          <span
+                            className="flex-shrink-0 me-2 rounded-circle"
+                            style={{ ...SHIMMER, width: 48, height: 48 }}
+                          />
                           <div className="w-100" style={{ maxWidth: 220 }}>
-                            <span className="placeholder col-12 mb-2 d-block rounded" style={{ height: 12 }} />
-                            <span className="placeholder col-8 rounded" style={{ height: 16 }} />
+                            <span className="mb-2" style={bar("100%", 12, 4)} />
+                            <span style={bar("70%", 16, 4)} />
                           </div>
                         </div>
                       </td>
                       <td>
-                        <div className="placeholder-glow">
-                          <span className="placeholder col-12 mb-2 d-block rounded" style={{ height: 14 }} />
-                          <span className="placeholder col-5 rounded" style={{ height: 12 }} />
-                        </div>
+                        <span className="mb-2" style={bar("100%", 14, 4)} />
+                        <span style={bar("40%", 12, 4)} />
                       </td>
                       <td>
-                        <div className="placeholder-glow">
-                          <span className="placeholder col-8 mb-2 d-block rounded" style={{ height: 14 }} />
-                          <span className="placeholder col-10 rounded" style={{ height: 24 }} />
-                        </div>
+                        <span className="mb-2" style={bar("75%", 14, 4)} />
+                        <span style={bar("90%", 24, 12)} />
                       </td>
                     </tr>
                   ))}
@@ -144,9 +157,9 @@ const DashboardSkeleton = () => (
       <div className="col-xl-4 d-flex">
         <div className="card flex-fill">
           <div className="card-body pb-1">
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 placeholder-glow">
-              <span className="placeholder col-3 rounded" style={{ height: 22 }} />
-              <span className="placeholder col-2 rounded" style={{ height: 18 }} />
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <span style={bar("36%", 22, 6)} />
+              <span style={bar(64, 18, 6)} />
             </div>
             <div className="table-responsive">
               <table className="table custom-table1">
@@ -154,18 +167,21 @@ const DashboardSkeleton = () => (
                   {[1, 2, 3].map((key) => (
                     <tr key={key}>
                       <td>
-                        <div className="d-flex align-items-center placeholder-glow">
-                          <span className="placeholder rounded flex-shrink-0 me-2" style={{ width: 40, height: 40 }} />
+                        <div className="d-flex align-items-center">
+                          <span
+                            className="flex-shrink-0 me-2 rounded"
+                            style={{ ...SHIMMER, width: 40, height: 40 }}
+                          />
                           <div>
-                            <span className="placeholder col-10 mb-2 d-block rounded" style={{ height: 14 }} />
-                            <span className="placeholder col-5 rounded" style={{ height: 12 }} />
+                            <span className="mb-2" style={bar("80%", 14, 4)} />
+                            <span style={bar("45%", 12, 4)} />
                           </div>
                         </div>
                       </td>
                       <td className="text-end">
-                        <div className="placeholder-glow d-inline-block text-end" style={{ minWidth: 72 }}>
-                          <span className="placeholder col-12 mb-2 d-block rounded ms-auto" style={{ height: 12 }} />
-                          <span className="placeholder col-8 rounded ms-auto d-block" style={{ height: 16 }} />
+                        <div className="d-inline-block text-end" style={{ minWidth: 72 }}>
+                          <span className="mb-2 ms-auto" style={{ ...bar("100%", 12, 4), marginLeft: "auto" }} />
+                          <span className="ms-auto d-block" style={{ ...bar("75%", 16, 4), marginLeft: "auto" }} />
                         </div>
                       </td>
                     </tr>
@@ -179,13 +195,13 @@ const DashboardSkeleton = () => (
       <div className="col-xl-8 d-flex">
         <div className="card flex-fill">
           <div className="card-body pb-0">
-            <div className="placeholder-glow mb-3">
-              <span className="placeholder col-3 rounded" style={{ height: 22 }} />
+            <div className="mb-3">
+              <span style={bar("28%", 22, 6)} />
             </div>
-            <div className="placeholder-glow mb-3">
-              <span className="placeholder col-5 rounded" style={{ height: 48 }} />
+            <div className="mb-3">
+              <span style={bar("40%", 48, 8)} />
             </div>
-            <span className="placeholder w-100 rounded placeholder-glow d-block" style={{ height: 290 }} />
+            <span className="d-block w-100" style={{ ...SHIMMER, height: 290, borderRadius: 12 }} />
           </div>
         </div>
       </div>
@@ -304,21 +320,34 @@ const CarPartnerDashboard = () => {
 
   return (
     <div className="content pb-0">
+      <style>{`
+        @keyframes carPartnerDashShimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
       {/* Breadcrumb */}
       <div className="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
-        <div className="my-auto mb-2">
-          <h4 className="mb-1">Dashboard</h4>
-          <nav>
-            <ol className="breadcrumb mb-0">
-              <li className="breadcrumb-item">
-                <Link to={all_routes.adminDashboard}>Home</Link>
-              </li>
-              <li className="breadcrumb-item active" aria-current="page">
-                Car Partner Dashboard
-              </li>
-            </ol>
-          </nav>
-        </div>
+        {loading ? (
+          <div className="my-auto mb-2">
+            <span className="d-block mb-2" style={bar(200, 32, 8)} />
+            <span className="d-block" style={bar(280, 14, 4)} />
+          </div>
+        ) : (
+          <div className="my-auto mb-2">
+            <h4 className="mb-1">Dashboard</h4>
+            <nav>
+              <ol className="breadcrumb mb-0">
+                <li className="breadcrumb-item">
+                  <Link to={all_routes.carPartnerDashboard}>Home</Link>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  Car Partner Dashboard
+                </li>
+              </ol>
+            </nav>
+          </div>
+        )}
       </div>
       {/* /Breadcrumb */}
       {loading ? (
@@ -556,7 +585,7 @@ const CarPartnerDashboard = () => {
                           <td>
                             <div className="d-flex align-items-center">
                               <Link
-                                to={`${all_routes.reservationDetails?.replace(":id", "")}${r.id}`}
+                                to={`${all_routes.carPartnerReservationDetails}/${r.id}`}
                                 className="avatar flex-shrink-0"
                               >
                                 <img
@@ -572,7 +601,7 @@ const CarPartnerDashboard = () => {
                                   {r.bookingType === "DELIVERY" ? "Delivery" : "Pickup"}
                                 </p>
                                 <h6 className="fs-14 fw-semibold mb-1">
-                                  <Link to={`${all_routes.reservationDetails?.replace(":id", "")}${r.id}`}>
+                                  <Link to={`${all_routes.carPartnerReservationDetails}/${r.id}`}>
                                     {r.carName}
                                   </Link>
                                 </h6>
