@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, generatePath } from "react-router-dom";
 import { all_routes } from "../../../../router/all_routes";
 import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
-import PredefinedDateRanges from "../../common/range-picker/datePicker";
+// import PredefinedDateRanges from "../../common/range-picker/datePicker";
 import ReactApexChart from "react-apexcharts";
 import {
   getAdminDashboard,
@@ -223,6 +223,7 @@ const AdminDashboard = () => {
             </ol>
           </nav>
         </div>
+        {/* Date range picker (hidden)
         <div className="d-flex my-xl-auto right-content align-items-center flex-wrap ">
           <div className="input-icon-start position-relative topdatepicker mb-2">
             <span className="input-icon-addon">
@@ -231,6 +232,7 @@ const AdminDashboard = () => {
             <PredefinedDateRanges />
           </div>
         </div>
+        */}
       </div>
       {/* /Breadcrumb */}
       <div className="row">

@@ -410,29 +410,44 @@
 .detail-product .slick-track {
     display: flex;
 }
-.detail-product .slick-slide {
-    width: 25% !important;
-    margin: 0 10px;
-    overflow: hidden;
-    &.slick-cloned {
-        width: 25% !important;
-        margin: 0 10px;
-        overflow: hidden;
-    }
-    &.slick-active {
-        width: 25% !important;
-        margin: 0 10px;
-        overflow: hidden;
-    }
-    img {
-        width: 100%;
-        border-radius: 10px;
-    }
-}
 .detail-bigimg {
     position: relative;
     margin-bottom: 15px;
     z-index: 999;
+    .slick-list {
+        overflow: hidden;
+        border-radius: 12px;
+    }
+    .slick-slide {
+        margin: 0 4px;
+        overflow: hidden;
+        float: none;
+        height: auto;
+        > div {
+            width: 100%;
+        }
+    }
+    .product-img {
+        position: relative;
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #eef0f2;
+        aspect-ratio: 16 / 10;
+        min-height: 260px;
+        @include mixins.respond-below(custom991) {
+            min-height: 200px;
+            aspect-ratio: 4 / 3;
+        }
+        img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 12px;
+        }
+    }
     button {
         width: 50px;
         height: 50px;
@@ -496,18 +511,72 @@
 
     }
 }
+/* Small preview strip under main gallery — not a second hero image */
 .detail-product .slider-nav-thumbnails {
-    .slick-slide {
-        height: auto;
+    margin-top: 12px;
+    max-height: 102px;
+    overflow: hidden;
+
+    .slick-list {
+        overflow: hidden;
+        padding: 2px 0 6px;
     }
+
+    .slick-track {
+        display: flex;
+        align-items: center;
+    }
+
+    .slick-slide {
+        width: 88px !important;
+        min-width: 88px;
+        max-width: 88px;
+        height: 88px;
+        margin: 0 5px !important;
+        overflow: visible;
+        opacity: 0.75;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        > div {
+            width: 88px;
+            height: 88px;
+        }
+        &.slick-current {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+        @include mixins.respond-below(custom767) {
+            width: 72px !important;
+            min-width: 72px;
+            max-width: 72px;
+            height: 72px;
+            > div {
+                width: 72px;
+                height: 72px;
+            }
+        }
+    }
+
     .listing-thumb-square {
         position: relative;
-        width: 100%;
-        aspect-ratio: 1 / 1;
+        width: 88px;
+        height: 88px;
+        min-width: 88px;
+        max-width: 88px;
+        max-height: 88px;
+        flex-shrink: 0;
         border-radius: 8px;
         overflow: hidden;
-        background-color: #f1f1f1;
+        background-color: #eef0f2;
         box-sizing: border-box;
+        border: 2px solid transparent;
+        cursor: pointer;
+        @include mixins.respond-below(custom767) {
+            width: 72px;
+            height: 72px;
+            min-width: 72px;
+            max-width: 72px;
+            max-height: 72px;
+        }
         img {
             position: absolute;
             inset: 0;
@@ -515,8 +584,13 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
-            border-radius: 8px;
+            border-radius: 6px;
         }
+    }
+
+    .slick-slide.slick-current .listing-thumb-square {
+        border-color: colors.$primarycolor;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
     }
 }
 .detail-product {

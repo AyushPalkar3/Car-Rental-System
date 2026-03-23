@@ -5,6 +5,7 @@ import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import { listingDetailsPath } from "../../router/all_routes";
 import { img_path } from "../../environment";
 import { getCarDayRate } from "../../utils/carPricing";
+import { buildCarGalleryImagePaths } from "../../utils/carGalleryImages";
 
 const CAR_IMAGE_BASE =
   import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
@@ -28,7 +29,7 @@ export function RelatedCarsSlider({ cars, sliderSettings }: Props) {
     <div className="rental-deal-slider details-car owl-carousel">
       <Slider {...sliderSettings}>
         {cars.map((c) => {
-          const imgs = Array.isArray(c.images) ? c.images : [];
+          const imgs = buildCarGalleryImagePaths(c);
           const imgPath = imgs[0];
           const rate = getCarDayRate(c.pricing);
           return (

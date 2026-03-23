@@ -17,6 +17,7 @@ import { all_routes, listingDetailsPath } from "../../router/all_routes";
 import { carAPI, type CarListSearchParams } from "../../api/user/car.api";
 import { BOOKING_BUFFER_HOURS } from "../../utils/bookingAvailability";
 import { getCarDayRate } from "../../utils/carPricing";
+import { buildCarGalleryImagePaths } from "../../utils/carGalleryImages";
 import { carfilterData } from "./carFilter";
 import { fuelFilterToApi, transmissionFilterToApi } from "../../utils/listingCarFilters";
 import { FaCogs, FaRoad, FaGasPump, FaBolt, FaCalendarAlt, FaUsers } from "react-icons/fa";
@@ -802,30 +803,45 @@ const ListingGrid = () => {
                 <div className="row">
                   {paginatedCars?.map((car: any) => {
                     const dayRate = getCarDayRate(car.pricing);
+                    const galleryPaths = buildCarGalleryImagePaths(car);
                     return (
                     <div key={car.id} className="col-xxl-4 col-lg-6 col-md-6 col-12">
                       <div className="listing-item">
                         <div className="listing-img">
                           <div className="img-slider listing-page-slider">
                             <Slider {...car.sliderSettings}>
-                              {car.images.map((img: any, index: any) => (
-                                <div key={index} className="slide-images">
+                              {galleryPaths.length > 0 ? (
+                                galleryPaths.map((img: string, index: number) => (
+                                  <div key={index} className="slide-images">
+                                    <Link to={listingDetailsPath(car.id)}>
+                                      <img
+                                        src={`${import.meta.env.VITE_API_BASE_URL_IMAGE}${img}`}
+                                        className="img-fluid"
+                                        alt={car.name}
+                                      />
+                                    </Link>
+                                  </div>
+                                ))
+                              ) : (
+                                <div key="fallback" className="slide-images">
                                   <Link to={listingDetailsPath(car.id)}>
-                                    <img
-                                      src={`${import.meta.env.VITE_API_BASE_URL_IMAGE}${img}`}
+                                    <ImageWithBasePath
+                                      src="assets/img/cars/car-01.jpg"
                                       className="img-fluid"
                                       alt={car.name}
                                     />
                                   </Link>
                                 </div>
-                              ))}
+                              )}
                             </Slider>
                           </div>
 
                           <div className="fav-item justify-content-end">
                             <span className="img-count">
                               <i className="feather icon-image" />
-                              {car.images.length.toString().padStart(2, "0")}
+                              {String(
+                                galleryPaths.length > 0 ? galleryPaths.length : 1
+                              ).padStart(2, "0")}
                             </span>
 
                             {/* Favorite (heart) icon hidden — match home popular cars

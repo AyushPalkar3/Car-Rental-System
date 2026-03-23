@@ -31,11 +31,55 @@ import {
   BookingCalendarLegend,
 } from "./booking-calendar-legend";
 import { RelatedCarsSlider } from "./relatedCarsSlider";
+import { img_path } from "../../environment";
+import { buildCarGalleryImagePaths } from "../../utils/carGalleryImages";
 
 const CAR_IMAGE_BASE =
   import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
 
+const LISTING_GALLERY_FALLBACK = `${img_path}assets/img/cars/slider-01.jpg`;
+
+function listingGalleryImageUrl(relativeOrAbsolute: string): string {
+  const raw = String(relativeOrAbsolute || "").trim();
+  if (!raw) return LISTING_GALLERY_FALLBACK;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const path = raw.startsWith("/") ? raw : `/${raw}`;
+  const base = CAR_IMAGE_BASE.replace(/\/$/, "");
+  return `${base}${path}`;
+}
+
+function ListingGalleryImage({
+  imagePath,
+  alt = "Vehicle",
+}: {
+  imagePath: string;
+  alt?: string;
+}) {
+  const [useFallback, setUseFallback] = useState(false);
+  const primary = listingGalleryImageUrl(imagePath);
+  return (
+    <img
+      src={useFallback ? LISTING_GALLERY_FALLBACK : primary}
+      alt={alt}
+      onError={() => setUseFallback(true)}
+    />
+  );
+}
+
 const SPEC_DASH = "—";
+
+function buildListingTitle(car: Record<string, unknown> | null): string {
+  if (!car) return "Car details";
+  const brand = String(car.brand || "").trim();
+  const name = String(car.name || "").trim();
+  const year = car.modelYear != null ? String(car.modelYear) : "";
+  if (brand && name) return `${brand} ${name}`;
+  if (name) return name;
+  if (brand && year) return `${brand} ${year}`;
+  if (brand) return brand;
+  if (year) return year;
+  return "Car details";
+}
 
 function specStr(v: unknown): string {
   if (v == null) return SPEC_DASH;
@@ -339,16 +383,12 @@ const listingDetails = () => {
     };
   }, [car?.id, car?.category, car?.brand]);
 
-  const galleryImages = Array.isArray(car?.images) ? car.images : [];
-  const gallerySlideCount =
-    galleryImages.length > 0 ? galleryImages.length : 1;
-  const galleryInfinite = galleryImages.length > 1;
-  // Keep thumb slidesToShow below slide count when possible so react-slick does not
-  // force `unslick` (slideCount <= slidesToShow), which breaks `asNavFor` with the main slider.
-  const thumbSlidesToShow =
-    gallerySlideCount <= 1
-      ? 1
-      : Math.min(3, gallerySlideCount - 1);
+  const galleryImages = useMemo(
+    () => buildCarGalleryImagePaths(car),
+    [car?.thumbnail, car?.images],
+  );
+  /** Slick's `infinite` clones slides; clones show up as extra thumbnails — only enable with enough real slides. */
+  const galleryInfiniteMain = galleryImages.length > 3;
 
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -430,29 +470,30 @@ const listingDetails = () => {
     () => ({
       dots: false,
       arrows: true,
-      infinite: galleryInfinite,
+      infinite: galleryInfiniteMain,
       speed: 500,
       slidesToShow: 1,
       slidesToScroll: 1,
       asNavFor: nav2 ?? undefined,
       ref: setMainSliderRef,
     }),
-    [nav2, galleryInfinite, setMainSliderRef],
+    [nav2, galleryInfiniteMain, setMainSliderRef],
   );
 
   const settings2 = useMemo(
     () => ({
       dots: false,
       arrows: false,
-      infinite: galleryInfinite,
-      speed: 500,
-      slidesToShow: thumbSlidesToShow,
+      infinite: false,
+      speed: 300,
+      variableWidth: true,
       slidesToScroll: 1,
+      swipeToSlide: true,
       focusOnSelect: true,
       asNavFor: nav1 ?? undefined,
       ref: setThumbSliderRef,
     }),
-    [nav1, galleryInfinite, thumbSlidesToShow, setThumbSliderRef],
+    [nav1, setThumbSliderRef],
   );
 
   useLayoutEffect(() => {
@@ -549,7 +590,7 @@ const listingDetails = () => {
                     </li> */}
                   </ul>
                   <div className="camaro-info">
-                    <h3>{car?.name?.trim() || "Car details"}</h3>
+                    <h3>{buildListingTitle(car)}</h3>
                     {/* <div className="camaro-location">
                       <div className="camaro-location-inner">
                         <i className="bx bx-map" />
@@ -585,50 +626,39 @@ const listingDetails = () => {
             <div className="col-lg-8">
               <div className="detail-product">
                 <div className="pro-info">
-                  {/* <div className="pro-badge">
-
-                    <Link to="#" className="fav-icon">
-                      <i className="fa-regular fa-heart" />
-
-                    </Link>
-              
-                  </div> */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: "relative",
-                        height: "20px",
-                        width: "20px",
-                        borderRadius: "50%",
-                        background: car?.hexCode,
-                        cursor: "pointer",
-                        boxShadow: `0 0 0 4px ${car?.hexCode}55, 0 6px 14px rgba(0,0,0,0.35)`,
-                        transform: "scale(1.15)",
-                        border:
-                          car?.hexCode === "#FFFFFF"
-                            ? "1px solid #9CA3AF"
-                            : "none",
-                      }}
-                    >
-
+                  <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 w-100 mb-2">
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="text-muted small text-nowrap">Exterior</span>
+                      <div
+                        title={specStr(car?.hexCode)}
+                        style={{
+                          height: "22px",
+                          width: "22px",
+                          minWidth: "22px",
+                          borderRadius: "50%",
+                          background: car?.hexCode || "#e5e7eb",
+                          boxShadow: car?.hexCode
+                            ? `0 0 0 3px ${String(car.hexCode)}55, 0 4px 10px rgba(0,0,0,0.2)`
+                            : "inset 0 0 0 1px #d1d5db",
+                          border:
+                            car?.hexCode === "#FFFFFF"
+                              ? "1px solid #9CA3AF"
+                              : "none",
+                        }}
+                        aria-hidden
+                      />
                     </div>
+                    <ul className="list-unstyled d-flex flex-wrap align-items-center gap-3 gap-md-4 mb-0">
+                      <li className="del-airport mb-0">
+                        <i className="fa-solid fa-check" />
+                        Home delivery
+                      </li>
+                      <li className="del-home mb-0">
+                        <i className="fa-solid fa-check" />
+                        ₹25/km
+                      </li>
+                    </ul>
                   </div>
-                  <ul>
-                    <li className="del-airport">
-                      <i className="fa-solid fa-check" />
-                      Home delivery
-                    </li>
-                    <li className="del-home">
-                      <i className="fa-solid fa-check" />
-                      ₹25/km
-                    </li>
-                  </ul>
                 </div>
 
 
@@ -650,7 +680,10 @@ const listingDetails = () => {
                     ) : galleryImages.length > 0 ? (
                       galleryImages.map((element: string, idx: number) => (
                         <div key={idx} className="product-img">
-                          <img src={`${CAR_IMAGE_BASE}${element}`} alt="" />
+                          <ListingGalleryImage
+                            imagePath={element}
+                            alt={`${buildListingTitle(car)} — photo ${idx + 1}`}
+                          />
                         </div>
                       ))
                     ) : (
@@ -695,9 +728,9 @@ const listingDetails = () => {
                     ) : galleryImages.length > 0 ? (
                       galleryImages.map((element: string, idx: number) => (
                         <div key={idx} className="listing-thumb-square">
-                          <img
-                            src={`${CAR_IMAGE_BASE}${element}`}
-                            alt=""
+                          <ListingGalleryImage
+                            imagePath={element}
+                            alt={`Thumbnail ${idx + 1}`}
                           />
                         </div>
                       ))
