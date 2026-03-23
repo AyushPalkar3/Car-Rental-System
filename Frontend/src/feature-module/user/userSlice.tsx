@@ -102,6 +102,7 @@ const userSlice = createSlice({
       .addCase(getProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string ?? "Something went wrong";
+        state.userInfo = null;
       })
       .addCase(updateUser.pending, (state) => {
         state.loading = true;

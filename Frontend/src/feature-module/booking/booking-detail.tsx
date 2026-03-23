@@ -6,6 +6,7 @@ import { Dropdown } from "primereact/dropdown";
 import { Link, useNavigate } from "react-router-dom";
 import { all_routes, listingDetailsPath } from "../../router/all_routes";
 import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
 import { updateUser } from "../user/userSlice";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
 
@@ -31,6 +32,23 @@ function basenameFromDocPath(pathOrUrl: string): string {
   } catch {
     return part;
   }
+}
+
+function emptyBillingForm() {
+  return {
+    firstName: "",
+    lastName: "",
+    phoneNum: "",
+    email: "",
+    addressLine: "",
+    state: "",
+    city: "",
+    pincode: "",
+    dlNumber: "",
+    dlPdf: "",
+    aadhaarPdf: "",
+    addressProofPdf: "",
+  };
 }
 
 const BookingDetail = () => {
@@ -125,20 +143,7 @@ const BookingDetail = () => {
 
 
 
-  const [formData, setFormData] = useState<any>({
-    firstName: "",
-    lastName: "",
-    phoneNum: "",
-    email: "",
-    addressLine: "",
-    state: "",
-    city: "",
-    pincode: "",
-    dlNumber: "",
-    dlPdf: "",
-    aadhaarPdf: "",
-    addressProofPdf: ""
-  });
+  const [formData, setFormData] = useState<any>(() => emptyBillingForm());
 
   // const fetchUser = async () => {
   //   const res = await userAPI.getMe();
@@ -160,7 +165,12 @@ const BookingDetail = () => {
   //   });
   // };
   useEffect(() => {
-    if (!userInfo) return;
+    const token = Cookies.get("accessToken");
+    if (!token || !userInfo) {
+      setFormData(emptyBillingForm());
+      setPickedDocNames({ dl: "", aadhaar: "", addressProof: "" });
+      return;
+    }
     const u = (userInfo as { user?: Record<string, unknown> }).user ?? userInfo;
     if (!u || typeof u !== "object") return;
     const row = u as Record<string, any>;

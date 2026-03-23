@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import { CornerDownLeft } from "react-feather";
 import { all_routes } from "../../router/all_routes";
 import { authAPI } from "../../api/user/auth.api";
-import Cookies from 'js-cookie'
+import Cookies from "js-cookie";
+import { useDispatch } from "react-redux";
+import { getProfile } from "../user/userSlice";
+import { getSafeInternalPath } from "../../utils/safeRedirect";
+
 const routes = all_routes;
 
 const Login = () => {
@@ -15,6 +19,8 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const dispatch = useDispatch();
 
   /* ================= SEND OTP ================= */
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -79,7 +85,14 @@ const Login = () => {
         sameSite: "strict",
       });
 
-        navigate(routes.homeOne);
+        try {
+          await dispatch(getProfile() as any).unwrap();
+        } catch {
+          /* profile optional for navigation */
+        }
+
+        const redirect = getSafeInternalPath(searchParams.get("redirect"));
+        navigate(redirect || routes.homeOne, { replace: true });
       } else {
         setError("Invalid OTP. Please try again.");
       }

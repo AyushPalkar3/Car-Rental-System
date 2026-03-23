@@ -5,7 +5,8 @@ import Breadcrumbs from "../common/breadcrumbs";
 import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
 import { TimePicker } from "antd";
-import { Link, useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { all_routes, listingDetailsPath } from "../../router/all_routes";
 import dayjs, { type Dayjs } from "dayjs";
 
@@ -60,6 +61,7 @@ const BookingCheckout = () => {
   const [priceBreakdown, setPriceBreakdown] = useState<any>(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const toDate = (v: unknown): Date | null => {
     if (v == null || v === "") return null;
@@ -531,6 +533,14 @@ const BookingCheckout = () => {
         totalAmount: finalDisplayTotal,
       })
     );
+    if (!Cookies.get("accessToken")) {
+      const returnTo = `${location.pathname}${location.search}`;
+      navigate(
+        `${routes.login}?redirect=${encodeURIComponent(returnTo)}`,
+        { replace: false }
+      );
+      return;
+    }
     navigate(routes.bookingDetail);
   };
 
