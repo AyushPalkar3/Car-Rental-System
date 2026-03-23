@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */		
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   adminAuth,
   adminRoutes,
@@ -39,6 +39,10 @@ const AllRoutes = () => {
   const location = useLocation();
   const dispatch :any = useDispatch();
   const { userInfo, loading } = useSelector((state:any)=>state.user);
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search]);
 
   // 🔥 Run API on mount
   useEffect(() => {

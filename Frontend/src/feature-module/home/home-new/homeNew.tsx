@@ -300,7 +300,7 @@ const HomeNew = () => {
                           <i className="bx bx-right-arrow-alt ms-1" />
                         </Link>
                         <Link
-                          to={all_routes.addListing}
+                          to={all_routes.contactUs}
                           className="btn btn-secondary d-inline-flex align-items-center"
                         >
                           <i className="bx bxs-plus-circle me-1" />

@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Breadcrumbs from "../common/breadcrumbs";
 import ImageWithBasePath from "../../core/data/img/ImageWithBasePath";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -233,8 +240,6 @@ const listingDetails = () => {
   const routes = all_routes;
   const navigate = useNavigate();
   const [date1, setDate1] = useState<any>();
-  const bigImgSliderRef = useRef<Slider | null>(null);
-  const thumbnailSliderRef = useRef<Slider | null>(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [selectedLocation1, setSelectedLocation1] = useState(null);
   const [date2, setDate2] = useState<any>();
@@ -334,6 +339,17 @@ const listingDetails = () => {
     };
   }, [car?.id, car?.category, car?.brand]);
 
+  const galleryImages = Array.isArray(car?.images) ? car.images : [];
+  const gallerySlideCount =
+    galleryImages.length > 0 ? galleryImages.length : 1;
+  const galleryInfinite = galleryImages.length > 1;
+  // Keep thumb slidesToShow below slide count when possible so react-slick does not
+  // force `unslick` (slideCount <= slidesToShow), which breaks `asNavFor` with the main slider.
+  const thumbSlidesToShow =
+    gallerySlideCount <= 1
+      ? 1
+      : Math.min(3, gallerySlideCount - 1);
+
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const images = [
@@ -389,54 +405,61 @@ const listingDetails = () => {
   };
 
   useEffect(() => {
-    if (bigImgSliderRef.current && thumbnailSliderRef.current) {
-      bigImgSliderRef.current.slickGoTo?.(0);
-      thumbnailSliderRef.current.slickGoTo?.(0);
-    }
-  }, []);
-  useEffect(() => {
     Aos.init({ duration: 1200, once: true });
   }, []);
   const openLightbox = (index: any) => {
     setCurrentIndex(index);
     setOpen(true);
   };
-  const [nav1, setNav1] = useState(null);
-  const [nav2, setNav2] = useState(null);
-  const sliderRef1 = useRef(null);
-  const sliderRef2 = useRef(null);
+  const [nav1, setNav1] = useState<any>(null);
+  const [nav2, setNav2] = useState<any>(null);
+  const sliderRef1 = useRef<any>(null);
+  const sliderRef2 = useRef<any>(null);
 
-  useEffect(() => {
-    setNav1(sliderRef1.current);
-    setNav2(sliderRef2.current);
+  const setMainSliderRef = useCallback((slider: any) => {
+    sliderRef1.current = slider;
+    setNav1(slider);
   }, []);
 
-  const settings1 = {
-    dots: false,
-    arrows: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    asNavFor: nav2 || undefined, // Link to the second slider
-    ref: (slider: any) => (sliderRef1.current = slider), // Assign the slider ref
+  const setThumbSliderRef = useCallback((slider: any) => {
+    sliderRef2.current = slider;
+    setNav2(slider);
+  }, []);
 
-  };
+  const settings1 = useMemo(
+    () => ({
+      dots: false,
+      arrows: true,
+      infinite: galleryInfinite,
+      speed: 500,
+      slidesToShow: 1,
+      slidesToScroll: 1,
+      asNavFor: nav2 ?? undefined,
+      ref: setMainSliderRef,
+    }),
+    [nav2, galleryInfinite, setMainSliderRef],
+  );
 
-  const settings2 = {
-    dots: false,
-    arrows: false,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    focusOnSelect: true,
-    asNavFor: nav1 || undefined, // Link to the first slider
-    ref: (slider: any) => (sliderRef2.current = slider), // Assign the slider ref
+  const settings2 = useMemo(
+    () => ({
+      dots: false,
+      arrows: false,
+      infinite: galleryInfinite,
+      speed: 500,
+      slidesToShow: thumbSlidesToShow,
+      slidesToScroll: 1,
+      focusOnSelect: true,
+      asNavFor: nav1 ?? undefined,
+      ref: setThumbSliderRef,
+    }),
+    [nav1, galleryInfinite, thumbSlidesToShow, setThumbSliderRef],
+  );
 
-  };
+  useLayoutEffect(() => {
+    sliderRef1.current?.slickGoTo?.(0);
+    sliderRef2.current?.slickGoTo?.(0);
+  }, [id, galleryImages.length]);
 
-  const galleryImages = Array.isArray(car?.images) ? car.images : [];
   const specificationRows = useMemo(() => buildSpecificationRows(car), [car]);
 
   if (!id) {
@@ -610,7 +633,10 @@ const listingDetails = () => {
 
 
                 <div className="slider detail-bigimg">
-                  <Slider {...settings1}>
+                  <Slider
+                    key={`detail-main-${id}-${galleryImages.length}`}
+                    {...settings1}
+                  >
                     {isLoading ? (
                       <div
                         key="gallery-loading"
@@ -653,12 +679,14 @@ const listingDetails = () => {
                   </Slider>
                 </div>
                 <div className="slider slider-nav-thumbnails">
-                  <Slider {...settings2}>
+                  <Slider
+                    key={`detail-thumb-${id}-${galleryImages.length}`}
+                    {...settings2}
+                  >
                     {isLoading ? (
                       <div
                         key="th-loading"
-                        className="d-flex align-items-center justify-content-center p-3"
-                        style={{ minHeight: 80 }}
+                        className="listing-thumb-square d-flex align-items-center justify-content-center"
                       >
                         <div className="spinner-border spinner-border-sm text-secondary" role="status">
                           <span className="visually-hidden">Loading…</span>
@@ -666,7 +694,7 @@ const listingDetails = () => {
                       </div>
                     ) : galleryImages.length > 0 ? (
                       galleryImages.map((element: string, idx: number) => (
-                        <div key={idx}>
+                        <div key={idx} className="listing-thumb-square">
                           <img
                             src={`${CAR_IMAGE_BASE}${element}`}
                             alt=""
@@ -674,7 +702,7 @@ const listingDetails = () => {
                         </div>
                       ))
                     ) : (
-                      <div key="th-fallback">
+                      <div key="th-fallback" className="listing-thumb-square">
                         <ImageWithBasePath
                           src="assets/img/cars/slider-thum-01.jpg"
                           alt=""
