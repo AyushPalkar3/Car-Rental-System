@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { Link, generatePath } from "react-router-dom";
 import { all_routes } from "../../../../router/all_routes";
 import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
@@ -80,6 +81,241 @@ function sparkOptions(categories: string[], strokeColor: string, fillColor: stri
     tooltip: { show: false, theme: "light", fixed: { enabled: false } },
   };
 }
+
+const SHIMMER: CSSProperties = {
+  background: "linear-gradient(90deg,#e8e8e8 25%,#f5f5f5 50%,#e8e8e8 75%)",
+  backgroundSize: "200% 100%",
+  animation: "adminDashShimmer 1.4s infinite",
+};
+
+const skBar = (w: string | number, h: number, r = 6): CSSProperties => ({
+  ...SHIMMER,
+  width: w,
+  height: h,
+  borderRadius: r,
+  display: "block",
+});
+
+const AdminDashboardSkeleton = () => (
+  <>
+    <div className="row">
+      <div className="col-xl-8 d-flex flex-column">
+        <div className="card flex-fill">
+          <div className="card-body">
+            <div className="row align-items-center row-gap-3">
+              <div className="col-sm-7">
+                <span className="mb-3 d-block" style={skBar("72%", 28, 6)} />
+                <span className="mb-3 d-block" style={skBar("55%", 16, 4)} />
+                <div className="d-flex align-items-center flex-wrap gap-4 mb-3">
+                  <div>
+                    <span className="mb-2 d-block" style={skBar(120, 14, 4)} />
+                    <span className="d-block" style={skBar(56, 36, 8)} />
+                  </div>
+                  <div className="flex-grow-1">
+                    <span className="mb-2 d-block" style={skBar("90%", 14, 4)} />
+                    <span className="d-block" style={skBar("90%", 14, 4)} />
+                  </div>
+                </div>
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  <span className="d-inline-block" style={skBar(140, 40, 8)} />
+                  <span className="d-inline-block" style={skBar(140, 40, 8)} />
+                </div>
+              </div>
+              <div className="col-sm-5">
+                <span
+                  className="d-block w-100"
+                  style={{ ...SHIMMER, height: 180, minHeight: 120, borderRadius: 12 }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="row">
+          {[1, 2, 3].map((key) => (
+            <div key={key} className="col-md-4 d-flex">
+              <div className="card flex-fill">
+                <div className="card-body pb-1">
+                  <div className="border-bottom mb-0 pb-2">
+                    <span className="d-block" style={skBar("85%", 22, 6)} />
+                  </div>
+                  <div className="d-flex align-items-center justify-content-between gap-2">
+                    <div className="py-2 flex-grow-1">
+                      <span className="mb-2 d-block" style={skBar("45%", 26, 6)} />
+                      <span className="d-block" style={skBar("70%", 14, 4)} />
+                    </div>
+                    <div className="flex-shrink-0">
+                      <span className="d-block" style={skBar(60, 45, 8)} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="col-xl-4 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <span className="d-block" style={skBar(160, 22, 6)} />
+              <span className="d-block" style={skBar(72, 18, 6)} />
+            </div>
+            <div className="mb-3">
+              <span className="d-block w-100" style={{ ...SHIMMER, height: 180, borderRadius: 12 }} />
+            </div>
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <div className="flex-grow-1">
+                <span className="mb-2 d-block" style={skBar("95%", 12, 4)} />
+                <span className="d-block" style={skBar("50%", 18, 6)} />
+              </div>
+              <span className="d-block" style={skBar(88, 26, 8)} />
+            </div>
+            <div className="row g-2 justify-content-center mb-3">
+              {[1, 2, 3].map((k) => (
+                <div key={k} className="col-sm-4 col-6 d-flex">
+                  <div className="bg-light border p-2 br-5 flex-fill text-center">
+                    <span className="mb-2 d-block mx-auto" style={skBar("70%", 12, 4)} />
+                    <span className="d-block mx-auto" style={skBar("50%", 14, 4)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <span className="d-block w-100" style={{ ...SHIMMER, height: 42, borderRadius: 8 }} />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-xl-12 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body pb-1">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <span className="d-block" style={skBar(200, 22, 6)} />
+              <span className="d-block" style={skBar(72, 18, 6)} />
+            </div>
+            <div className="table-responsive">
+              <table className="table custom-table1">
+                <tbody>
+                  {[1, 2, 3, 4].map((key) => (
+                    <tr key={key}>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <span
+                            className="flex-shrink-0 me-2 rounded"
+                            style={{ ...SHIMMER, width: 40, height: 40 }}
+                          />
+                          <div className="w-100" style={{ maxWidth: 220 }}>
+                            <span className="mb-2 d-block" style={skBar("100%", 12, 4)} />
+                            <span className="d-block" style={skBar("70%", 16, 4)} />
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="mb-2 d-block" style={skBar("100%", 14, 4)} />
+                        <span className="d-block" style={skBar("40%", 12, 4)} />
+                      </td>
+                      <td>
+                        <span className="mb-2 d-block" style={skBar("75%", 14, 4)} />
+                        <span className="d-block" style={skBar(90, 24, 12)} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-xl-4 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body pb-1">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <span className="d-block" style={skBar(120, 22, 6)} />
+              <span className="d-block" style={skBar(64, 18, 6)} />
+            </div>
+            <div className="table-responsive">
+              <table className="table custom-table1">
+                <tbody>
+                  {[1, 2, 3].map((key) => (
+                    <tr key={key}>
+                      <td>
+                        <span className="mb-2 d-block" style={skBar("75%", 16, 4)} />
+                        <span className="d-block" style={skBar(64, 22, 12)} />
+                      </td>
+                      <td className="text-end">
+                        <div className="d-inline-block text-end" style={{ minWidth: 72 }}>
+                          <span
+                            className="mb-2 d-block ms-auto"
+                            style={{ ...skBar(100, 12, 4), marginLeft: "auto" }}
+                          />
+                          <span
+                            className="ms-auto d-block"
+                            style={{ ...skBar(36, 16, 4), marginLeft: "auto" }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="col-xl-8 d-flex">
+        <div className="card flex-fill">
+          <div className="card-body pb-0">
+            <div className="mb-3">
+              <span className="d-block" style={skBar(100, 22, 6)} />
+            </div>
+            <div className="mb-3">
+              <span className="d-block" style={skBar("40%", 48, 8)} />
+            </div>
+            <span className="d-block w-100" style={{ ...SHIMMER, height: 290, borderRadius: 12 }} />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-md-12">
+        <div className="card">
+          <div className="card-body">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <span className="d-block" style={skBar(160, 22, 6)} />
+              <span className="d-block" style={skBar(72, 18, 6)} />
+            </div>
+            <div className="custom-table table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                      <th key={i}>
+                        <span className="d-block" style={skBar("85%", 14, 4)} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3, 4].map((row) => (
+                    <tr key={row}>
+                      {[1, 2, 3, 4, 5, 6, 7].map((col) => (
+                        <td key={col}>
+                          <span className="d-block" style={skBar(col === 7 ? 72 : "90%", 14, 4)} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </>
+);
 
 const AdminDashboard = () => {
   const [data, setData] = useState<AdminDashboardData | null>(null);
@@ -185,8 +421,20 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="content pb-0 p-4">
-        <p className="text-muted">Loading dashboard…</p>
+      <div className="content pb-0">
+        <style>{`
+          @keyframes adminDashShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}</style>
+        <div className="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
+          <div className="my-auto mb-2">
+            <span className="d-block mb-2" style={skBar(200, 32, 8)} />
+            <span className="d-block" style={skBar(280, 14, 4)} />
+          </div>
+        </div>
+        <AdminDashboardSkeleton />
       </div>
     );
   }
