@@ -120,24 +120,46 @@ const NewHeader = () => {
 
 
 
-            {/* Mobile Login / Signup */}
-            {isLogin ? <div className="mobile-auth d-lg-none">Hello</div> : <div className="mobile-auth d-lg-none">
-              <Link
-                to={all_routes.login}
-                className="btn btn-secondary w-100 mb-2"
-                onClick={onhandleCloseMenu}
-              >
-                <i className="bx bx-user me-1"></i> Sign In
-              </Link>
+            {/* Mobile Login / Signup or Dashboard / Logout */}
+            {isLogin ? (
+              <div className="mobile-auth d-lg-none">
+                <Link
+                  to={all_routes.userDashboard}
+                  className="btn btn-secondary w-100 mb-2"
+                  onClick={onhandleCloseMenu}
+                >
+                  <i className="bx bx-grid-alt me-1"></i> Dashboard
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn-primary w-100"
+                  onClick={() => {
+                    onhandleCloseMenu();
+                    onLogout();
+                  }}
+                >
+                  <i className="bx bx-log-out me-1"></i> Logout
+                </button>
+              </div>
+            ) : (
+              <div className="mobile-auth d-lg-none">
+                <Link
+                  to={all_routes.login}
+                  className="btn btn-secondary w-100 mb-2"
+                  onClick={onhandleCloseMenu}
+                >
+                  <i className="bx bx-user me-1"></i> Sign In
+                </Link>
 
-              <Link
-                to={all_routes.register}
-                className="btn btn-primary w-100"
-                onClick={onhandleCloseMenu}
-              >
-                <i className="bx bx-lock me-1"></i> Sign Up
-              </Link>
-            </div>}
+                <Link
+                  to={all_routes.register}
+                  className="btn btn-primary w-100"
+                  onClick={onhandleCloseMenu}
+                >
+                  <i className="bx bx-lock me-1"></i> Sign Up
+                </Link>
+              </div>
+            )}
 
           </div>
 
