@@ -1001,7 +1001,8 @@ const HomeNew = () => {
           </div>
         </section>
         {/* /Rental Section */}
-        {/* Popular Section */}
+        {/* Popular Section — disabled; set to `true` to show */}
+        {false && (
         <section className="popular-section-four">
           <div className="container">
             {/* Section Header */}
@@ -1161,6 +1162,7 @@ const HomeNew = () => {
             </Slider>
           </div>
         </section>
+        )}
         {/* /Popular Section */}
         {/* Testimonial Section */}
         <section className="testimonial-section">
