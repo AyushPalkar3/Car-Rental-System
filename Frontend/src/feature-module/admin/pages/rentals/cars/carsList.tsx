@@ -123,8 +123,11 @@ const CarsList = () => {
         if (!unavailModal) return;
         try {
             setUnavailSubmitting(true);
-            await adminUnavailabilityAPI.approve(unavailModal.requestId, adminNote.trim() || undefined);
-            message.success("Block request approved.");
+            const res = await adminUnavailabilityAPI.approve(
+                unavailModal.requestId,
+                adminNote.trim() || undefined
+            );
+            message.success(res.data.message ?? "Block request approved.");
             setUnavailModal(null);
             setAdminNote("");
             setRefreshSeq(s => s + 1);

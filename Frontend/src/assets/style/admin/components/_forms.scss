@@ -620,15 +620,41 @@ input[type="range"]::-webkit-slider-runnable-track {
   font-weight: variables.$font-weight-medium;
   color: variables.$title-color;
 }
-[data-theme-mode="dark"] {
+/* Dark theme: html gets class "dark-mode" from Redux (see commonSlice); data-theme-mode is unused */
+[data-theme-mode="dark"],
+.dark-mode {
   input {
     &[type="week"],
     &[type="month"],
     &[type="date"],
     &[type="datetime-local"],
     &[type="time"] {
+      color-scheme: dark;
+      color: variables.$gray-900;
+
+      /* Native date/time text segments (e.g. dd/mm/yyyy) must inherit readable color */
+      &::-webkit-datetime-edit,
+      &::-webkit-datetime-edit-fields-wrapper,
+      &::-webkit-datetime-edit-text,
+      &::-webkit-datetime-edit-month-field,
+      &::-webkit-datetime-edit-day-field,
+      &::-webkit-datetime-edit-year-field,
+      &::-webkit-datetime-edit-hour-field,
+      &::-webkit-datetime-edit-minute-field,
+      &::-webkit-datetime-edit-second-field,
+      &::-webkit-datetime-edit-millisecond-field,
+      &::-webkit-datetime-edit-ampm-field {
+        color: inherit;
+      }
+
       &::-webkit-calendar-picker-indicator {
-        filter: invert(1);
+        cursor: pointer;
+        opacity: 1;
+        width: 1.125rem;
+        height: 1.125rem;
+        padding: 0.125rem;
+        /* Silhouette to white: works for dark icons; avoids invert(1) alone flipping light icons to black on dark bg */
+        filter: brightness(0) invert(1);
       }
     }
   }

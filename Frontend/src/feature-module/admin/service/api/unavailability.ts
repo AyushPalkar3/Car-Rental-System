@@ -16,10 +16,12 @@ export const adminUnavailabilityAPI = {
     ),
 
   approve: (id: string, adminNote?: string) =>
-    axiosClient.put<{ message: string; data: UnavailabilityRequest }>(
-      `${ADMIN_UNAVAIL_BASE}/${id}/approve`,
-      { adminNote }
-    ),
+    axiosClient.put<{
+      message: string;
+      data: UnavailabilityRequest;
+      cancelledBookingIds?: string[];
+      cancelledBookingsCount?: number;
+    }>(`${ADMIN_UNAVAIL_BASE}/${id}/approve`, { adminNote }),
 
   reject: (id: string, adminNote?: string) =>
     axiosClient.put<{ message: string; data: UnavailabilityRequest }>(

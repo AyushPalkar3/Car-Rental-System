@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { message } from "antd";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../../../router/all_routes";
 import {
@@ -83,9 +84,14 @@ const UnavailabilityRequests = () => {
     setSaveError(null);
     try {
       if (actionModal.type === "approve") {
-        await adminUnavailabilityAPI.approve(actionModal.request.id, adminNote || undefined);
+        const res = await adminUnavailabilityAPI.approve(
+          actionModal.request.id,
+          adminNote || undefined
+        );
+        message.success(res.data.message ?? "Block request approved.");
       } else {
         await adminUnavailabilityAPI.reject(actionModal.request.id, adminNote || undefined);
+        message.success("Block request rejected.");
       }
       setRequests((prev) =>
         prev.map((r) =>
