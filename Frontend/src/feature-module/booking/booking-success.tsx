@@ -1,14 +1,64 @@
-import React from 'react';
-import ImageWithBasePath from '../../core/data/img/ImageWithBasePath'
+import React, { useState } from 'react';
 import Breadcrumbs from '../common/breadcrumbs'
 import { useSelector } from 'react-redux';
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
+
+const getAccessToken = () => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; accessToken=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
+  return "";
+};
+
+const apiBase =
+  (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL ||
+  "http://localhost:4000";
 
 const BookingSuccess = () => {
   const bookingData = useSelector((state: any) => state.checkout.bookingData);
   const checkoutData = useSelector((state: any) => state.checkout);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+
+  const handleDownloadInvoice = async () => {
+    const token = getAccessToken();
+    if (!token) {
+      toast.error("Please sign in to download your invoice.");
+      return;
+    }
+    const bookingId = bookingData?.id;
+    if (!bookingId) {
+      toast.error("Booking reference is missing.");
+      return;
+    }
+    try {
+      setInvoiceLoading(true);
+      const res = await fetch(`${apiBase}/api/payment/booking/${bookingId}/invoice`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { message?: string }).message || "Could not download invoice.");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${String(bookingId).slice(-8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Invoice downloaded.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Download failed.";
+      toast.error(msg);
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
 
   if (!bookingData) {
     return (
@@ -122,7 +172,24 @@ const BookingSuccess = () => {
               {/* ... (rest of the sections can be simplified or hidden for now) ... */}
             </div>
           </div>
-          <div className="print-btn text-center d-flex justify-content-center mt-4">
+          <div className="print-btn text-center d-flex justify-content-center flex-wrap gap-3 mt-4">
+            <button
+              type="button"
+              className="btn btn-primary d-inline-flex align-items-center"
+              onClick={handleDownloadInvoice}
+              disabled={invoiceLoading}>
+              {invoiceLoading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden />
+                  Preparing…
+                </>
+              ) : (
+                <>
+                  <i className="feather icon-download me-2" />
+                  Download invoice
+                </>
+              )}
+            </button>
             <Link to={all_routes.homeOne} className="btn btn-secondary">Back to Home</Link>
           </div>
         </div>

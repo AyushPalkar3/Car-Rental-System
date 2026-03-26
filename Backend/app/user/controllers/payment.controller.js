@@ -1,6 +1,7 @@
 import razorpay from "../../../lib/razorpay.js";
 import crypto from "crypto";
 import prisma from "../../../lib/db.config.js";
+import { streamInvoicePdfForPaymentRecord } from "../../utils/sendInvoicePdf.js";
 
 // ─── 1. Create Razorpay Order ────────────────────────────────────────────────
 export const createOrder = async (req, res) => {
@@ -128,5 +129,54 @@ export const getPaymentsByUser = async (req, res) => {
   } catch (error) {
     console.error("getPaymentsByUser error:", error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+// ─── Download invoice PDF for own booking (same PDF as admin) ─────────────────
+export const downloadInvoiceByBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const gstRaw = String(req.query.gst ?? "0");
+    const gstPercent = gstRaw === "18" ? 18 : 0;
+
+    const booking = await prisma.booking.findFirst({
+      where: { id: bookingId, userId },
+    });
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const payment = await prisma.payment.findUnique({
+      where: { bookingId },
+      include: {
+        user: true,
+        booking: {
+          include: {
+            car: true,
+            pricing: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      return res.status(404).json({ message: "Invoice not available yet" });
+    }
+
+    if (payment.status !== "SUCCESS") {
+      return res.status(400).json({ message: "Invoice is available after successful payment" });
+    }
+
+    streamInvoicePdfForPaymentRecord(payment, res, gstPercent);
+  } catch (error) {
+    console.error("downloadInvoiceByBooking error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Error generating invoice", error: error.message });
+    }
   }
 };
