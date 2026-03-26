@@ -150,6 +150,7 @@ export const all_routes = {
   adminAddPages: "/admin/add-pages",
   adminEditPages: "/admin/edit-pages",
   carDetails: "/admin/car-details",
+  adminCarCalendar: "/admin/car-calendar",
   companyDetails: "/admin/company-details",
   customerDetails: "/admin/customer-details",
   ticketDetails: "/admin/ticket-details",

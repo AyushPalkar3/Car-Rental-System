@@ -5,6 +5,7 @@ import { all_routes } from "../../../../../router/all_routes";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { adminCarAPI } from "../../../service/api/car";
+import CarDetailsMiniCalendar from "./carDetailsMiniCalendar";
 
 const CarDetails = () => {
     const [searchParams] = useSearchParams();
@@ -158,7 +159,13 @@ const CarDetails = () => {
                             )}
                         </p>
                     </div>
-                    <div className="d-flex align-items-center gap-3">
+                    <div className="d-flex align-items-center gap-3 flex-wrap">
+                        <Link
+                            to={`${all_routes.adminCarCalendar}?id=${carId}`}
+                            className="btn btn-outline-primary btn-md d-flex align-items-center">
+                            <i className="ti ti-calendar me-1" />
+                            Calendar
+                        </Link>
                         <Link
                             to={`${all_routes.editCar}?id=${carId}`}
                             className="btn btn-dark btn-md d-flex align-items-center">
@@ -491,7 +498,7 @@ const CarDetails = () => {
                         </div>
                     </div>
 
-                    <div className="card mb-0">
+                    <div className="card mb-3">
                         <div className="card-body">
                             <div className="border-bottom mb-3 pb-3">
                                 <h5>Summary</h5>
@@ -538,6 +545,8 @@ const CarDetails = () => {
                             </div>
                         </div>
                     </div>
+
+                    {carId ? <CarDetailsMiniCalendar carId={carId} /> : null}
                 </div>
                 {/* /Right Column */}
             </div>

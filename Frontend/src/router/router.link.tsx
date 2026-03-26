@@ -231,6 +231,7 @@ import CustomerDetails from "../feature-module/admin/pages/manage/customerDetail
 import CompanyDetails from "../feature-module/admin/pages/manage/companyDetails";
 import QuotationDetails from "../feature-module/admin/pages/bookings/quotations/quotationDetails";
 import CarDetails from "../feature-module/admin/pages/rentals/cars/carDetails";
+import CarCalendar from "../feature-module/admin/pages/rentals/cars/carCalendar";
 import PermissionsList from "../feature-module/admin/pages/user-management/permissionsList";
 import EditMenu from "../feature-module/admin/pages/cms/editMenu";
 import AddBlog from "../feature-module/admin/pages/cms/blogs/addBlog";
@@ -863,6 +864,10 @@ export const adminRoutes = [
   {
     path: routes.carDetails,
     element: <CarDetails />,
+  },
+  {
+    path: routes.adminCarCalendar,
+    element: <CarCalendar />,
   },
   {
     path: routes.adminChat,

@@ -68,8 +68,12 @@ export type AdminReservationPayload = {
   couponId?: string | null;
 };
 
-export const listReservations = async (): Promise<AdminReservation[]> => {
-  const response = await apiClient.get<AdminReservation[]>("/admin/reservations");
+export const listReservations = async (params?: {
+  carId?: string;
+}): Promise<AdminReservation[]> => {
+  const response = await apiClient.get<AdminReservation[]>("/admin/reservations", {
+    params: params?.carId ? { carId: params.carId } : undefined,
+  });
   return response.data;
 };
 

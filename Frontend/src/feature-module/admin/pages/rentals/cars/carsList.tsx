@@ -336,6 +336,14 @@ const CarsList = () => {
                         <li>
                             <Link
                                 className="dropdown-item rounded-1"
+                                to={`${all_routes.adminCarCalendar}?id=${record.key}`}>
+                                <i className="ti ti-calendar me-1" />
+                                Calendar
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                className="dropdown-item rounded-1"
                                 to={all_routes.adminAddReservations}>
                                 <i className="ti ti-plus me-1" />
                                 Add Reservation

@@ -10,7 +10,13 @@ const bookingInclude = {
 
 export const listAdminReservations = async (req, res) => {
   try {
+    const carId =
+      typeof req.query.carId === "string" && req.query.carId.trim()
+        ? req.query.carId.trim()
+        : undefined;
+
     const bookings = await prisma.booking.findMany({
+      where: carId ? { carId } : undefined,
       include: bookingInclude,
       orderBy: { createdAt: "desc" },
     });
