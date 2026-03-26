@@ -9,6 +9,7 @@ import { Column } from "primereact/column";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { getAccessToken } from "./common/bookingUtils";
+import { formatBookingDisplayId } from "../../core/utils/bookingDisplayId";
 
 const UserPayment = () => {
   const userInfo = useSelector((state: any) => state.user.userInfo);
@@ -58,9 +59,14 @@ const UserPayment = () => {
     .filter((p) => {
       if (!searchInput) return true;
       const q = searchInput.toLowerCase();
-      const bookingId = `#${p.bookingId?.slice(-6).toUpperCase() || ""}`;
+      const bookingRef = formatBookingDisplayId(p.bookingId);
       const carName = p.booking?.car?.name || "";
-      return bookingId.includes(q) || carName.toLowerCase().includes(q) || p.status?.toLowerCase().includes(q) || p.razorpayPaymentId?.toLowerCase().includes(q);
+      return (
+        bookingRef.toLowerCase().includes(q) ||
+        carName.toLowerCase().includes(q) ||
+        p.status?.toLowerCase().includes(q) ||
+        p.razorpayPaymentId?.toLowerCase().includes(q)
+      );
     })
     .sort((a, b) => {
       if (sortMode === "asc") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -92,7 +98,7 @@ INVOICE - ${invoiceNumber}
 Date: ${new Date(selectedPayment.createdAt).toLocaleDateString()}
 
 Car: ${selectedPayment.booking?.car?.name || "N/A"}
-Booking ID: #${selectedPayment.bookingId?.slice(-6).toUpperCase()}
+Booking ID: ${formatBookingDisplayId(selectedPayment.bookingId)}
 Razorpay Order ID: ${selectedPayment.razorpayOrderId}
 Payment ID: ${selectedPayment.razorpayPaymentId}
 
@@ -118,9 +124,7 @@ ${userInfo?.user?.email || ""}
     <label className="custom_check w-100"><input type="checkbox" name="username" /><span className="checkmark" /></label>
   );
 
-  const bookingIdCol = (p: any) => (
-    <span>#{p.bookingId?.slice(-6).toUpperCase()}</span>
-  );
+  const bookingIdCol = (p: any) => <span>{formatBookingDisplayId(p.bookingId)}</span>;
 
   const carNameCol = (p: any) => (
     <div className="table-avatar">

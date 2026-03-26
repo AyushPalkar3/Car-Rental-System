@@ -5,6 +5,7 @@ import PredefinedDateRanges from "../../../common/range-picker/datePicker";
 import CommonDatatable from "../../../common/dataTable";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
 
 // Status mapping utilities similar to what we did for User Bookings
 const statusColors: Record<string, string> = {
@@ -78,7 +79,7 @@ const ReservationsList = () => {
             originalData: booking,
             CAR_ID: booking.car?.id,
             CAR_IMG: booking.car?.images?.[0] || "",
-            CAR_NO: booking.orderId || booking.id.substring(0, 8), // Show short ID if no orderId
+            CAR_NO: formatBookingDisplayId(booking.id),
             CAR: booking.car?.name || "Unknown Car",
             CUSTOMER: `${booking.user?.firstName || ""} ${booking.user?.lastName || ""}`.trim() || "Unknown",
             BADGE: "Client", 

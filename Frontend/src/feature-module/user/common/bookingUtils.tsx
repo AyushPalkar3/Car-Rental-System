@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { formatBookingDisplayId } from "../../../core/utils/bookingDisplayId";
 
 // Shared utility for formatting booking data from backend for DataTable
 export const getAccessToken = (): string => {
@@ -11,7 +12,7 @@ export const getAccessToken = (): string => {
 
 export const formatBooking = (booking: any) => ({
   originalData: booking,
-  bookingId: `#${booking.id.slice(-6).toUpperCase()}`,
+  bookingId: formatBookingDisplayId(booking.id),
   originalId: booking.id,
   carName: booking.car?.name || "Unknown Car",
   img: booking.car?.images?.[0]

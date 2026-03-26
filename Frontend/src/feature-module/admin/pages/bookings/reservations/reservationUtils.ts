@@ -1,4 +1,5 @@
 import type { AdminReservation } from "../../../service/api/reservations";
+import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
 
 const monthShort = [
   "Jan",
@@ -61,7 +62,7 @@ export function mapReservationToTableRow(
   return {
     key: b.id,
     bookingId: b.id,
-    CAR_NO: `#${b.id.slice(-6).toUpperCase()}`,
+    CAR_NO: formatBookingDisplayId(b.id),
     CAR: car?.name ?? "—",
     CAR_IMG: thumbUrl,
     CUSTOMER: customerName,

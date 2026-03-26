@@ -5,6 +5,7 @@ import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
+import { formatBookingDisplayId } from "../../core/utils/bookingDisplayId";
 
 const getAccessToken = () => {
   const value = `; ${document.cookie}`;
@@ -46,7 +47,7 @@ const BookingSuccess = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `invoice-${String(bookingId).slice(-8)}.pdf`;
+      a.download = `invoice-${formatBookingDisplayId(bookingId)}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -82,7 +83,7 @@ const BookingSuccess = () => {
                 <i className="fa-solid fa-check-double" />
               </span>
               <h5>Thank you! Your Order has been Recieved</h5>
-              <h5 className="order-no">Order Number : <span>#{bookingData.id.slice(-6).toUpperCase()}</span></h5>
+              <h5 className="order-no">Order Number : <span>{formatBookingDisplayId(bookingData.id)}</span></h5>
             </div>
             <div className="booking-header">
               <div className="booking-img-wrap">

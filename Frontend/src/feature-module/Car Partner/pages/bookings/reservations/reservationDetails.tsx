@@ -3,6 +3,7 @@ import { all_routes } from "../../../../../router/all_routes";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
 
 const statusColors: Record<string, string> = {
   COMPLETED: "bg-success-transparent",
@@ -75,7 +76,7 @@ const ReservationDetails = () => {
             </div>
             <div className="card">
               <div className="card-header d-flex align-items-center justify-content-between">
-                <h5>Reservation Details - #{booking.orderId || booking.id.substring(0,8)}</h5>
+                <h5>Reservation Details — {formatBookingDisplayId(booking.id)}</h5>
                 <span className={`badge ${statusColors[booking.status] || "bg-secondary-transparent"}`}>
                   {booking.status}
                 </span>

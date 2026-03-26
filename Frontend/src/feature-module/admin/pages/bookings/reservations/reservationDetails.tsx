@@ -9,6 +9,7 @@ import {
   type AdminReservation,
 } from "../../../service/api/reservations";
 import { displayStatus } from "./reservationUtils";
+import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
 
 const formatDetail = (iso: string) =>
   new Date(iso).toLocaleString(undefined, {
@@ -148,7 +149,12 @@ const ReservationDetails = () => {
             {booking && (
             <div className="card">
               <div className="card-header d-flex align-items-center justify-content-between">
-                <h5>Reservation Details</h5>
+                <h5>
+                  Reservation Details
+                  <span className="text-muted fs-14 fw-normal ms-2">
+                    {formatBookingDisplayId(booking.id)}
+                  </span>
+                </h5>
                 <span className={`badge ${statusBadgeClass(booking)}`}>
                   {statusLabel}
                 </span>
