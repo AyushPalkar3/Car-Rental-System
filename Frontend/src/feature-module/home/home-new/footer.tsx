@@ -43,23 +43,13 @@ const NewFooter = () => {
             </div>
             <ul className="social-icon">
               <li>
-                <Link to="#">
+                <Link to="https://www.facebook.com/ekalodrive?mibextid=wwXIfr&rdid=89hfw2WnCKHJzEMN&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18G5FUDoaE%2F%3Fmibextid%3DwwXIfr" target="_blank" rel="noopener noreferrer">
                   <i className="fa-brands fa-facebook-f" />
                 </Link>
               </li>
               <li>
-                <Link to="#">
+                <Link to="https://www.instagram.com/ekalodrive?igsh=MXRlMzdyY2tiYTN6bQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer">
                   <i className="fa-brands fa-instagram" />
-                </Link>
-              </li>
-              <li>
-                <Link to="#">
-                  <i className="fab fa-twitter" />{" "}
-                </Link>
-              </li>
-              <li>
-                <Link to="#">
-                  <i className="fab fa-linkedin" />
                 </Link>
               </li>
             </ul>
