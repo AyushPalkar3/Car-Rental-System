@@ -70,16 +70,8 @@ const Header = () => {
         <div className={` container-fluid`}>
           <nav className="navbar navbar-expand-lg header-nav">
             <div className="navbar-header">
-              <Link id="mobile_btn" to="#"  onClick={() => onHandleMobileMenu()}>
-                <span className="bar-icon">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </span>
-              </Link>
-              
               <Link to={all_routes.homeOne} className="navbar-brand logo">
-              
+
                 <ImageWithBasePath
                   src="assets/img/logo.svg"
                   className="img-fluid"
@@ -93,6 +85,14 @@ const Header = () => {
                   alt="Logo"
                 />
               </Link>
+
+              <Link id="mobile_btn" to="#"  onClick={() => onHandleMobileMenu()}>
+                <span className="bar-icon">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+              </Link>
             </div>
             <div className="main-menu-wrapper">
               <div className="menu-header">
@@ -102,10 +102,6 @@ const Header = () => {
                     className="img-fluid"
                     alt="Logo"
                   />
-                </Link>
-                <Link id="menu_close" className="menu-close" to="#" onClick={() => onhandleCloseMenu()}>
-                  {" "}
-                  <i className="fas fa-times"></i>
                 </Link>
               </div>
               <ul className={`main-nav `}>

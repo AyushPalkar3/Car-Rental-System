@@ -123,7 +123,7 @@
             @include mixins.respond-below(custom575) {
                 display: block;
                 width: 100%;
-                text-align: right;
+                text-align: left;
                 img {
                     height: 60px;
                     width: auto;
@@ -133,13 +133,14 @@
         }
         #mobile_btn {
             display: none;
-            margin-right: 30px;            
+            margin-right: 30px;
             @include mixins.respond-below(custom991) {
                 display: inline-block;
                 line-height: 0;
             }
             @include mixins.respond-below(custom575) {
-                left: 0;
+                right: 0;
+                left: auto;
                 margin-right: 0;
                 padding: 0 0px;
                 position: absolute;
