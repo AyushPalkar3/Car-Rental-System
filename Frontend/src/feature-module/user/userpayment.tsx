@@ -310,7 +310,7 @@ ${userInfo?.user?.email || ""}
                     <div className="col-lg-4 col-md-12">
                       <div className="invoice-bill-info">
                         <h6>Invoice From</h6>
-                        <p>Ekal Car Rentals<br />support@ekalrent.com<br />India</p>
+                        <p>EKALO DRIVE<br />support@ekalrent.com<br />India</p>
                       </div>
                     </div>
                     <div className="col-lg-4 col-md-12">
@@ -388,17 +388,17 @@ ${userInfo?.user?.email || ""}
                     <div className="col-lg-6 col-md-12">
                       <div className="invocie-note">
                         <h6>Notes</h6>
-                        <p>Thank you for choosing Ekal Car Rentals!</p>
+                        <p>Thank you for choosing EKALO DRIVE!</p>
                       </div>
                       <div className="invocie-note mb-0">
                         <h6>Terms and Conditions</h6>
-                        <p>All rentals are subject to Ekal's Terms of Service.</p>
+                        <p>All rentals are subject to EKALO DRIVE's Terms of Service.</p>
                       </div>
                     </div>
                     <div className="col-lg-6 col-md-12">
                       <div className="invoice-sign">
                         <ImageWithBasePath className="img-fluid d-inline-block" src="assets/img/signature.png" alt="Sign" />
-                        <span className="d-block">Ekal Car Rentals</span>
+                        <span className="d-block">EKALO DRIVE</span>
                       </div>
                     </div>
                   </div>
