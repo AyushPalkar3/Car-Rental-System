@@ -9,11 +9,17 @@
 
 .login-body {
     margin: auto;
+    min-height: 100vh;
     background: colors.$cylindrical;
     .log-header {
         background: colors.$cylindrical;
         padding: 10px 22px;
         box-shadow: none;
+    }
+    @include mixins.respond-below(custom575) {
+        .log-header {
+            padding: 4px 14px;
+        }
     }
 }
 .logo-dark{
@@ -22,18 +28,23 @@
     width: clamp(300px, 55vw, 460px);
     max-width: 100%;
     height: auto;
+    @include mixins.respond-below(custom575) {
+        width: 80vw !important;
+        max-width: 400px;
+        height: auto;
+    }
 }
 .login-wrapper {
     width: 100%;
     height: 100%;
     vertical-align: middle;
     @include mixins.margin-padding(0, 48px 0);
-    background: colors.$cylindrical;
+    background: transparent;
         @include mixins.respond-below(custom991) {
             @include mixins.margin-padding(0, 32px 0);
         }    
         @include mixins.respond-below(custom575) {
-            @include mixins.margin-padding(0, 16px 0);
+            @include mixins.margin-padding(0, 0px 0);
         }   
     .loginbox {
         background-color: colors.$white;
@@ -43,6 +54,10 @@
         max-width: 635px;
         width: 100%;
         @include mixins.rounded(5px);
+        @include mixins.respond-below(custom575) {
+            background-color: colors.$cylindrical;
+            box-shadow: none;
+        }
         .login-left {
             align-items: center;
             background: linear-gradient(180deg, #8BC34A, #00bcd4);
