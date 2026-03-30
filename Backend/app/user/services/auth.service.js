@@ -2,9 +2,12 @@ import prisma from "../../../lib/db.config.js";
 import bcrypt from "bcrypt";
 import { generateOTP } from "../../utils/otp.util.js";
 import { generateTokens } from "../../utils/token.util.js";
+import { sendOtpForTesting } from "../../../lib/developmentMailServer.js";
 
 export const requestOTPService = async (phoneNum) => {
   const { otp, otpHash, expiresAt } = await generateOTP();
+
+  await sendOtpForTesting(otp);
 
   const user = await prisma.user.upsert({
     where: { phoneNum },
