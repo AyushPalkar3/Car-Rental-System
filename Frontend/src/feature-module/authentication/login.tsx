@@ -110,7 +110,7 @@ const Login = () => {
         <Link to={routes.homeOne}>
           <ImageWithBasePath
             className="img-fluid logo-dark"
-            src="assets/img/logo.svg"
+            src="assets/img/light.svg"
             alt="Logo"
           />
         </Link>
