@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */		
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useLayoutEffect, useState } from "react";
 import {
   adminAuth,
@@ -17,7 +17,7 @@ import {
 } from "./router.link";
 
 import { Route, Routes, useLocation, Navigate } from "react-router-dom";
-import { useDispatch,useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import Feature from "../feature-module/feature";
 import UserFeature from "../feature-module/userFeature";
@@ -37,8 +37,8 @@ import { getProfile } from "../feature-module/user/userSlice";
 const AllRoutes = () => {
   const [_styleLoaded, setStyleLoaded] = useState(false);
   const location = useLocation();
-  const dispatch :any = useDispatch();
-  const { userInfo, loading } = useSelector((state:any)=>state.user);
+  const dispatch: any = useDispatch();
+  const { userInfo, loading } = useSelector((state: any) => state.user);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -50,9 +50,22 @@ const AllRoutes = () => {
   }, [dispatch]);
 
 
+  const [currentStyle, setCurrentStyle] = useState<"admin" | "main" | null>(null);
+
   useEffect(() => {
-    setStyleLoaded(false);
-    if (location.pathname.includes("/admin") || location.pathname.includes("/car-partner")) {
+    // Determine the required style based on the path
+    const isSpecialRoute = location.pathname.includes("/admin") || location.pathname.includes("/car-partner");
+    const targetStyle = isSpecialRoute ? "admin" : "main";
+
+    // If the style for the current layout is already loaded/loading, don't do anything
+    if (currentStyle === targetStyle) {
+      return;
+    }
+
+    setCurrentStyle(targetStyle);
+
+    // Fetch the style asynchronously and mark style loaded (only affects the first load as it initializes to false)
+    if (targetStyle === "admin") {
       import("../assets/style/admin/main.scss")
         .then(() => setStyleLoaded(true))
         .catch((err) => console.error("Admin style load error: ", err));
@@ -61,7 +74,41 @@ const AllRoutes = () => {
         .then(() => setStyleLoaded(true))
         .catch((err) => console.error("Main style load error: ", err));
     }
-  }, [location]);
+  }, [location.pathname, currentStyle]);
+
+  if (!_styleLoaded) {
+    return (
+      <div className="container mt-5 placeholder-glow">
+        {/* Header Skeleton */}
+        <div className="row mb-4">
+          <div className="col-12">
+            <div className="placeholder w-100" style={{ height: '80px', borderRadius: '8px' }}></div>
+          </div>
+        </div>
+        {/* Main Content Skeleton */}
+        <div className="row">
+          {/* Left Column */}
+          <div className="col-lg-8">
+            <div className="placeholder w-100 mb-4" style={{ height: '400px', borderRadius: '8px' }}></div>
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <div className="placeholder w-100" style={{ height: '200px', borderRadius: '8px' }}></div>
+              </div>
+              <div className="col-md-6 mb-3">
+                <div className="placeholder w-100" style={{ height: '200px', borderRadius: '8px' }}></div>
+              </div>
+            </div>
+          </div>
+          {/* Right Column / Sidebar */}
+          <div className="col-lg-4">
+            <div className="placeholder w-100 mb-3" style={{ height: '150px', borderRadius: '8px' }}></div>
+            <div className="placeholder w-100 mb-3" style={{ height: '150px', borderRadius: '8px' }}></div>
+            <div className="placeholder w-100 mb-3" style={{ height: '250px', borderRadius: '8px' }}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -85,7 +132,7 @@ const AllRoutes = () => {
         </Route>
 
         {/* PUBLIC ROUTES */}
-    
+
 
         {/* PAGES */}
         <Route path="/pages" element={<Feature />}>
@@ -180,7 +227,7 @@ const AllRoutes = () => {
           ))}
         </Route> */}
 
-        
+
 
       </Routes>
     </>

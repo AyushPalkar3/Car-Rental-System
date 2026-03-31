@@ -304,7 +304,7 @@ import CarPartnerPermissionsList from "../feature-module/Car Partner/pages/user-
 const routes = all_routes;
 
 export const publicRoutes = [
-   {
+  {
     path: "/home",
     element: <Navigate to="/index" />,
   },
@@ -341,7 +341,7 @@ export const listingroutes = [
   },
   {
     path: routes.listingDetails,
-    element: <ListingDetails/>,
+    element: <ListingDetails />,
   },
   {
     path: routes.listingMap,
@@ -358,7 +358,7 @@ export const pageroutes = [
     path: routes.aboutUs,
     element: <AboutUs />,
   },
-    {
+  {
     path: routes.contactUs,
     element: <Contact />,
   },
@@ -619,7 +619,7 @@ export const adminRoutes = [
   },
   {
     path: routes.adminCarPartnerList,
-    element: <CarPartnerList/>,
+    element: <CarPartnerList />,
   },
   {
     path: routes.adminLocationsList,
@@ -870,6 +870,10 @@ export const adminRoutes = [
     element: <AdminInvoiceDetails />,
   },
   {
+    path: routes.customerDetails,
+    element: <CustomerDetails />,
+  },
+  {
     path: routes.customerDetails + "/:id",
     element: <CustomerDetails />,
   },
@@ -919,7 +923,7 @@ export const adminAuth = [
   {
     path: routes.adminlogin,
     element: <AdminLogin />,
-  },  
+  },
   {
     path: routes.adminForgotPassword,
     element: <AdminForgotPassword />,
@@ -1552,7 +1556,7 @@ export const carPartnerAuth = [
   {
     path: routes.carPartnerLogin,
     element: <CarPartnerLogin />,
-  },  
+  },
   {
     path: routes.carPartnerForgotPassword,
     element: <CarPartnerForgotPassword />,
