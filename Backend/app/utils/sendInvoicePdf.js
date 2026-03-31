@@ -46,9 +46,13 @@ export function streamInvoicePdfForPaymentRecord(payment, res, gstPercent) {
   const dueDate = booking?.returnDate ? formatDate(booking.returnDate) : invoiceDate;
 
   const companyName = process.env.INVOICE_COMPANY_NAME || "Ekalo Drive";
-  const companyAddress = process.env.INVOICE_COMPANY_ADDRESS || "";
+  const companyAddress =
+    process.env.INVOICE_COMPANY_ADDRESS ||
+    "PRAYEJA CITY, Flat No. B-2, S NO-71, Floor 204, Sinhagad Road, Vadgaon Budruk, Pune - 411051, Maharashtra, India.";
   const companyPhone = process.env.INVOICE_COMPANY_PHONE || "+91 9168527197";
   const companyEmail = process.env.INVOICE_COMPANY_EMAIL || "support@ekalodrive.com";
+  const companyGstin = process.env.INVOICE_COMPANY_GSTIN || "27CCKPN2833G1ZH";
+  const companyLogoPath = process.env.INVOICE_COMPANY_LOGO_PATH || "";
 
   const customerName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Customer";
   const customerAddress = formatAddress(user?.address);
@@ -69,6 +73,8 @@ export function streamInvoicePdfForPaymentRecord(payment, res, gstPercent) {
     companyAddress,
     companyPhone,
     companyEmail,
+    companyGstin,
+    companyLogoPath,
     invoiceNo,
     invoiceDate,
     dueDate,

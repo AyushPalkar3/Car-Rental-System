@@ -1,10 +1,15 @@
 import PDFDocument from "pdfkit";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 function formatMoney(value, currency = "INR") {
   try {
+    const currencyDisplay = currency === "INR" ? "code" : "symbol";
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency,
+      currencyDisplay,
       minimumFractionDigits: 2,
     }).format(value);
   } catch {
@@ -34,6 +39,14 @@ function formatAddress(addr) {
   return parts.join(", ");
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const defaultLogoPath = path.resolve(
+  __dirname,
+  "../../../../",
+  "Frontend/src/assets/img/light-theme-logo-authentication.png"
+);
+
 /**
  * @param {import("pdfkit")} doc
  * @param {object} opts
@@ -44,6 +57,8 @@ export function buildInvoicePdf(doc, opts) {
     companyAddress = "",
     companyPhone = "",
     companyEmail = "",
+    companyGstin = "",
+    companyLogoPath = "",
     invoiceNo,
     invoiceDate,
     dueDate,
@@ -63,54 +78,148 @@ export function buildInvoicePdf(doc, opts) {
     transactionId,
   } = opts;
 
-  doc.fontSize(18).text("TAX INVOICE", { align: "center" });
-  doc.moveDown(0.5);
-  doc.fontSize(10).fillColor("#333333");
-  doc.text(companyName, { align: "center" });
-  if (companyAddress) doc.text(companyAddress, { align: "center" });
-  if (companyPhone || companyEmail) {
-    doc.text(
-      [companyPhone && `Tel: ${companyPhone}`, companyEmail].filter(Boolean).join("  |  "),
-      { align: "center" }
-    );
-  }
-  doc.moveDown(1);
-  doc.fillColor("#000000");
+  const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const leftX = doc.page.margins.left;
+  const rightX = leftX + pageWidth;
 
-  doc.fontSize(11).text(`Invoice No: ${invoiceNo}`);
-  doc.text(`Invoice Date: ${invoiceDate}`);
-  doc.text(`Due Date: ${dueDate}`);
-  doc.text(`GST: ${gstLabel}`);
-  doc.moveDown(0.8);
+  const drawDivider = (y) => {
+    doc.moveTo(leftX, y).lineTo(rightX, y).lineWidth(1).strokeColor("#e5e7eb").stroke();
+    doc.strokeColor("#000000");
+  };
 
-  doc.fontSize(12).text("Bill To", { underline: true });
-  doc.fontSize(10).text(customerName || "Customer");
-  if (customerAddress) doc.text(customerAddress);
-  if (customerPhone) doc.text(`Phone: ${customerPhone}`);
-  if (customerEmail) doc.text(`Email: ${customerEmail}`);
-  doc.moveDown(1);
+  const drawLabelValue = (label, value, x, y, width) => {
+    doc.fontSize(9).fillColor("#6b7280").text(label, x, y, { width });
+    doc.fontSize(10).fillColor("#111827").text(value, x, y + 12, { width });
+  };
 
-  doc.fontSize(10).text("Line items", { underline: true });
-  doc.moveDown(0.3);
-  doc.text(lineDescription, { continued: false });
-  doc.text(`${lineQty} — ${formatMoney(subtotal, currency)}`, { align: "right" });
-  doc.moveDown(1);
-
-  doc.text(`Subtotal: ${formatMoney(subtotal, currency)}`, { align: "right" });
-  if (gstPercent > 0) {
-    doc.text(
-      `GST (${gstPercent}%): ${formatMoney(gstAmount, currency)}`,
-      { align: "right" }
-    );
+  // Header
+  const headerTop = 40;
+  const logoPath = companyLogoPath || defaultLogoPath;
+  if (logoPath && fs.existsSync(logoPath)) {
+    doc.image(logoPath, leftX, headerTop, { height: 36 });
   } else {
-    doc.text(`GST: ${formatMoney(0, currency)}`, { align: "right" });
+    doc.fontSize(14).fillColor("#111827").text(companyName, leftX, headerTop);
   }
-  doc.fontSize(12).text(`Total: ${formatMoney(total, currency)}`, { align: "right" });
-  doc.moveDown(1.5);
 
-  doc.fontSize(9).fillColor("#555555");
-  if (paymentRef) doc.text(`Payment reference: ${paymentRef}`);
-  if (transactionId) doc.text(`Transaction ID: ${transactionId}`);
+  doc.fontSize(16).fillColor("#111827").text("Invoice", leftX, headerTop, {
+    width: pageWidth,
+    align: "right",
+  });
+  doc.fontSize(9).fillColor("#374151").text(`Invoice Number: ${invoiceNo}`, leftX, headerTop + 18, {
+    width: pageWidth,
+    align: "right",
+  });
+
+  drawDivider(90);
+
+  // Billing info (3 columns)
+  const billTop = 105;
+  const colWidth = pageWidth / 3;
+  const columnGap = 12;
+
+  const writeLine = (text, x, y, width, fontSize, color) => {
+    doc.fontSize(fontSize).fillColor(color).text(text, x, y, { width });
+    return y + doc.heightOfString(text, { width });
+  };
+
+  const writeColumn = (x, title, lines) => {
+    const width = colWidth - columnGap;
+    let y = billTop;
+    y = writeLine(title, x, y, width, 10, "#111827") + 4;
+    lines.forEach((line) => {
+      if (!line) return;
+      y = writeLine(line, x, y, width, 9, "#374151") + 3;
+    });
+    return y;
+  };
+
+  const billedToLines = [
+    customerName || "Customer",
+    customerEmail,
+    customerPhone,
+    customerAddress,
+  ].filter(Boolean);
+
+  const invoiceFromLines = [
+    companyName,
+    companyGstin ? `GSTIN: ${companyGstin}` : "",
+    companyAddress,
+    companyEmail,
+    companyPhone,
+  ].filter(Boolean);
+
+  const invoiceInfoLines = [
+    `Issue Date: ${invoiceDate}`,
+    `Due Date: ${dueDate}`,
+    `Amount: ${formatMoney(total, currency)}`,
+    paymentRef ? `Order ID: ${paymentRef}` : "",
+    transactionId ? `Payment ID: ${transactionId}` : "",
+  ].filter(Boolean);
+
+  const billedToBottom = writeColumn(leftX, "Billed To", billedToLines);
+  const fromBottom = writeColumn(leftX + colWidth, "Invoice From", invoiceFromLines);
+  const infoBottom = writeColumn(leftX + colWidth * 2, "Invoice Info", invoiceInfoLines);
+  const billingBottom = Math.max(billedToBottom, fromBottom, infoBottom) + 6;
+
+  // Line items table
+  const tableTop = Math.max(billingBottom, 210);
+  const descWidth = pageWidth * 0.55;
+  const qtyWidth = pageWidth * 0.25;
+  const amtWidth = pageWidth * 0.2;
+
+  doc.rect(leftX, tableTop, pageWidth, 24).fill("#f3f4f6");
+  doc.fillColor("#111827").fontSize(10).text("Description", leftX + 8, tableTop + 7, { width: descWidth });
+  doc.text("Period", leftX + descWidth + 8, tableTop + 7, { width: qtyWidth });
+  doc.text("Amount", leftX + descWidth + qtyWidth + 8, tableTop + 7, {
+    width: amtWidth - 16,
+    align: "right",
+  });
+
+  const rowTop = tableTop + 24;
+  const rowHeight = 52;
+  doc.rect(leftX, rowTop, pageWidth, rowHeight).strokeColor("#e5e7eb").stroke();
+  doc.fillColor("#111827").fontSize(10).text(lineDescription, leftX + 8, rowTop + 8, {
+    width: descWidth - 16,
+  });
+  doc.fillColor("#374151").fontSize(9).text(lineQty, leftX + descWidth + 8, rowTop + 8, {
+    width: qtyWidth - 16,
+  });
+  doc.fillColor("#111827").fontSize(10).text(formatMoney(subtotal, currency), leftX + descWidth + qtyWidth + 8, rowTop + 8, {
+    width: amtWidth - 16,
+    align: "right",
+  });
+
+  // Totals
+  const totalsTop = rowTop + rowHeight + 18;
+  const totalsWidth = pageWidth * 0.45;
+  const totalsX = rightX - totalsWidth;
+  doc.roundedRect(totalsX, totalsTop, totalsWidth, 78, 6).strokeColor("#e5e7eb").stroke();
+
+  const lineY = (offset) => totalsTop + 10 + offset;
+  doc.fillColor("#374151").fontSize(9).text("Subtotal", totalsX + 10, lineY(0));
+  doc.fillColor("#111827").fontSize(10).text(formatMoney(subtotal, currency), totalsX + 10, lineY(0), {
+    width: totalsWidth - 20,
+    align: "right",
+  });
+
+  doc.fillColor("#374151").fontSize(9).text(`GST (${gstPercent}%)`, totalsX + 10, lineY(18));
+  doc.fillColor("#111827").fontSize(10).text(formatMoney(gstAmount, currency), totalsX + 10, lineY(18), {
+    width: totalsWidth - 20,
+    align: "right",
+  });
+
+  doc.fillColor("#111827").fontSize(11).text("Total", totalsX + 10, lineY(38));
+  doc.fontSize(12).text(formatMoney(total, currency), totalsX + 10, lineY(38), {
+    width: totalsWidth - 20,
+    align: "right",
+  });
+
+  // Footer
+  const footerTop = totalsTop + 100;
+  drawDivider(footerTop);
+  doc.fontSize(9).fillColor("#6b7280");
+  if (paymentRef) doc.text(`Payment reference: ${paymentRef}`, leftX, footerTop + 8);
+  if (transactionId) doc.text(`Transaction ID: ${transactionId}`, leftX, footerTop + 22);
   doc.fillColor("#000000");
 }
 
