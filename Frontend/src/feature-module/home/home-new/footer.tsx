@@ -60,22 +60,28 @@ const NewFooter = () => {
             <div className="col-lg-4 col-md-6">
               {/* Footer Widget */}
               <div className="footer-widget footer-menu">
-                <h5 className="footer-title">Usefull Links</h5>
+                <h5 className="footer-title">Useful Links</h5>
                 <ul>
                   <li>
-                    <Link to="#">My account</Link>
+                    <Link to={all_routes.cancellationRefundPolicy}>
+                      Cancellation & Refund Policy
+                    </Link>
                   </li>
                   <li>
-                    <Link to="#">Testimonials</Link>
+                    <Link to={all_routes.bookingProcedure}>
+                      Booking Procedure & Rental Terms
+                    </Link>
                   </li>
                   <li>
-                    <Link to="#">Privacy & Policy</Link>
+                    <Link to={all_routes.ekaloTermsConditions}>
+                      EKALO Drive Terms & Conditions
+                    </Link>
+                  </li>
+                   <li>
+                    <Link to={all_routes.damagePolicy}>Damage Policy</Link>
                   </li>
                   <li>
-                    <Link to="#">Terms & Condition</Link>
-                  </li>
-                  <li>
-                    <Link to="#">Refund Policy</Link>
+                    <Link to={all_routes.faq}>FAQs</Link>
                   </li>
                 </ul>
               </div>

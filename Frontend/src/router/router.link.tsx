@@ -48,6 +48,10 @@ import OurTeam from "../feature-module/pages/ourteam/ourTeam";
 import ComingSoon from "../feature-module/pages/comingsoon/comingsoon";
 import UserWallet from "../feature-module/user/wallet/userwallet";
 import PrivacyPolicy from "../feature-module/pages/privacypolicy/privacypolicy";
+import CancellationRefundPolicy from "../feature-module/pages/cancellationrefundpolicy/cancellationrefundpolicy";
+import DamagePolicy from "../feature-module/pages/damagepolicy/damagepolicy";
+import EkaloTermsConditions from "../feature-module/pages/ekaloterms/ekaloterms";
+import BookingProcedure from "../feature-module/pages/bookingprocedure/bookingprocedure";
 import AboutUs from "../feature-module/pages/aboutus";
 import InvoiceDetails from "../feature-module/booking/invoice";
 import BookingCalendar from "../feature-module/user/bookings-calendar";
@@ -397,6 +401,22 @@ export const pageroutes = [
   {
     path: routes.privacyPolicy,
     element: <PrivacyPolicy />,
+  },
+  {
+    path: routes.cancellationRefundPolicy,
+    element: <CancellationRefundPolicy />,
+  },
+  {
+    path: routes.damagePolicy,
+    element: <DamagePolicy />,
+  },
+  {
+    path: routes.ekaloTermsConditions,
+    element: <EkaloTermsConditions />,
+  },
+  {
+    path: routes.bookingProcedure,
+    element: <BookingProcedure />,
   },
   {
     path: routes.bookingAddon,

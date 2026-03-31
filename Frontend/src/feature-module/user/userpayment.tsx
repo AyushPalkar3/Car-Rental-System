@@ -310,7 +310,17 @@ ${userInfo?.user?.email || ""}
                     <div className="col-lg-4 col-md-12">
                       <div className="invoice-bill-info">
                         <h6>Invoice From</h6>
-                        <p>EKALO DRIVE<br />support@ekalrent.com<br />India</p>
+                        <p className="mb-1 fw-semibold">EKALO DRIVE</p>
+                        <p className="mb-1">
+                          Goods and Services Tax Identification Number:
+                          <span className="d-block">27CCKPN2833G1ZH</span>
+                        </p>
+                        <p className="mb-1">
+                          PRAYEJA CITY, Flat No. B-2, S NO-71, Floor 204,
+                          Sinhagad Road, Vadgaon Budruk, Pune - 411051,
+                          Maharashtra, India.
+                        </p>
+                        <p className="mb-1">support@ekalrent.com</p>
                       </div>
                     </div>
                     <div className="col-lg-4 col-md-12">
