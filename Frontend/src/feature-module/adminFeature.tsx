@@ -38,7 +38,7 @@ const AdminFeature = () => {
           <AdminSidebar />
           <div className="page-wrapper">
             <Outlet />
-            <AdminFooter />
+            {/* <AdminFooter /> */}
           </div>
         </div>
         <div className={`sidebar-overlay ${mobileSidebar ? "opened" : ""}`}  onClick={toggleMobileSidebar}></div>
