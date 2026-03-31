@@ -84,7 +84,7 @@ const NewHeader = () => {
             <div className="menu-header">
               <Link to={all_routes.home} className="menu-logo">
                 <ImageWithBasePath
-                  src="assets/img/logo-dark.png"
+                  src="assets/img/light-theme-logo.png"
                   className="img-fluid"
                   alt="Logo"
                 />

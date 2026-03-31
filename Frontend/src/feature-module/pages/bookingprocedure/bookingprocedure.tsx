@@ -68,13 +68,13 @@ const BookingProcedure = () => {
                     of the Driving License prior to commencement of the rental
                     period.
                   </li>
-                  <li>
+                  <li className="d-block">
                     The Renter must present the following original documents at
                     the time of vehicle handover:
-                    <ul>
-                      <li>Original Driving License</li>
-                      <li>Local Address Proof</li>
-                      <li>One additional Government-issued ID proof</li>
+                    <ul className="mt-2 ms-4">
+                      <li className="d-block" style={{ display: "list-item" }}>Original Driving License</li>
+                      <li className="d-block" style={{ display: "list-item" }}>Local Address Proof</li>
+                      <li className="d-block" style={{ display: "list-item" }}>One additional Government-issued ID proof</li>
                     </ul>
                   </li>
                   <li>Acceptable ID proofs include:</li>
@@ -115,15 +115,15 @@ const BookingProcedure = () => {
                     authorized Payment Link. Cash payments shall not be
                     accepted.
                   </li>
-                  <li>
+                  <li className="d-block">
                     The Company reserves the right to deduct from the security
                     deposit any amounts payable towards:
-                    <ul>
-                      <li>Vehicle damages</li>
-                      <li>Traffic violations and penalties</li>
-                      <li>Overdue rental charges</li>
-                      <li>Excess kilometer usage</li>
-                      <li>Any other contractual dues</li>
+                    <ul className="mt-2 ms-4">
+                      <li className="d-block" style={{ display: "list-item" }}>Vehicle damages</li>
+                      <li className="d-block" style={{ display: "list-item" }}>Traffic violations and penalties</li>
+                      <li className="d-block" style={{ display: "list-item" }}>Overdue rental charges</li>
+                      <li className="d-block" style={{ display: "list-item" }}>Excess kilometer usage</li>
+                      <li className="d-block" style={{ display: "list-item" }}>Any other contractual dues</li>
                     </ul>
                   </li>
                   <li>

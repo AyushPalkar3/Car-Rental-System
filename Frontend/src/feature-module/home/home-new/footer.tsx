@@ -74,7 +74,7 @@ const NewFooter = () => {
                   </li>
                   <li>
                     <Link to={all_routes.ekaloTermsConditions}>
-                      EKALO Drive Terms & Conditions
+                      Terms & Conditions
                     </Link>
                   </li>
                    <li>
@@ -190,19 +190,7 @@ const NewFooter = () => {
               </Link>
             </div>
           </div>
-          <div className="col-lg-4">
-            <ul className="privacy-link">
-              <li>
-                <Link to={all_routes.privacyPolicy}>Privacy</Link>
-              </li>
-              <li>
-                <Link to={all_routes.termsConditions}>Terms &amp; Condition</Link>
-              </li>
-              <li>
-                <Link to="#">Refund Policy</Link>
-              </li>
-            </ul>
-          </div>
+          
         </div>
       </div>
       {/* /Copyright */}

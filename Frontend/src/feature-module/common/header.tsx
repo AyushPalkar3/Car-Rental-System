@@ -81,7 +81,7 @@ const Header = () => {
               </Link>
               <Link to={all_routes.homeOne} className="navbar-brand logo-small">
                 <ImageWithBasePath
-                  src="assets/img/logo-small.png"
+                  src="assets/img/light-theme-logo-authentication.png"
                   className="img-fluid"
                   alt="Logo"
                 />
