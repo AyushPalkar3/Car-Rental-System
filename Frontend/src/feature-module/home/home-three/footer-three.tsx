@@ -16,7 +16,8 @@ const FooterThree = () => {
           <div className="footer-contact footer-widget">
             <div className="footer-logo">
               <ImageWithBasePath
-                src="assets/img/logo.svg"
+                src="assets/img/light-theme-logo-authentication.png"
+                style={{maxWidth:'250px' , height:'auto'}}
                 className="img-fluid aos"
                 alt="logo"
               />

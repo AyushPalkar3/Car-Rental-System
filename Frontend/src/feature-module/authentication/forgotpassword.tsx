@@ -14,8 +14,9 @@ const ForgotPassword = () => {
           <Link to={routes.homeOne}>
             <ImageWithBasePath
               className="img-fluid logo-dark"
-              src="assets/img/logo.svg"
+              src="assets/img/light-theme-logo-authentication.png"
               alt="Logo"
+              style={{ maxWidth: "250px", height: "auto", marginBottom: "50px"  }}
             />
           </Link>
         </header>

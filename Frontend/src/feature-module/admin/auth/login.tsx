@@ -79,6 +79,7 @@ const AdminLogin = () => {
                 src="assets/img/light-theme-logo-authentication.png"
                 className="img-fluid"
                 alt="Logo"
+                style={{ maxWidth: "250px", height: "auto", marginBottom: "50px"  }}
               />
             </div>
             <div className="card authentication-card mb-0">

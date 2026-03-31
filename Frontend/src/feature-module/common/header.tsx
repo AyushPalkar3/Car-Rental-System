@@ -73,7 +73,8 @@ const Header = () => {
               <Link to={all_routes.homeOne} className="navbar-brand logo">
 
                 <ImageWithBasePath
-                  src="assets/img/logo.svg"
+                                      src="assets/img/light-theme-logo-authentication.png"
+                    style={{maxWidth:'250px' , height:'auto'}}
                   className="img-fluid"
                   alt="Logo"
                 />
@@ -98,7 +99,8 @@ const Header = () => {
               <div className="menu-header">
                 <Link to={all_routes.homeOne} className="menu-logo">
                   <ImageWithBasePath
-                    src="assets/img/logo.svg"
+                    src="assets/img/light-theme-logo-authentication.png"
+                    style={{maxWidth:'250px' , height:'auto'}}
                     className="img-fluid"
                     alt="Logo"
                   />

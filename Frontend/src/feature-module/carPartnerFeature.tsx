@@ -2,7 +2,7 @@ import Cookies from "js-cookie";
 import { Navigate, Outlet } from "react-router-dom";
 import CarPartnerHeader from "./Car Partner/common/header/adminHeader";
 import CarPartnerSidebar from "./Car Partner/common/sidebar/adminSidebar";
-import CarPartnerFooter from "./Car Partner/common/footer/adminFooter";
+// import CarPartnerFooter from "./Car Partner/common/footer/adminFooter";
 import { useDispatch, useSelector } from "react-redux";
 import { setMobileSidebar } from "../core/data/redux/commonSlice";
 import { all_routes } from "../router/all_routes";
@@ -39,7 +39,7 @@ const CarPartnerFeature = () => {
           <CarPartnerSidebar />
           <div className="page-wrapper">
             <Outlet />
-            <CarPartnerFooter />
+            {/* <CarPartnerFooter /> */}
           </div>
         </div>
         <div className={`sidebar-overlay ${mobileSidebar ? "opened" : ""}`} onClick={toggleMobileSidebar}></div>
