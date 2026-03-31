@@ -109,8 +109,8 @@ const Login = () => {
       <header className="log-header">
         <Link to={routes.homeOne}>
           <ImageWithBasePath
-            className="img-fluid logo-dark"
-            src="assets/img/light.svg"
+            className="img-fluid logo-dark p-4"
+            src="assets/img/light-theme-logo-authentication.png"
             alt="Logo"
           />
         </Link>

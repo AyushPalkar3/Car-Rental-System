@@ -64,7 +64,7 @@ const NewHeader = () => {
 
             <Link to={all_routes.home} className="navbar-brand logo-small">
               <ImageWithBasePath
-                src="assets/img/logo-dark.png"
+                src="assets/img/light-theme-logo.png"
                 className="img-fluid"
                 alt="Logo"
               />

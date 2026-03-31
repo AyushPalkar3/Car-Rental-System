@@ -121,22 +121,28 @@
         .logo-small {
             display: none;
             @include mixins.respond-below(custom991) {
-                display: block;
+                display: flex;
+                align-items: center;
                 margin-right: auto;
+                max-width: calc(100% - 60px);
                 img {
-                    height: 40px;
+                    height: 36px;
                     width: auto;
+                    max-width: 100%;
+                }
+            }
+            @include mixins.respond-below(custom768) {
+                max-width: calc(100% - 56px);
+                img {
+                    height: 32px;
                 }
             }
             @include mixins.respond-below(custom575) {
-                width: 100%;
-                text-align: left;
+                max-width: calc(100% - 50px);
                 img {
-                    height: 60px;
-                    width: auto;
-                    max-height: none;
+                    height: 100px;
                 }
-             }
+            }
         }
         #mobile_btn {
             display: none;
@@ -1133,6 +1139,9 @@
             height: 79px;
             @include mixins.respond-below(lg) {
                 height: 66px;
+            }
+            @include mixins.respond-below(custom991) {
+                height: 100px;
             }
             .navbar-header {
                 #mobile_btn {
