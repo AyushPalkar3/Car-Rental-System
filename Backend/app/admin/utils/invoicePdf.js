@@ -3,6 +3,25 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// ─── Brand palette ───────────────────────────────────────────────────────────
+const C = {
+  dark: "#1A1A2E",
+  darkCard: "#222222",
+  darkCardLight: "#2E2E3A",
+  heading: "#111827",
+  body: "#374151",
+  muted: "#6B7280",
+  light: "#F9FAFB",
+  border: "#E5E7EB",
+  tableBg: "#F5F5F5",
+  amber: "#F5A623",
+  amberLight: "#FFF3DC",
+  teal: "#127384",
+  white: "#FFFFFF",
+  black: "#000000",
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatMoney(value, currency = "INR") {
   try {
     const currencyDisplay = currency === "INR" ? "code" : "symbol";
@@ -17,6 +36,13 @@ function formatMoney(value, currency = "INR") {
   }
 }
 
+function formatMoneyShort(value, currency = "INR") {
+  // PDFKit's built-in fonts don't support the ₹ Unicode glyph (U+20B9),
+  // so we use 'Rs.' which renders correctly without embedding extra fonts.
+  if (currency === "INR") return `Rs. ${Number(value).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatMoney(value, currency);
+}
+
 function formatDate(d) {
   if (!d) return "—";
   const date = d instanceof Date ? d : new Date(d);
@@ -24,6 +50,20 @@ function formatDate(d) {
     day: "2-digit",
     month: "short",
     year: "numeric",
+  });
+}
+
+function formatDateTime(d) {
+  if (!d) return "—";
+  const date = d instanceof Date ? d : new Date(d);
+  return date.toLocaleString("en-IN", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
   });
 }
 
@@ -39,15 +79,22 @@ function formatAddress(addr) {
   return parts.join(", ");
 }
 
+// ─── Asset paths ─────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const defaultLogoPath = path.resolve(
   __dirname,
-  "../../../../",
-  "Frontend/src/assets/img/light-theme-logo-authentication.png"
+  "../../..",
+  "assest/light-theme-logo-authentication.png"
+);
+const defaultSignaturePath = path.resolve(
+  __dirname,
+  "../../..",
+  "assest/signature.png"
 );
 
 /**
+ * Build a professional invoice PDF matching the client's design.
  * @param {import("pdfkit")} doc
  * @param {object} opts
  */
@@ -59,6 +106,7 @@ export function buildInvoicePdf(doc, opts) {
     companyEmail = "",
     companyGstin = "",
     companyLogoPath = "",
+    signaturePath = "",
     invoiceNo,
     invoiceDate,
     dueDate,
@@ -68,6 +116,15 @@ export function buildInvoicePdf(doc, opts) {
     customerEmail,
     customerPhone,
     customerAddress,
+    // Car / booking details
+    carName = "",
+    rentalType = "",
+    pickupDateRaw = "",
+    returnDateRaw = "",
+    deliveryCharge = 0,
+    paymentMode = "Razorpay",
+    paymentStatus = "",
+    // Amounts
     lineDescription,
     lineQty,
     subtotal,
@@ -78,60 +135,49 @@ export function buildInvoicePdf(doc, opts) {
     transactionId,
   } = opts;
 
-  const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-  const leftX = doc.page.margins.left;
-  const rightX = leftX + pageWidth;
+  const pageW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const L = doc.page.margins.left;
+  const R = L + pageW;
 
-  const drawDivider = (y) => {
-    doc.moveTo(leftX, y).lineTo(rightX, y).lineWidth(1).strokeColor("#e5e7eb").stroke();
-    doc.strokeColor("#000000");
-  };
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 1. HEADER — Logo on left + "INVOICE" title + invoice number on right
+  // ═══════════════════════════════════════════════════════════════════════════
+  const hdrTop = 40;
 
-  const drawLabelValue = (label, value, x, y, width) => {
-    doc.fontSize(9).fillColor("#6b7280").text(label, x, y, { width });
-    doc.fontSize(10).fillColor("#111827").text(value, x, y + 12, { width });
-  };
-
-  // Header
-  const headerTop = 40;
+  // Logo on the left
   const logoPath = companyLogoPath || defaultLogoPath;
   if (logoPath && fs.existsSync(logoPath)) {
-    doc.image(logoPath, leftX, headerTop, { height: 36 });
+    doc.image(logoPath, L, hdrTop, { height: 38 });
   } else {
-    doc.fontSize(14).fillColor("#111827").text(companyName, leftX, headerTop);
+    doc.fontSize(16).fillColor(C.heading).text(companyName, L, hdrTop);
   }
 
-  doc.fontSize(16).fillColor("#111827").text("Invoice", leftX, headerTop, {
-    width: pageWidth,
-    align: "right",
-  });
-  doc.fontSize(9).fillColor("#374151").text(`Invoice Number: ${invoiceNo}`, leftX, headerTop + 18, {
-    width: pageWidth,
-    align: "right",
-  });
-
-  drawDivider(90);
-
-  // Billing info (3 columns)
-  const billTop = 105;
-  const colWidth = pageWidth / 3;
-  const columnGap = 12;
-
-  const writeLine = (text, x, y, width, fontSize, color) => {
-    doc.fontSize(fontSize).fillColor(color).text(text, x, y, { width });
-    return y + doc.heightOfString(text, { width });
-  };
-
-  const writeColumn = (x, title, lines) => {
-    const width = colWidth - columnGap;
-    let y = billTop;
-    y = writeLine(title, x, y, width, 10, "#111827") + 4;
-    lines.forEach((line) => {
-      if (!line) return;
-      y = writeLine(line, x, y, width, 9, "#374151") + 3;
+  // INVOICE title on the right
+  doc
+    .fontSize(22)
+    .fillColor(C.heading)
+    .text("INVOICE", L, hdrTop, { width: pageW, align: "right" });
+  doc
+    .fontSize(9)
+    .fillColor(C.muted)
+    .text(`Invoice Number : ${invoiceNo}`, L, hdrTop + 26, {
+      width: pageW,
+      align: "right",
     });
-    return y;
-  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 2. INFO BLOCK — Billed To | Invoice From | Dates/Amount
+  // ═══════════════════════════════════════════════════════════════════════════
+  const blockTop = hdrTop + 54;
+
+  // --- Measure content heights first so the block is tall enough ---
+  const col1W = pageW * 0.32;
+  const col2W = pageW * 0.38;
+  const col3W = pageW - col1W - col2W;
+  const pad = 14;
+  const innerW1 = col1W - pad * 2;
+  const innerW2 = col2W - pad * 2;
+  const innerW3 = col3W - pad * 2;
 
   const billedToLines = [
     customerName || "Customer",
@@ -141,86 +187,274 @@ export function buildInvoicePdf(doc, opts) {
   ].filter(Boolean);
 
   const invoiceFromLines = [
-    companyName,
+    companyName.toUpperCase(),
     companyGstin ? `GSTIN: ${companyGstin}` : "",
     companyAddress,
     companyEmail,
-    companyPhone,
   ].filter(Boolean);
 
-  const invoiceInfoLines = [
-    `Issue Date: ${invoiceDate}`,
-    `Due Date: ${dueDate}`,
-    `Amount: ${formatMoney(total, currency)}`,
-    paymentRef ? `Order ID: ${paymentRef}` : "",
+  const rightColLines = [
+    `Issue Date : ${invoiceDate}`,
+    `Amount : ${formatMoneyShort(total, currency)}`,
+    "",
+    paymentRef ? `Order ID : ${paymentRef}` : "",
+  ].filter(Boolean);
+
+  // Measure heights
+  const measureLines = (lines, w, titleSize, bodySize) => {
+    doc.fontSize(titleSize);
+    let h = doc.heightOfString("Title", { width: w }) + 8;
+    lines.forEach((ln) => {
+      if (!ln) return;
+      doc.fontSize(bodySize);
+      h += doc.heightOfString(String(ln), { width: w }) + 3;
+    });
+    return h;
+  };
+
+  const h1 = measureLines(billedToLines, innerW1, 11, 9);
+  const h2 = measureLines(invoiceFromLines, innerW2, 11, 8.5);
+  const h3 = measureLines(rightColLines, innerW3, 9, 9);
+  const blockH = Math.max(h1, h2, h3) + pad * 2 + 4;
+
+  // Black border around the info block
+  doc.roundedRect(L, blockTop, pageW, blockH, 6).lineWidth(1).strokeColor(C.black).stroke();
+
+  // Column 1 — Billed To
+  doc.save();
+  doc.rect(L, blockTop, col1W, blockH).clip();
+  let y1 = blockTop + pad;
+  doc.fontSize(11).fillColor(C.heading).text("Billed To", L + pad, y1, { width: innerW1 });
+  y1 += doc.heightOfString("Billed To", { width: innerW1 }) + 6;
+  billedToLines.forEach((ln) => {
+    doc.fontSize(9).fillColor(C.body).text(ln, L + pad, y1, { width: innerW1 });
+    y1 += doc.heightOfString(ln, { width: innerW1 }) + 3;
+  });
+  doc.restore();
+
+  // Vertical separator 1
+  const sepX1 = L + col1W;
+  doc.moveTo(sepX1, blockTop + 8).lineTo(sepX1, blockTop + blockH - 8).lineWidth(0.5).strokeColor(C.border).stroke();
+
+  // Column 2 — Invoice From
+  doc.save();
+  doc.rect(sepX1, blockTop, col2W, blockH).clip();
+  let y2 = blockTop + pad;
+  doc.fontSize(11).fillColor(C.heading).text("Invoice From", sepX1 + pad, y2, { width: innerW2 });
+  y2 += doc.heightOfString("Invoice From", { width: innerW2 }) + 6;
+  invoiceFromLines.forEach((ln) => {
+    doc.fontSize(8.5).fillColor(C.body).text(ln, sepX1 + pad, y2, { width: innerW2 });
+    y2 += doc.heightOfString(String(ln), { width: innerW2 }) + 3;
+  });
+  doc.restore();
+
+  // Vertical separator 2
+  const sepX2 = L + col1W + col2W;
+  doc.moveTo(sepX2, blockTop + 8).lineTo(sepX2, blockTop + blockH - 8).lineWidth(0.5).strokeColor(C.border).stroke();
+
+  // Column 3 — Issue date / amount / order id (same white background as other columns)
+  doc.save();
+  doc.rect(sepX2, blockTop, col3W, blockH).clip();
+  let y3 = blockTop + pad;
+  rightColLines.forEach((ln) => {
+    doc.fontSize(9).fillColor(C.heading).text(ln, sepX2 + pad, y3, { width: innerW3 });
+    y3 += doc.heightOfString(String(ln), { width: innerW3 }) + 5;
+  });
+  doc.restore();
+
+  // Subtle bottom divider under the info block
+  doc
+    .moveTo(L, blockTop + blockH + 6)
+    .lineTo(R, blockTop + blockH + 6)
+    .lineWidth(0.5)
+    .strokeColor(C.border)
+    .stroke();
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 3. RENTAL DETAILS TABLE
+  // ═══════════════════════════════════════════════════════════════════════════
+  const tableTop = blockTop + blockH + 24;
+
+  // Column widths
+  const tCols = [
+    { label: "Rented Car", w: pageW * 0.20 },
+    { label: "Rental Type", w: pageW * 0.16 },
+    { label: "Pickup Date", w: pageW * 0.24 },
+    { label: "Return Date", w: pageW * 0.24 },
+    { label: "Amount", w: pageW * 0.16 },
+  ];
+
+  // Header row
+  const thH = 28;
+  doc.rect(L, tableTop, pageW, thH).fill(C.tableBg);
+  doc.rect(L, tableTop, pageW, thH).strokeColor(C.border).stroke();
+  let tx = L;
+  tCols.forEach((col) => {
+    const align = col.label === "Amount" ? "right" : "left";
+    const px = col.label === "Amount" ? 12 : 8;
+    doc.fontSize(9).fillColor(C.heading).text(col.label, tx + px, tableTop + 9, {
+      width: col.w - px * 2,
+      align,
+    });
+    tx += col.w;
+  });
+
+  // Data row
+  const trH = 32;
+  const trTop = tableTop + thH;
+  doc.rect(L, trTop, pageW, trH).strokeColor(C.border).stroke();
+  const rowData = [
+    carName || lineDescription || "Car rental",
+    rentalType || "—",
+    pickupDateRaw ? formatDateTime(pickupDateRaw) : "—",
+    returnDateRaw ? formatDateTime(returnDateRaw) : "—",
+    formatMoneyShort(subtotal, currency),
+  ];
+  tx = L;
+  rowData.forEach((val, i) => {
+    const align = i === 4 ? "right" : "left";
+    const px = i === 4 ? 12 : 8;
+    doc.fontSize(9).fillColor(C.body).text(val, tx + px, trTop + 10, {
+      width: tCols[i].w - px * 2,
+      align,
+    });
+    tx += tCols[i].w;
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 4. PAYMENT DETAILS + AMOUNT BREAKDOWN
+  // ═══════════════════════════════════════════════════════════════════════════
+  const payTop = trTop + trH + 24;
+  const payLeftW = pageW * 0.45;
+  const payRightW = pageW * 0.55;
+
+  // --- Left side: Payment Details in dashed box ---
+  doc.fontSize(11).fillColor(C.heading).text("Payment Details", L, payTop);
+  const dashBoxTop = payTop + 20;
+  const dashBoxW = payLeftW - 20;
+  const dashBoxH = 58;
+  doc.save();
+  doc.roundedRect(L, dashBoxTop, dashBoxW, dashBoxH, 4).dash(4, { space: 3 }).strokeColor(C.muted).stroke();
+  doc.undash();
+  doc.restore();
+
+  const payLines = [
+    `Mode: ${paymentMode}`,
     transactionId ? `Payment ID: ${transactionId}` : "",
+    paymentStatus ? `Status: ${paymentStatus}` : "",
   ].filter(Boolean);
-
-  const billedToBottom = writeColumn(leftX, "Billed To", billedToLines);
-  const fromBottom = writeColumn(leftX + colWidth, "Invoice From", invoiceFromLines);
-  const infoBottom = writeColumn(leftX + colWidth * 2, "Invoice Info", invoiceInfoLines);
-  const billingBottom = Math.max(billedToBottom, fromBottom, infoBottom) + 6;
-
-  // Line items table
-  const tableTop = Math.max(billingBottom, 210);
-  const descWidth = pageWidth * 0.55;
-  const qtyWidth = pageWidth * 0.25;
-  const amtWidth = pageWidth * 0.2;
-
-  doc.rect(leftX, tableTop, pageWidth, 24).fill("#f3f4f6");
-  doc.fillColor("#111827").fontSize(10).text("Description", leftX + 8, tableTop + 7, { width: descWidth });
-  doc.text("Period", leftX + descWidth + 8, tableTop + 7, { width: qtyWidth });
-  doc.text("Amount", leftX + descWidth + qtyWidth + 8, tableTop + 7, {
-    width: amtWidth - 16,
-    align: "right",
+  let py = dashBoxTop + 10;
+  payLines.forEach((ln) => {
+    doc.fontSize(8.5).fillColor(C.body).text(ln, L + 12, py, { width: dashBoxW - 24 });
+    py += 14;
   });
 
-  const rowTop = tableTop + 24;
-  const rowHeight = 52;
-  doc.rect(leftX, rowTop, pageWidth, rowHeight).strokeColor("#e5e7eb").stroke();
-  doc.fillColor("#111827").fontSize(10).text(lineDescription, leftX + 8, rowTop + 8, {
-    width: descWidth - 16,
-  });
-  doc.fillColor("#374151").fontSize(9).text(lineQty, leftX + descWidth + 8, rowTop + 8, {
-    width: qtyWidth - 16,
-  });
-  doc.fillColor("#111827").fontSize(10).text(formatMoney(subtotal, currency), leftX + descWidth + qtyWidth + 8, rowTop + 8, {
-    width: amtWidth - 16,
-    align: "right",
-  });
+  // --- Right side: Rental Amount + Delivery Charge ---
+  const amtX = L + payLeftW;
+  const amtLabelW = payRightW * 0.55;
+  const amtValW = payRightW * 0.45;
 
-  // Totals
-  const totalsTop = rowTop + rowHeight + 18;
-  const totalsWidth = pageWidth * 0.45;
-  const totalsX = rightX - totalsWidth;
-  doc.roundedRect(totalsX, totalsTop, totalsWidth, 78, 6).strokeColor("#e5e7eb").stroke();
+  const drawAmtRow = (label, value, yPos, bold) => {
+    const fs = bold ? 10 : 9;
+    const clr = bold ? C.heading : C.body;
+    doc.fontSize(fs).fillColor(clr).text(label, amtX, yPos, { width: amtLabelW });
+    doc.fontSize(fs).fillColor(clr).text(value, amtX + amtLabelW, yPos, {
+      width: amtValW,
+      align: "right",
+    });
+  };
 
-  const lineY = (offset) => totalsTop + 10 + offset;
-  doc.fillColor("#374151").fontSize(9).text("Subtotal", totalsX + 10, lineY(0));
-  doc.fillColor("#111827").fontSize(10).text(formatMoney(subtotal, currency), totalsX + 10, lineY(0), {
-    width: totalsWidth - 20,
-    align: "right",
-  });
+  drawAmtRow("Rental Amount", formatMoneyShort(subtotal, currency), payTop + 4);
+  // Divider
+  doc.moveTo(amtX, payTop + 22).lineTo(R, payTop + 22).lineWidth(0.5).strokeColor(C.border).stroke();
+  drawAmtRow("Delivery Charge", `+ ${formatMoneyShort(deliveryCharge, currency)}`, payTop + 30);
 
-  doc.fillColor("#374151").fontSize(9).text(`GST (${gstPercent}%)`, totalsX + 10, lineY(18));
-  doc.fillColor("#111827").fontSize(10).text(formatMoney(gstAmount, currency), totalsX + 10, lineY(18), {
-    width: totalsWidth - 20,
-    align: "right",
-  });
+  if (gstPercent > 0) {
+    doc.moveTo(amtX, payTop + 48).lineTo(R, payTop + 48).lineWidth(0.5).strokeColor(C.border).stroke();
+    drawAmtRow(`GST (${gstPercent}%)`, formatMoneyShort(gstAmount, currency), payTop + 56);
+  }
 
-  doc.fillColor("#111827").fontSize(11).text("Total", totalsX + 10, lineY(38));
-  doc.fontSize(12).text(formatMoney(total, currency), totalsX + 10, lineY(38), {
-    width: totalsWidth - 20,
-    align: "right",
-  });
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 5. TOTAL BAR (amber highlight)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const gstExtra = gstPercent > 0 ? 34 : 0;
+  const totalBarTop = payTop + 78 + gstExtra;
+  const totalBarH = 30;
+  doc.rect(L, totalBarTop, pageW, totalBarH).fill(C.amber);
+  doc
+    .fontSize(12)
+    .fillColor(C.white)
+    .text("Total", L + 14, totalBarTop + 8, { width: pageW * 0.6 });
+  doc
+    .fontSize(13)
+    .fillColor(C.white)
+    .text(formatMoneyShort(total, currency), L, totalBarTop + 8, {
+      width: pageW - 14,
+      align: "right",
+    });
 
-  // Footer
-  const footerTop = totalsTop + 100;
-  drawDivider(footerTop);
-  doc.fontSize(9).fillColor("#6b7280");
-  if (paymentRef) doc.text(`Payment reference: ${paymentRef}`, leftX, footerTop + 8);
-  if (transactionId) doc.text(`Transaction ID: ${transactionId}`, leftX, footerTop + 22);
-  doc.fillColor("#000000");
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 6. NOTES
+  // ═══════════════════════════════════════════════════════════════════════════
+  const notesTop = totalBarTop + totalBarH + 22;
+  doc.fontSize(11).fillColor(C.heading).text("Notes", L, notesTop);
+  doc
+    .fontSize(9)
+    .fillColor(C.body)
+    .text(`Thank you for choosing ${companyName.toUpperCase()}!`, L, notesTop + 16);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 7. TERMS & CONDITIONS + SIGNATURE
+  // ═══════════════════════════════════════════════════════════════════════════
+  const tcTop = notesTop + 42;
+  doc.fontSize(11).fillColor(C.heading).text("Terms and Conditions", L, tcTop);
+  doc
+    .fontSize(9)
+    .fillColor(C.body)
+    .text(
+      `All rentals are subject to ${companyName.toUpperCase()}'s Terms of Service.`,
+      L,
+      tcTop + 16,
+      { width: pageW * 0.55 }
+    );
+
+  // Signature on the right
+  const sigImgPath = signaturePath || defaultSignaturePath;
+  const sigBlockW = 150;
+  const sigBlockX = R - sigBlockW;
+
+  if (sigImgPath && fs.existsSync(sigImgPath)) {
+    const sigImgH = 50;
+    doc.image(sigImgPath, sigBlockX + 10, tcTop - 6, {
+      width: sigBlockW - 20,
+      height: sigImgH,
+    });
+    // Line
+    doc
+      .moveTo(sigBlockX, tcTop + sigImgH - 2)
+      .lineTo(sigBlockX + sigBlockW, tcTop + sigImgH - 2)
+      .lineWidth(1)
+      .strokeColor(C.heading)
+      .stroke();
+    // Company name
+    doc
+      .fontSize(10)
+      .fillColor(C.heading)
+      .text(companyName.toUpperCase(), sigBlockX, tcTop + sigImgH + 4, {
+        width: sigBlockW,
+        align: "center",
+      });
+  } else {
+    doc
+      .fontSize(12)
+      .fillColor(C.heading)
+      .text(companyName.toUpperCase(), sigBlockX, tcTop + 6, {
+        width: sigBlockW,
+        align: "center",
+      });
+  }
+
+  doc.fillColor(C.black);
 }
 
 export function createInvoicePdfBuffer(opts) {
@@ -236,4 +470,4 @@ export function createInvoicePdfBuffer(opts) {
   });
 }
 
-export { formatMoney, formatDate, formatAddress };
+export { formatMoney, formatDate, formatDateTime, formatAddress };

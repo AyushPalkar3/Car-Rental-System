@@ -59,6 +59,9 @@ export function streamInvoicePdfForPaymentRecord(payment, res, gstPercent) {
   const gstLabel =
     gstPercent === 0 ? "Not applicable (no GST on this invoice)" : `GST 18% on subtotal`;
 
+  // Delivery charge from booking (default 0)
+  const deliveryCharge = Number(booking?.deliveryFee || 0);
+
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
@@ -84,6 +87,15 @@ export function streamInvoicePdfForPaymentRecord(payment, res, gstPercent) {
     customerEmail: user?.email || "",
     customerPhone: user?.phoneNum || "",
     customerAddress,
+    // Car / booking details
+    carName: car?.name || "",
+    rentalType: booking?.duration || "",
+    pickupDateRaw: booking?.pickupDate || "",
+    returnDateRaw: booking?.returnDate || "",
+    deliveryCharge,
+    paymentMode: "Razorpay",
+    paymentStatus: payment.status || "",
+    // Line items (legacy)
     lineDescription,
     lineQty,
     subtotal,
