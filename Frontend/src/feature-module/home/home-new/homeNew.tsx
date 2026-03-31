@@ -1180,7 +1180,7 @@ const HomeNew = () => {
                 <div className="testimonial-item testimonial-item-two flex-fill">
                   <div className="user-img">
                     <ImageWithBasePath
-                      src="assets/img/profiles/rahul.jpg"
+                      src="assets/img/Testimonial1.jpeg"
                       className="img-fluid"
                       alt="img"
                     />
@@ -1208,7 +1208,7 @@ const HomeNew = () => {
                 <div className="testimonial-item testimonial-item-two flex-fill">
                   <div className="user-img">
                     <ImageWithBasePath
-                      src="assets/img/profiles/priya.jpg"
+                      src="assets/img/Testimonial2.png"
                       className="img-fluid"
                       alt="img"
                     />
@@ -1236,7 +1236,7 @@ const HomeNew = () => {
                 <div className="testimonial-item testimonial-item-two flex-fill">
                   <div className="user-img">
                     <ImageWithBasePath
-                      src="assets/img/profiles/arjun.jpg"
+                      src="assets/img/Testimonial3.jpeg"
                       className="img-fluid"
                       alt="img"
                     />

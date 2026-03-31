@@ -114,14 +114,21 @@
             }
         }
         .logo {
-            @include mixins.respond-below(custom575) {
+            @include mixins.respond-below(custom991) {
                display: none;
             }
         }
         .logo-small {
             display: none;
-            @include mixins.respond-below(custom575) {
+            @include mixins.respond-below(custom991) {
                 display: block;
+                margin-right: auto;
+                img {
+                    height: 40px;
+                    width: auto;
+                }
+            }
+            @include mixins.respond-below(custom575) {
                 width: 100%;
                 text-align: left;
                 img {
@@ -137,14 +144,17 @@
             @include mixins.respond-below(custom991) {
                 display: inline-block;
                 line-height: 0;
+                margin-left: auto;
+                margin-right: 20px;
             }
             @include mixins.respond-below(custom575) {
                 right: 0;
                 left: auto;
-                margin-right: 0;
+                margin-right: 15px;
                 padding: 0 0px;
                 position: absolute;
                 z-index: 99;
+                margin-left: 0;
             }
             .bar-icon {
                 display: inline-block;
@@ -174,9 +184,12 @@
             display: -ms-flexbox;
             display: inline-flex;
             align-items: center;
-        } 
+            gap: 0;
+            width: 100%;
+        }
         @include mixins.respond-below(custom575) {
             width: 100%;
+            gap: 0;
         }       
     }
     .main-menu-wrapper {
@@ -1120,6 +1133,18 @@
             height: 79px;
             @include mixins.respond-below(lg) {
                 height: 66px;
+            }
+            .navbar-header {
+                #mobile_btn {
+                    .bar-icon {
+                        span {
+                            background-color: colors.$primarycolor;
+                            @include mixins.respond-below(lg) {
+                                background-color: colors.$primarycolor;
+                            }
+                        }
+                    }
+                }
             }
             .logo {
                 .dark-logo {

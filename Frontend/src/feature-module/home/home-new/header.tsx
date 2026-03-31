@@ -54,14 +54,6 @@ const NewHeader = () => {
 
           {/* Logo & Mobile Toggle */}
           <div className="navbar-header">
-            <Link id="mobile_btn" to="#" onClick={onHandleMobileMenu}>
-              <span className="bar-icon">
-                <span></span>
-                <span></span>
-                <span></span>
-              </span>
-            </Link>
-
             <Link to={all_routes.home} className="navbar-brand logo">
               <ImageWithBasePath
                 src="assets/img/logo-lite.png"
@@ -76,6 +68,14 @@ const NewHeader = () => {
                 className="img-fluid"
                 alt="Logo"
               />
+            </Link>
+
+            <Link id="mobile_btn" to="#" onClick={onHandleMobileMenu}>
+              <span className="bar-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
             </Link>
           </div>
 
