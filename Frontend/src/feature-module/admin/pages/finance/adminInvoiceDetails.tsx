@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../router/all_routes";
 import {
@@ -44,6 +45,7 @@ function statusBadgeClass(label: string) {
 
 const AdminInvoiceDetails = () => {
   const { paymentId } = useParams<{ paymentId: string }>();
+  const darkMode = useSelector((state: any) => state.commonSlice.darkMode);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [payment, setPayment] = useState<
@@ -168,9 +170,11 @@ const AdminInvoiceDetails = () => {
             <div className="col-md-6">
               <div className="text-end mb-2">
                 <ImageWithBasePath
-                  src="assets/admin/img/logo.svg"
-                  className="invoice-logo img-fluid"
+                  src={darkMode === "dark-mode" ? "assets/img/dark-theme-authentication.png" : "assets/img/light-theme-logo-authentication.png"}
                   alt="logo"
+                  style={darkMode === "dark-mode"
+                    ? { width: "350px", height: "auto", marginBottom: "50px", objectFit: "contain" }
+                    : { width: "250px", height: "auto", marginBottom: "50px", objectFit: "contain" }}
                 />
                 <p className="mb-2">{COMPANY.address}</p>
                 <span className={`badge ${statusBadgeClass(payment.invoiceStatusLabel)}`}>

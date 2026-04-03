@@ -74,6 +74,7 @@ const InvoicesList = () => {
       IMAGE: `avatar-${imgNum}.jpg`,
       NAME: name,
       EMAIL: p.user?.email || "—",
+      userId: p.user?.id || null,
       CREATEDDATE: created.date,
       CREATEDTIME: created.time,
       DUEDATE: due.date,
@@ -117,10 +118,10 @@ const InvoicesList = () => {
     {
       title: "NAME",
       dataIndex: "NAME",
-      render: (text: string, record: { IMAGE: string }) => (
+      render: (text: string, record: { IMAGE: string; userId: string | null }) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.customerDetails}
+            to={record.userId ? `${all_routes.customerDetails}/${record.userId}` : all_routes.customerDetails}
             className="avatar avatar-rounded me-2 flex-shrink-0"
           >
             <ImageWithBasePath
@@ -130,7 +131,9 @@ const InvoicesList = () => {
           </Link>
           <div>
             <h6 className="fs-14">
-              <Link to={all_routes.customerDetails}>{text}</Link>
+              <Link to={record.userId ? `${all_routes.customerDetails}/${record.userId}` : all_routes.customerDetails}>
+                {text}
+              </Link>
             </h6>
           </div>
         </div>
@@ -177,8 +180,7 @@ const InvoicesList = () => {
       dataIndex: "STATUS",
       render: (text: string) => (
         <span
-          className={`badge ${
-            text === "Paid"
+          className={`badge ${text === "Paid"
               ? "badge-soft-success"
               : text === "Pending"
                 ? "badge-soft-info"
@@ -187,7 +189,7 @@ const InvoicesList = () => {
                   : text === "Unpaid"
                     ? "badge-soft-danger"
                     : "badge-soft-danger"
-          } d-inline-flex align-items-center badge-sm`}
+            } d-inline-flex align-items-center badge-sm`}
         >
           <i className="ti ti-point-filled me-1" />
           {text}

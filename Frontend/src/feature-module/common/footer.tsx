@@ -134,19 +134,13 @@ const Footer = () => {
                   <div className="footer-social-widget">
                     <ul className="nav-social">
                       <li>
-                        <Link to="#"><i className="fa-brands fa-facebook-f fa-facebook fi-icon" /></Link>
+                        <Link to="https://www.facebook.com/ekalodrive?mibextid=wwXIfr&rdid=89hfw2WnCKHJzEMN&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18G5FUDoaE%2F%3Fmibextid%3DwwXIfr" target="_blank" rel="noopener noreferrer"><i className="fa-brands fa-facebook-f fa-facebook fi-icon" /></Link>
                       </li>
                       <li>
-                        <Link to="#"><i className="fab fa-instagram fi-icon" /></Link>
+                        <Link to="https://www.instagram.com/ekalodrive?igsh=MXRlMzdyY2tiYTN6bQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram fi-icon" /></Link>
                       </li>
                       <li>
                         <Link to="#"><i className="fab fa-behance fi-icon" /></Link>
-                      </li>
-                      <li>
-                        <Link to="#"><i className="fab fa-twitter fi-icon" /> </Link>
-                      </li>
-                      <li>
-                        <Link to="#"><i className="fab fa-linkedin fi-icon" /></Link>
                       </li>
                     </ul>
                   </div>

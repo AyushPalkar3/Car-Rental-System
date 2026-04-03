@@ -42,7 +42,9 @@ const InvoiceDetails = () => {
                   <div className="row">
                     <div className="col-md-6">
                       <div className="invoice-logo">
-                        <ImageWithBasePath src="assets/img/logo.svg" alt="logo" />
+                        <ImageWithBasePath src="assets/img/light-theme-logo-authentication.png"
+                        style={{ maxWidth:'250px' , height:'auto' }}
+                        alt="logo" />
                       </div>
                     </div>
                     <div className="col-md-6">

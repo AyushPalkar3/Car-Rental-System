@@ -21,6 +21,27 @@
             }
         } 
     }
+    .mini-sidebar {
+        .sidebar {
+            .sidebar-logo {
+                .dark-logo {
+                    display: none;
+                }
+            }
+        }
+        &.expand-menu {
+            .sidebar {
+                .sidebar-logo {
+                    .logo {
+                        display: none;
+                    }
+                    .dark-logo {
+                        display: block;
+                    }
+                }
+            }
+        }
+    }
     .toast-header {
         .btn-close {
             filter: brightness(0) invert(1);

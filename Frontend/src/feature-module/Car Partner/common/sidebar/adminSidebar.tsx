@@ -76,27 +76,35 @@ const AdminSidebar = () => {
         onMouseOver={expandMenuOpen}
       >
         {/* Logo */}
-        <div className="sidebar-logo">
+       <div className="sidebar-logo" style={{ height: "100px", paddingTop: "0px", display: "flex", alignItems: "center", backgroundColor: "transparent" }}>
           <Link to={all_routes.carPartnerDashboard} className="logo logo-normal">
-            <ImageWithBasePath src="assets/img/logo-dark.png" alt="Logo" />
+            <ImageWithBasePath
+              style={{ maxHeight: "150px", width: "auto" }}
+              className="img-fluid"
+              src="assets/img/light-theme-logo.png"
+              alt="Logo"
+            />
           </Link>
           <Link to={all_routes.carPartnerDashboard} className="logo-small">
             <ImageWithBasePath
-              src="assets/img/logo-dark.png"
+              src="../../../../public/favicon.svg"
               alt="Logo"
+              style={{ maxHeight: "35px", width: "auto" }}
             />
           </Link>
           <Link to={all_routes.carPartnerDashboard} className="dark-logo">
             <ImageWithBasePath
-              src="assets/img/logo-lite.png"
+              src="assets/img/dark-theme-logo.png"
               alt="Logo"
+              className="img-fluid"
+              style={{ maxHeight: "150px", width: "auto" }}
             />
           </Link>
         </div>
         {/* /Logo */}
-      <OverlayScrollbarsComponent>
+        <OverlayScrollbarsComponent>
           <div className="sidebar-inner slimscroll">
-            <div id="sidebar-menu" className="sidebar-menu">
+            <div id="sidebar-menu" className="sidebar-menu" style={{ marginTop: "110px" }}>
               <div className="form-group">
                 {/* Search */}
                 {/* <div className="input-group input-group-flat d-inline-flex">
@@ -141,19 +149,17 @@ const AdminSidebar = () => {
                               <Link
                                 to={title?.submenu ? "#" : title?.link}
                                 onClick={() => toggleSidebar(title?.label)}
-                                className={`${
-                                  subOpen === title?.submenu ? "subdrop" : ""
-                                }  ${
-                                  title?.submenuItems
+                                className={`${subOpen === title?.submenu ? "subdrop" : ""
+                                  }  ${title?.submenuItems
                                     ?.map((link: any) => link?.link)
                                     .includes(Location.pathname) ||
-                                  title?.link === Location.pathname||
-                                  title?.sublink === Location.pathname||
-                                  title?.sublink2 === Location.pathname||
-                                  title?.sublink3 === Location.pathname
+                                    title?.link === Location.pathname ||
+                                    title?.sublink === Location.pathname ||
+                                    title?.sublink2 === Location.pathname ||
+                                    title?.sublink3 === Location.pathname
                                     ? "active"
                                     : ""
-                                }`}
+                                  }`}
                               >
                                 <i className={`ti ti-${title.icon}`}></i>
                                 <span>{title?.label}</span>
@@ -190,21 +196,19 @@ const AdminSidebar = () => {
                                             to={
                                               item?.submenu ? "#" : item?.link
                                             }
-                                            className={`${
-                                              item?.submenuItems
-                                                ?.map((link: any) => link?.link)
-                                                .includes(Location.pathname) ||
-                                              item?.link === Location.pathname||
-                                              item?.sublink === Location.pathname||
-                                              item?.sublink2 === Location.pathname||
+                                            className={`${item?.submenuItems
+                                              ?.map((link: any) => link?.link)
+                                              .includes(Location.pathname) ||
+                                              item?.link === Location.pathname ||
+                                              item?.sublink === Location.pathname ||
+                                              item?.sublink2 === Location.pathname ||
                                               item?.sublink3 === Location.pathname
-                                                ? "active"
-                                                : ""
-                                            } ${
-                                              subsidebar === item?.label
+                                              ? "active"
+                                              : ""
+                                              } ${subsidebar === item?.label
                                                 ? "subdrop"
                                                 : ""
-                                            }`}
+                                              }`}
                                             onClick={() => {
                                               toggleSubsidebar(item?.label);
                                             }}
@@ -236,13 +240,11 @@ const AdminSidebar = () => {
                                                           ? "#"
                                                           : items?.link
                                                       }
-                                                      className={`${
-                                                        subsidebar ===
+                                                      className={`${subsidebar ===
                                                         items?.label
-                                                          ? "submenu-two subdrop"
-                                                          : "submenu-two"
-                                                      } ${
-                                                        items?.submenuItems
+                                                        ? "submenu-two subdrop"
+                                                        : "submenu-two"
+                                                        } ${items?.submenuItems
                                                           ?.map(
                                                             (link: any) =>
                                                               link.link
@@ -250,11 +252,11 @@ const AdminSidebar = () => {
                                                           .includes(
                                                             Location.pathname
                                                           ) ||
-                                                        items?.link ===
+                                                          items?.link ===
                                                           Location.pathname
                                                           ? "active"
                                                           : ""
-                                                      }`}
+                                                        }`}
                                                     >
                                                       {items?.label}
                                                     </Link>
@@ -278,7 +280,7 @@ const AdminSidebar = () => {
               </ul>
             </div>
           </div>
-       </OverlayScrollbarsComponent>
+        </OverlayScrollbarsComponent>
       </div>
       {/* /Sidebar */}
     </>

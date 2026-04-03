@@ -48,6 +48,10 @@ import OurTeam from "../feature-module/pages/ourteam/ourTeam";
 import ComingSoon from "../feature-module/pages/comingsoon/comingsoon";
 import UserWallet from "../feature-module/user/wallet/userwallet";
 import PrivacyPolicy from "../feature-module/pages/privacypolicy/privacypolicy";
+import CancellationRefundPolicy from "../feature-module/pages/cancellationrefundpolicy/cancellationrefundpolicy";
+import DamagePolicy from "../feature-module/pages/damagepolicy/damagepolicy";
+import EkaloTermsConditions from "../feature-module/pages/ekaloterms/ekaloterms";
+import BookingProcedure from "../feature-module/pages/bookingprocedure/bookingprocedure";
 import AboutUs from "../feature-module/pages/aboutus";
 import InvoiceDetails from "../feature-module/booking/invoice";
 import BookingCalendar from "../feature-module/user/bookings-calendar";
@@ -300,7 +304,7 @@ import CarPartnerPermissionsList from "../feature-module/Car Partner/pages/user-
 const routes = all_routes;
 
 export const publicRoutes = [
-   {
+  {
     path: "/home",
     element: <Navigate to="/index" />,
   },
@@ -337,7 +341,7 @@ export const listingroutes = [
   },
   {
     path: routes.listingDetails,
-    element: <ListingDetails/>,
+    element: <ListingDetails />,
   },
   {
     path: routes.listingMap,
@@ -354,7 +358,7 @@ export const pageroutes = [
     path: routes.aboutUs,
     element: <AboutUs />,
   },
-    {
+  {
     path: routes.contactUs,
     element: <Contact />,
   },
@@ -397,6 +401,22 @@ export const pageroutes = [
   {
     path: routes.privacyPolicy,
     element: <PrivacyPolicy />,
+  },
+  {
+    path: routes.cancellationRefundPolicy,
+    element: <CancellationRefundPolicy />,
+  },
+  {
+    path: routes.damagePolicy,
+    element: <DamagePolicy />,
+  },
+  {
+    path: routes.ekaloTermsConditions,
+    element: <EkaloTermsConditions />,
+  },
+  {
+    path: routes.bookingProcedure,
+    element: <BookingProcedure />,
   },
   {
     path: routes.bookingAddon,
@@ -599,7 +619,7 @@ export const adminRoutes = [
   },
   {
     path: routes.adminCarPartnerList,
-    element: <CarPartnerList/>,
+    element: <CarPartnerList />,
   },
   {
     path: routes.adminLocationsList,
@@ -850,6 +870,10 @@ export const adminRoutes = [
     element: <AdminInvoiceDetails />,
   },
   {
+    path: routes.customerDetails,
+    element: <CustomerDetails />,
+  },
+  {
     path: routes.customerDetails + "/:id",
     element: <CustomerDetails />,
   },
@@ -899,7 +923,7 @@ export const adminAuth = [
   {
     path: routes.adminlogin,
     element: <AdminLogin />,
-  },  
+  },
   {
     path: routes.adminForgotPassword,
     element: <AdminForgotPassword />,
@@ -1532,7 +1556,7 @@ export const carPartnerAuth = [
   {
     path: routes.carPartnerLogin,
     element: <CarPartnerLogin />,
-  },  
+  },
   {
     path: routes.carPartnerForgotPassword,
     element: <CarPartnerForgotPassword />,

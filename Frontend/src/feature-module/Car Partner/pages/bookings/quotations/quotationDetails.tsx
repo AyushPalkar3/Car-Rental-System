@@ -39,7 +39,8 @@ const QuotationDetails = () => {
               <div className="col-md-6">
                 <div className=" text-end mb-2">
                   <ImageWithBasePath
-                    src="assets/admin/img/logo.svg"
+                    src="assets/img/light-theme-logo-authentication.png"
+                    style={{maxWidth:'250px' , height:'auto'}}
                     className="invoice-logo img-fluid mb-2"
                     alt="logo"
                   />

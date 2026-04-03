@@ -77,6 +77,7 @@ const PaymentsList = () => {
       id: p.id,
       TRANSACTIONID: tx,
       NAME: name,
+      userId: p.user?.id || null,
       IMAGE: `avatar-${imgNum}.jpg`,
       AMOUNT: formatInvoiceCurrency(p.amount, p.currency),
       PAYMENTMETHOD: "Razorpay",
@@ -118,10 +119,10 @@ const PaymentsList = () => {
     {
       title: "NAME",
       dataIndex: "NAME",
-      render: (text: string, record: { IMAGE: string }) => (
+      render: (text: string, record: { IMAGE: string; userId: string | null }) => (
         <div className="d-flex align-items-center">
           <Link
-            to={all_routes.customerDetails}
+            to={record.userId ? `${all_routes.customerDetails}/${record.userId}` : all_routes.customerDetails}
             className="avatar me-2 flex-shrink-0"
           >
             <ImageWithBasePath
@@ -131,7 +132,10 @@ const PaymentsList = () => {
             />
           </Link>
           <h6>
-            <Link to={all_routes.customerDetails} className="fs-14 fw-semibold">
+            <Link
+              to={record.userId ? `${all_routes.customerDetails}/${record.userId}` : all_routes.customerDetails}
+              className="fs-14 fw-semibold"
+            >
               {text}
             </Link>
           </h6>
@@ -167,15 +171,14 @@ const PaymentsList = () => {
           className={`badge ${text === "Completed" ? "bg-success-transparent" : text === "Pending" ? "bg-info-transparent" : text === "Refunded" ? " bg-violet-transparent" : "bg-danger-transparent"} `}
         >
           <i
-            className={`ti ti-point-filled ${
-              text === "Completed"
+            className={`ti ti-point-filled ${text === "Completed"
                 ? "text-success"
                 : text === "Pending"
                   ? "text-info"
                   : text === "Refunded"
                     ? "text-purple"
                     : "text-danger"
-            } me-1`}
+              } me-1`}
           />
           {text}
         </span>

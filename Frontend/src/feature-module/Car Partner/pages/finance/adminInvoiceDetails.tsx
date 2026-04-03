@@ -1,9 +1,11 @@
-
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../router/all_routes";
 
 const AdminInvoiceDetails = () => {
+  const darkMode = useSelector((state: any) => state.commonSlice.darkMode);
+
   return (
     <div className="content me-4">
       <div className="mb-3">
@@ -44,7 +46,8 @@ const AdminInvoiceDetails = () => {
             <div className="col-md-6">
               <div className=" text-end mb-2">
                 <ImageWithBasePath
-                  src="assets/admin/img/logo.svg"
+                  src={darkMode === "dark-mode" ? "assets/img/dark-theme-authentication.png" : "assets/img/light-theme-logo-authentication.png"}
+                  style={darkMode === "dark-mode" ? { width: '350px', height: 'auto', objectFit: 'contain' } : { width: '250px', height: 'auto', objectFit: 'contain' }}
                   className="invoice-logo img-fluid"
                   alt="logo"
                 />

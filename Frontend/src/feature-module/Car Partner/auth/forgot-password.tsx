@@ -40,7 +40,7 @@ const CarPartnerForgotPassword = () => {
                     <div className="col-lg-5 mx-auto">
                         <form onSubmit={handleSubmit} className="p-4">
                             <div className="mx-auto mb-5 text-center">
-                                <ImageWithBasePath src="assets/admin/img/logo.svg" className="img-fluid" alt="Logo" />
+                                <ImageWithBasePath src="assets/img/light-theme-logo-authentication.png" className="img-fluid" alt="Logo"  style={{ maxWidth: "250px", height: "auto" }}/>
                             </div>
                             <div className="card authentication-card mb-0">
                                 <div className="card-body">

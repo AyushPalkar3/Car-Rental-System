@@ -114,36 +114,53 @@
             }
         }
         .logo {
-            @include mixins.respond-below(custom575) {
+            @include mixins.respond-below(custom991) {
                display: none;
             }
         }
         .logo-small {
             display: none;
-            @include mixins.respond-below(custom575) {
-                display: block;
-                width: 100%;
-                text-align: right;
+            @include mixins.respond-below(custom991) {
+                display: flex;
+                align-items: center;
+                margin-right: auto;
+                max-width: calc(100% - 60px);
                 img {
-                    height: 60px;
+                    height: 36px;
                     width: auto;
-                    max-height: none;
+                    max-width: 100%;
                 }
-             }
+            }
+            @include mixins.respond-below(custom768) {
+                max-width: calc(100% - 56px);
+                img {
+                    height: 32px;
+                }
+            }
+            @include mixins.respond-below(custom575) {
+                max-width: calc(100% - 50px);
+                img {
+                    height: 100px;
+                }
+            }
         }
         #mobile_btn {
             display: none;
-            margin-right: 30px;            
+            margin-right: 30px;
             @include mixins.respond-below(custom991) {
                 display: inline-block;
                 line-height: 0;
+                margin-left: auto;
+                margin-right: 20px;
             }
             @include mixins.respond-below(custom575) {
-                left: 0;
-                margin-right: 0;
+                right: 0;
+                left: auto;
+                margin-right: 15px;
                 padding: 0 0px;
                 position: absolute;
                 z-index: 99;
+                margin-left: 0;
             }
             .bar-icon {
                 display: inline-block;
@@ -173,9 +190,12 @@
             display: -ms-flexbox;
             display: inline-flex;
             align-items: center;
-        } 
+            gap: 0;
+            width: 100%;
+        }
         @include mixins.respond-below(custom575) {
             width: 100%;
+            gap: 0;
         }       
     }
     .main-menu-wrapper {
@@ -1119,6 +1139,21 @@
             height: 79px;
             @include mixins.respond-below(lg) {
                 height: 66px;
+            }
+            @include mixins.respond-below(custom991) {
+                height: 100px;
+            }
+            .navbar-header {
+                #mobile_btn {
+                    .bar-icon {
+                        span {
+                            background-color: colors.$primarycolor;
+                            @include mixins.respond-below(lg) {
+                                background-color: colors.$primarycolor;
+                            }
+                        }
+                    }
+                }
             }
             .logo {
                 .dark-logo {
