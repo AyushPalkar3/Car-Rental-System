@@ -46,14 +46,21 @@ export function streamInvoicePdfForPaymentRecord(payment, res, gstPercent) {
   const dueDate = booking?.returnDate ? formatDate(booking.returnDate) : invoiceDate;
 
   const companyName = process.env.INVOICE_COMPANY_NAME || "Ekalo Drive";
-  const companyAddress = process.env.INVOICE_COMPANY_ADDRESS || "";
+  const companyAddress =
+    process.env.INVOICE_COMPANY_ADDRESS ||
+    "PRAYEJA CITY, Flat No. B-2, S NO-71, Floor 204, Sinhagad Road, Vadgaon Budruk, Pune - 411051, Maharashtra, India.";
   const companyPhone = process.env.INVOICE_COMPANY_PHONE || "+91 9168527197";
   const companyEmail = process.env.INVOICE_COMPANY_EMAIL || "support@ekalodrive.com";
+  const companyGstin = process.env.INVOICE_COMPANY_GSTIN || "27CCKPN2833G1ZH";
+  const companyLogoPath = process.env.INVOICE_COMPANY_LOGO_PATH || "";
 
   const customerName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Customer";
   const customerAddress = formatAddress(user?.address);
   const gstLabel =
     gstPercent === 0 ? "Not applicable (no GST on this invoice)" : `GST 18% on subtotal`;
+
+  // Delivery charge from booking (default 0)
+  const deliveryCharge = Number(booking?.deliveryFee || 0);
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
@@ -69,6 +76,8 @@ export function streamInvoicePdfForPaymentRecord(payment, res, gstPercent) {
     companyAddress,
     companyPhone,
     companyEmail,
+    companyGstin,
+    companyLogoPath,
     invoiceNo,
     invoiceDate,
     dueDate,
@@ -78,6 +87,15 @@ export function streamInvoicePdfForPaymentRecord(payment, res, gstPercent) {
     customerEmail: user?.email || "",
     customerPhone: user?.phoneNum || "",
     customerAddress,
+    // Car / booking details
+    carName: car?.name || "",
+    rentalType: booking?.duration || "",
+    pickupDateRaw: booking?.pickupDate || "",
+    returnDateRaw: booking?.returnDate || "",
+    deliveryCharge,
+    paymentMode: "Razorpay",
+    paymentStatus: payment.status || "",
+    // Line items (legacy)
     lineDescription,
     lineQty,
     subtotal,

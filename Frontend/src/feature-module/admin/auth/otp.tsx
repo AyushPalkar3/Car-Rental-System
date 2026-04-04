@@ -36,9 +36,10 @@ const AdminOtp = () => {
                         <form onSubmit={handleSubmit} className="digit-group p-4">
                         <div className="mx-auto mb-5 text-center">
                             <ImageWithBasePath
-                            src="assets/admin/img/logo.svg"
+                            src="assets/img/light-theme-logo-authentication.png"
                             className="img-fluid"
                             alt="Logo"
+                            style={{ maxWidth: "250px", height: "auto", marginBottom: "50px"  }}
                             />
                         </div>
                         <div className="card authentication-card mb-0">

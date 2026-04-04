@@ -39,9 +39,10 @@ const QuotationDetails = () => {
               <div className="col-md-6">
                 <div className=" text-end mb-2">
                   <ImageWithBasePath
-                    src="assets/admin/img/logo.svg"
+                    src="assets/img/light-theme-logo-authentication.png"
                     className="invoice-logo img-fluid mb-2"
                     alt="logo"
+                    style={{ maxWidth: "250px", height: "auto", marginBottom: "50px"  }}
                   />
                   <p className="mb-2">
                     Flat8, Park View House, 7 high Street , US

@@ -43,23 +43,13 @@ const NewFooter = () => {
             </div>
             <ul className="social-icon">
               <li>
-                <Link to="#">
+                <Link to="https://www.facebook.com/ekalodrive?mibextid=wwXIfr&rdid=89hfw2WnCKHJzEMN&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18G5FUDoaE%2F%3Fmibextid%3DwwXIfr" target="_blank" rel="noopener noreferrer">
                   <i className="fa-brands fa-facebook-f" />
                 </Link>
               </li>
               <li>
-                <Link to="#">
+                <Link to="https://www.instagram.com/ekalodrive?igsh=MXRlMzdyY2tiYTN6bQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer">
                   <i className="fa-brands fa-instagram" />
-                </Link>
-              </li>
-              <li>
-                <Link to="#">
-                  <i className="fab fa-twitter" />{" "}
-                </Link>
-              </li>
-              <li>
-                <Link to="#">
-                  <i className="fab fa-linkedin" />
                 </Link>
               </li>
             </ul>
@@ -70,22 +60,28 @@ const NewFooter = () => {
             <div className="col-lg-4 col-md-6">
               {/* Footer Widget */}
               <div className="footer-widget footer-menu">
-                <h5 className="footer-title">Usefull Links</h5>
+                <h5 className="footer-title">Useful Links</h5>
                 <ul>
                   <li>
-                    <Link to="#">My account</Link>
+                    <Link to={all_routes.cancellationRefundPolicy}>
+                      Cancellation & Refund Policy
+                    </Link>
                   </li>
                   <li>
-                    <Link to="#">Testimonials</Link>
+                    <Link to={all_routes.bookingProcedure}>
+                      Booking Procedure & Rental Terms
+                    </Link>
                   </li>
                   <li>
-                    <Link to="#">Privacy & Policy</Link>
+                    <Link to={all_routes.ekaloTermsConditions}>
+                      Terms & Conditions
+                    </Link>
+                  </li>
+                   <li>
+                    <Link to={all_routes.damagePolicy}>Damage Policy</Link>
                   </li>
                   <li>
-                    <Link to="#">Terms & Condition</Link>
-                  </li>
-                  <li>
-                    <Link to="#">Refund Policy</Link>
+                    <Link to={all_routes.faq}>FAQs</Link>
                   </li>
                 </ul>
               </div>
@@ -194,19 +190,7 @@ const NewFooter = () => {
               </Link>
             </div>
           </div>
-          <div className="col-lg-4">
-            <ul className="privacy-link">
-              <li>
-                <Link to={all_routes.privacyPolicy}>Privacy</Link>
-              </li>
-              <li>
-                <Link to={all_routes.termsConditions}>Terms &amp; Condition</Link>
-              </li>
-              <li>
-                <Link to="#">Refund Policy</Link>
-              </li>
-            </ul>
-          </div>
+          
         </div>
       </div>
       {/* /Copyright */}

@@ -77,8 +77,9 @@ const CarPartnerResetPassword = () => {
                             <form onSubmit={handleSubmit} className="p-4">
                             <div className="mx-auto mb-5 text-center">
                                 <ImageWithBasePath
-                                src="assets/admin/img/logo.svg"
+                                src="assets/img/light-theme-logo-authentication.png"
                                 className="img-fluid"
+                                style={{ maxWidth:'250px' , height:'auto' }}
                                 alt="Logo"
                                 />
                             </div>

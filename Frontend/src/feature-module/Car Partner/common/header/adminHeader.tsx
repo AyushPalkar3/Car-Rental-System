@@ -81,10 +81,12 @@ const AdminHeader = () => {
         <div className="main-header">
           <div className="header-left" onMouseLeave={expandMenu} onMouseOver={expandMenuOpen}>
             <Link to="/car-partner/dashboard" className="logo">
-              <ImageWithBasePath src="assets/admin/img/logo.svg" alt="Logo" />
+              <ImageWithBasePath src="assets/img/light-theme-logo-authentication.png"
+                style={{ maxHeight: "40px", width: "auto" }}
+                alt="Logo" />
             </Link>
             <Link to="/car-partner/dashboard" className="dark-logo">
-              <ImageWithBasePath src="assets/admin/img/logo-white.svg" alt="Logo" />
+              <ImageWithBasePath src="assets/admin/img/logo-white.svg" alt="Logo" style={{ maxHeight: "40px", width: "auto" }} />
             </Link>
           </div>
           <Link id="mobile_btn" className="mobile_btn" to="#sidebar" onClick={toggleMobileSidebar}>

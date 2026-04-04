@@ -235,7 +235,8 @@ const HeaderTwo = () => {
                 <div className="menu-header">
                   <Link to={routes.homeOne} className="menu-logo">
                     <ImageWithBasePath
-                      src="assets/img/logo.svg"
+                      src="assets/img/light-theme-logo-authentication.png"
+                      style={{maxWidth:'250px' , height:'auto'}}
                       className="img-fluid"
                       alt="Logo"
                     />
