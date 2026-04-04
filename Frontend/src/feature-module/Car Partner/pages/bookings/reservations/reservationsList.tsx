@@ -7,6 +7,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
 
+const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
 // Status mapping utilities similar to what we did for User Bookings
 const statusColors: Record<string, string> = {
   COMPLETED: "bg-success-transparent",
@@ -150,7 +152,11 @@ const ReservationsList = () => {
             className="avatar me-2 flex-shrink-0"
           >
             <img
-              src={`http://localhost:4000${record.CAR_IMG}`}
+              src={
+                record.CAR_IMG?.startsWith("http")
+                  ? record.CAR_IMG
+                  : `${IMAGE_BASE_URL}${record.CAR_IMG || ""}`
+              }
               onError={(e:any) => e.target.src = "assets/admin/img/car/car-01.jpg"}
               alt="car"
             />

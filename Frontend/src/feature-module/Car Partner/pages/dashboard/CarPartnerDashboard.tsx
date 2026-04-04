@@ -8,6 +8,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const API_BASE = "http://localhost:4000";
+const API_MEDIA_BASE = import.meta.env.VITE_API_BASE_URL_IMAGE || API_BASE;
 
 const statusColors: Record<string, string> = {
   COMPLETED: "bg-success-transparent",
@@ -521,7 +522,11 @@ const CarPartnerDashboard = () => {
                 <>
                   <div className="mb-2">
                     <img
-                      src={`${API_BASE}${newestCar.image}`}
+                      src={
+                        newestCar.image?.startsWith("http")
+                          ? newestCar.image
+                          : `${API_MEDIA_BASE}${newestCar.image}`
+                      }
                       onError={(e: any) => { e.target.src = "assets/admin/img/car/car.jpg"; }}
                       alt="img"
                       className="rounded w-100"
@@ -593,7 +598,13 @@ const CarPartnerDashboard = () => {
                                 className="avatar flex-shrink-0"
                               >
                                 <img
-                                  src={r.carImage ? `${API_BASE}${r.carImage}` : "assets/admin/img/car/car-01.jpg"}
+                                  src={
+                                    r.carImage
+                                      ? r.carImage.startsWith("http")
+                                        ? r.carImage
+                                        : `${API_MEDIA_BASE}${r.carImage}`
+                                      : "assets/admin/img/car/car-01.jpg"
+                                  }
                                   onError={(e: any) => { e.target.src = "assets/admin/img/car/car-01.jpg"; }}
                                   alt="img"
                                 />
@@ -686,7 +697,13 @@ const CarPartnerDashboard = () => {
                               <div className="d-flex align-items-center">
                                 <span className="avatar flex-shrink-0">
                                   <img
-                                    src={car.image ? `${API_BASE}${car.image}` : `assets/admin/img/car/car-0${(idx % 5) + 1}.jpg`}
+                                    src={
+                                      car.image
+                                        ? car.image.startsWith("http")
+                                          ? car.image
+                                          : `${API_MEDIA_BASE}${car.image}`
+                                        : `assets/admin/img/car/car-0${(idx % 5) + 1}.jpg`
+                                    }
                                     onError={(e: any) => { e.target.src = `assets/admin/img/car/car-01.jpg`; }}
                                     className="rounded"
                                     alt=""

@@ -14,6 +14,8 @@ const getAccessToken = () => {
   return "";
 };
 
+const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
 const BookingPayment = () => {
   const routes = all_routes;
   const navigate = useNavigate();
@@ -339,7 +341,11 @@ const BookingPayment = () => {
                               {bookingData?.car?.images?.[0] && (
                                 <span className="car-img">
                                   <img
-                                    src={`http://localhost:4000${bookingData.car.images[0]}`}
+                                    src={
+                                      bookingData.car.images[0].startsWith("http")
+                                        ? bookingData.car.images[0]
+                                        : `${IMAGE_BASE_URL}${bookingData.car.images[0]}`
+                                    }
                                     className="img-fluid"
                                     alt="Car"
                                   />

@@ -11,6 +11,8 @@ import axios from "axios";
 import { getAccessToken } from "./common/bookingUtils";
 import { formatBookingDisplayId } from "../../core/utils/bookingDisplayId";
 
+const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
 const UserPayment = () => {
   const userInfo = useSelector((state: any) => state.user.userInfo);
   const [payments, setPayments] = useState<any[]>([]);
@@ -130,7 +132,15 @@ ${userInfo?.user?.email || ""}
     <div className="table-avatar">
       <Link to="#" className="avatar avatar-lg flex-shrink-0">
         {p.booking?.car?.images?.[0] ? (
-          <img className="avatar-img" src={`http://localhost:4000${p.booking.car.images[0]}`} alt="car" />
+          <img
+            className="avatar-img"
+            src={
+              p.booking.car.images[0].startsWith("http")
+                ? p.booking.car.images[0]
+                : `${IMAGE_BASE_URL}${p.booking.car.images[0]}`
+            }
+            alt="car"
+          />
         ) : (
           <ImageWithBasePath className="avatar-img" src="assets/img/cars/car-05.jpg" alt="car" />
         )}

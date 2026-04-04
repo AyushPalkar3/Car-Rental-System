@@ -15,6 +15,9 @@ import { setBookingDetails } from "./checkoutSlice";
 import { couponAPI } from "../../api/user/coupon.api";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
 
+const CAR_IMAGE_BASE =
+  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
 const BookingCheckout = () => {
   const routes = all_routes;
   const locationOptions = [
@@ -927,7 +930,13 @@ const BookingCheckout = () => {
                             <div className="booking-car-detail">
                               <span className="car-img">
                                 <img
-                                  src={`http://localhost:4000${bookingData?.car?.images[0]}`}
+                                  src={
+                                    bookingData?.car?.images?.[0]
+                                      ? bookingData.car.images[0].startsWith("http")
+                                        ? bookingData.car.images[0]
+                                        : `${CAR_IMAGE_BASE}${bookingData.car.images[0]}`
+                                      : `${CAR_IMAGE_BASE}/uploads/default-car.jpg`
+                                  }
                                   className="img-fluid"
                                   alt="Car"
                                 />

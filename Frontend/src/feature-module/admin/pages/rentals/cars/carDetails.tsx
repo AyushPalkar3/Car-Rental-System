@@ -18,7 +18,11 @@ const CarDetails = () => {
     const [lightboxIdx, setLightboxIdx] = useState(0);
 
     const imageBaseUrl = useMemo(() => {
-        const base = (import.meta as any)?.env?.VITE_API_BASE_URL_IMAGE;
+        const env = import.meta.env;
+        const base =
+            env.VITE_API_BASE_URL_IMAGE ||
+            env.VITE_API_BASE_URL ||
+            "http://localhost:4000";
         return typeof base === "string" ? base.replace(/\/$/, "") : "http://localhost:4000";
     }, []);
 
@@ -37,7 +41,7 @@ const CarDetails = () => {
 
     const slides = useMemo(
         () => allImages.map(p => ({ src: getImageUrl(p) })),
-        [allImages],
+        [allImages, imageBaseUrl],
     );
 
     const pricingByDuration = useMemo(() => {

@@ -710,7 +710,13 @@ const BookingDetail = () => {
                             <div className="booking-car-detail">
                               <span className="car-img">
                                 <img
-                                  src={`http://localhost:4000${checkoutData?.car?.images[0]}`}
+                                  src={
+                                    checkoutData?.car?.images?.[0]
+                                      ? checkoutData.car.images[0].startsWith("http")
+                                        ? checkoutData.car.images[0]
+                                        : `${UPLOAD_API_ORIGIN}${checkoutData.car.images[0]}`
+                                      : `${UPLOAD_API_ORIGIN}/uploads/default-car.jpg`
+                                  }
                                   className="img-fluid"
                                   alt="Car"
                                 />

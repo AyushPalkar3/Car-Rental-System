@@ -9,6 +9,8 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import { getAccessToken } from "./common/bookingUtils";
 
+const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
 const statusBadgeClass: Record<string, string> = {
   PENDING: "badge-light-secondary",
   CONFIRMED: "badge-light-warning",
@@ -52,7 +54,11 @@ const UserDashboard = () => {
   }, [userInfo]);
 
   const getCarImg = (car: any) => {
-    if (car?.images?.[0]) return `http://localhost:4000${car.images[0]}`;
+    if (car?.images?.[0]) {
+      return car.images[0].startsWith("http")
+        ? car.images[0]
+        : `${IMAGE_BASE_URL}${car.images[0]}`;
+    }
     return "assets/img/cars/car-01.jpg";
   };
 

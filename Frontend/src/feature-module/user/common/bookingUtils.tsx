@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { formatBookingDisplayId } from "../../../core/utils/bookingDisplayId";
 
+const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
 // Shared utility for formatting booking data from backend for DataTable
 export const getAccessToken = (): string => {
   const value = `; ${document.cookie}`;
@@ -16,7 +18,9 @@ export const formatBooking = (booking: any) => ({
   originalId: booking.id,
   carName: booking.car?.name || "Unknown Car",
   img: booking.car?.images?.[0]
-    ? `http://localhost:4000${booking.car.images[0]}`
+    ? booking.car.images[0].startsWith("http")
+      ? booking.car.images[0]
+      : `${IMAGE_BASE_URL}${booking.car.images[0]}`
     : "assets/img/cars/car-05.jpg",
   deliveryStatus:
     booking.bookingType === "DELIVERY" ? "Delivery" : "Self Pickup",
@@ -355,7 +359,9 @@ export const BookingModal = ({
                   <img
                     src={
                       booking.car?.images?.[0]
-                        ? `http://localhost:4000${booking.car.images[0]}`
+                        ? booking.car.images[0].startsWith("http")
+                          ? booking.car.images[0]
+                          : `${IMAGE_BASE_URL}${booking.car.images[0]}`
                         : "assets/img/cars/car-05.jpg"
                     }
                     alt="car"

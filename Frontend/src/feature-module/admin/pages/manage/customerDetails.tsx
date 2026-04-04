@@ -6,6 +6,8 @@ import { all_routes } from "../../../../router/all_routes";
 import { userAPI } from "../../service/api/user";
 import { toast } from "react-toastify";
 
+const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+
 const CustomerDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<any>(null);
@@ -195,7 +197,13 @@ const CustomerDetails = () => {
                                     <div className="d-flex align-items-center">
                                       <span className="avatar flex-shrink-0 me-2">
                                         <ImageWithBasePath
-                                          src={booking.car.thumbnail || "assets/admin/img/car/car-06.jpg"}
+                                          src={
+                                            booking.car.thumbnail
+                                              ? booking.car.thumbnail.startsWith("http")
+                                                ? booking.car.thumbnail
+                                                : `${IMAGE_BASE_URL}${booking.car.thumbnail}`
+                                              : "assets/admin/img/car/car-06.jpg"
+                                          }
                                           alt=""
                                         />
                                       </span>
