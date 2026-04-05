@@ -9,4 +9,6 @@ export const carPartnerAPI = {
         id: string,
         payload: { name: string; email: string; address?: string | null }
     ) => axiosClient.patch(`/admin/car-partner/${id}`, payload),
+    /** Soft-delete partner; backend soft-deletes all cars and cancels active bookings. */
+    delete: (id: string) => axiosClient.delete(`/admin/car-partner/${id}`),
 };  

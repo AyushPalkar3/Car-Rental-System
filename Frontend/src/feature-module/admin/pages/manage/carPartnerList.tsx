@@ -117,14 +117,14 @@ const CarPartnerList = () => {
     if (!deactivatePartnerId) return;
     setStatusUpdating(true);
     try {
-      await carPartnerAPI.setStatus(deactivatePartnerId, "Inactive");
-      toast.success("Car partner marked as inactive.");
+      await carPartnerAPI.delete(deactivatePartnerId);
+      toast.success("Car partner deleted. Their cars were removed and active bookings cancelled.");
       setDeactivatePartnerId(null);
       hideDeleteModal();
       await getAllCarPartner();
     } catch (e: any) {
       toast.error(
-        e?.response?.data?.message || e?.message || "Could not update status"
+        e?.response?.data?.message || e?.message || "Could not delete car partner"
       );
     } finally {
       setStatusUpdating(false);
@@ -542,9 +542,11 @@ const CarPartnerList = () => {
               <span className="avatar avatar-lg bg-transparent-danger rounded-circle text-danger mb-3">
                 <i className="ti ti-trash-x fs-26" />
               </span>
-              <h4 className="mb-1">Deactivate car partner</h4>
-              <p className="mb-3">
-                This will set their status to <strong>Inactive</strong>. They will remain in the list.
+              <h4 className="mb-1">Delete car partner</h4>
+              <p className="mb-3 text-start small text-gray-9">
+                This removes the partner from the list, withdraws all of their vehicles from the fleet,
+                and cancels pending and active bookings on those cars. Past completed bookings and
+                payment records stay for history.
               </p>
               <div className="d-flex justify-content-center">
                 <button
@@ -561,7 +563,7 @@ const CarPartnerList = () => {
                   disabled={statusUpdating || !deactivatePartnerId}
                   onClick={() => void handleConfirmDeactivatePartner()}
                 >
-                  {statusUpdating ? "Updating…" : "Yes, deactivate"}
+                  {statusUpdating ? "Deleting…" : "Yes, delete"}
                 </button>
               </div>
             </div>

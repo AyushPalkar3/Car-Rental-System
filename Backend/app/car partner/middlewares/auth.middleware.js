@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import prisma from "../../../lib/db.config.js";
 
-export const verifyToken = (req, res, next) => {
+export const verifyToken = async (req, res, next) => {
     try {
         const token = req?.headers?.authorization?.split(" ")[1];
         if (!token) {
@@ -9,17 +10,25 @@ export const verifyToken = (req, res, next) => {
             });
         }
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // In the login controller, the token might have the partner details or just ID and role
-        // Checking for partner role if applicable, or just verifying it's a valid token for car partner
-        // Usually, the role would be "CAR_PARTNER" or similar.
-        
+
+        if (decodedToken?.role !== "CAR_PARTNER" || !decodedToken?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const partner = await prisma.carPartner.findUnique({
+            where: { id: decodedToken.id },
+            select: { deletedAt: true },
+        });
+        if (!partner || partner.deletedAt) {
+            return res.status(403).json({ message: "Account no longer active" });
+        }
+
         req.carPartner = decodedToken;
         next();
     } catch (error) {
-        res.status(500).json({
+        res.status(401).json({
             message: "Invalid or expired token",
             error: error.message
         });
     }
-}
+};

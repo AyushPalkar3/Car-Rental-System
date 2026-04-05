@@ -68,6 +68,12 @@ export const carPartnerLogin = async (req, res) => {
       });
     }
 
+    if (partner.deletedAt) {
+      return res.status(403).json({
+        message: "Account no longer active"
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, partner.password);
 
     if (!isPasswordValid) {
@@ -110,6 +116,10 @@ export const forgotPassword = async (req, res) => {
 
     if (!partner) {
       return res.status(404).json({ message: "Car partner not found" });
+    }
+
+    if (partner.deletedAt) {
+      return res.status(403).json({ message: "Account no longer active" });
     }
 
     // Generate 4 digit OTP
@@ -155,6 +165,10 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid request or OTP expired" });
     }
 
+    if (partner.deletedAt) {
+      return res.status(403).json({ message: "Account no longer active" });
+    }
+
     if (new Date() > partner.otpExpiresAt) {
       return res.status(400).json({ message: "OTP has expired" });
     }
@@ -189,6 +203,10 @@ export const resendOtp = async (req, res) => {
 
     if (!partner) {
       return res.status(404).json({ message: "Car partner not found" });
+    }
+
+    if (partner.deletedAt) {
+      return res.status(403).json({ message: "Account no longer active" });
     }
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -229,6 +247,10 @@ export const resetPassword = async (req, res) => {
 
     if (!partner || !partner.otpHash || !partner.otpExpiresAt) {
       return res.status(400).json({ message: "Invalid request" });
+    }
+
+    if (partner.deletedAt) {
+      return res.status(403).json({ message: "Account no longer active" });
     }
 
     if (new Date() > partner.otpExpiresAt) {

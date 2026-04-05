@@ -1,4 +1,8 @@
 import prisma from "../../../lib/db.config.js";
+import {
+  CAR_DELETE_REASON_ADMIN,
+  softDeleteCarInTransaction,
+} from "../../utils/fleetSoftDelete.js";
 
 function parseJsonField(raw, fallback) {
   if (raw == null || raw === "") return fallback;
@@ -374,8 +378,6 @@ export const updateAdminCar = async (req, res) => {
 };
 
 // ─── Remove car from fleet (soft delete) ─────────────────────────────────────
-const CAR_DELETE_CANCEL_REASON = "Vehicle removed from fleet (car deleted by admin)";
-
 export const deleteAdminCar = async (req, res) => {
   try {
     const adminId = req.admin?.id;
@@ -391,33 +393,13 @@ export const deleteAdminCar = async (req, res) => {
     const now = new Date();
 
     const summary = await prisma.$transaction(async (tx) => {
-      // Cancel upcoming + in-progress only; keep COMPLETED / CANCELLED / past CONFIRMED as-is.
-      // Payments and booking rows stay in the database for invoices / history.
-      const cancelled = await tx.booking.updateMany({
-        where: {
-          carId,
-          OR: [
-            { status: "PENDING" },
-            { status: "CONFIRMED", returnDate: { gte: now } },
-          ],
-        },
-        data: {
-          status: "CANCELLED",
-          cancellationReason: CAR_DELETE_CANCEL_REASON,
-          cancelledAt: now,
-        },
-      });
-
-      await tx.car.update({
-        where: { id: carId },
-        data: {
-          deletedAt: now,
-          isAvailable: false,
-          featured: false,
-        },
-      });
-
-      return { cancelledBookings: cancelled.count };
+      const cancelledBookings = await softDeleteCarInTransaction(
+        tx,
+        carId,
+        now,
+        CAR_DELETE_REASON_ADMIN
+      );
+      return { cancelledBookings };
     });
 
     res.status(200).json({

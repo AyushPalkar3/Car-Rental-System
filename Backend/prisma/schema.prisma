@@ -48,6 +48,9 @@ model CarPartner {
   otpExpiresAt  DateTime?
   otpAttempts   Int      @default(0)
 
+  /// Set when admin removes the partner; cars are soft-deleted and active bookings cancelled.
+  deletedAt    DateTime?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
