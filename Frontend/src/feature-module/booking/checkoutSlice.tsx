@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { getApiBaseUrl } from "../../core/utils/envUrls";
 
 const getAccessToken = () => {
   const value = `; ${document.cookie}`;
@@ -15,7 +16,7 @@ export const createBooking = createAsyncThunk(
   "checkout/createBooking",
   async (bookingData: any, thunkAPI) => {
     try {
-      const res = await axios.post("http://localhost:4000/api/bookings", bookingData, {
+      const res = await axios.post(`${getApiBaseUrl()}/bookings`, bookingData, {
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
         },

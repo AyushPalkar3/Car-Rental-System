@@ -63,10 +63,15 @@ export const createBooking = async (req, res) => {
     }
     const carBookingCheck = await prisma.car.findUnique({
       where: { id: carId },
-      select: { isVerified: true },
+      select: { isVerified: true, deletedAt: true },
     });
     if (!carBookingCheck) {
       return res.status(400).json({ message: "Car not found." });
+    }
+    if (carBookingCheck.deletedAt) {
+      return res.status(400).json({
+        message: "This vehicle is no longer available for booking.",
+      });
     }
     if (!carBookingCheck.isVerified) {
       return res.status(400).json({

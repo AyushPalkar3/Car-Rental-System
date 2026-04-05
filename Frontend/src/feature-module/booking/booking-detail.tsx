@@ -9,12 +9,9 @@ import { useDispatch, useSelector } from "react-redux";
 import Cookies from "js-cookie";
 import { updateUser } from "../user/userSlice";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
+import { getMediaBaseUrl } from "../../core/utils/envUrls";
 
-const UPLOAD_API_ORIGIN = (
-  import.meta.env.VITE_API_BASE_URL_IMAGE ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:4000"
-).replace(/\/$/, "");
+const UPLOAD_API_ORIGIN = getMediaBaseUrl();
 
 function resolveUploadDocHref(pathOrUrl: string | null | undefined): string | null {
   const s = String(pathOrUrl || "").trim();

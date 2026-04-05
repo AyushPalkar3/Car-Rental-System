@@ -158,6 +158,9 @@ model Car {
 
   isAvailable   Boolean  @default(true)
 
+  /// Set when admin removes car from fleet; row kept for bookings / payments / invoices history.
+  deletedAt     DateTime?
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }

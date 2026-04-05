@@ -414,9 +414,15 @@
     position: relative;
     margin-bottom: 15px;
     z-index: 999;
+    /* Keep horizontal gallery swipes from chaining to the page / sibling columns */
+    .slick-slider {
+        overscroll-behavior-x: contain;
+    }
     .slick-list {
         overflow: hidden;
         border-radius: 12px;
+        overscroll-behavior-x: contain;
+        overscroll-behavior-y: auto;
     }
     .slick-slide {
         margin: 0 4px;
@@ -511,53 +517,40 @@
 
     }
 }
-/* Small preview strip under main gallery — not a second hero image */
-.detail-product .slider-nav-thumbnails {
+/* Thumbnails: plain flex (no Slick) so swiping the main image does not slide this row */
+.detail-product .listing-thumbnails-static {
     margin-top: 12px;
-    max-height: 102px;
-    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 0 6px;
+    overflow: visible;
 
-    .slick-list {
-        overflow: hidden;
-        padding: 2px 0 6px;
-    }
-
-    .slick-track {
-        display: flex;
-        align-items: center;
-    }
-
-    .slick-slide {
-        width: 88px !important;
-        min-width: 88px;
-        max-width: 88px;
-        height: 88px;
-        margin: 0 5px !important;
-        overflow: visible;
+    .listing-thumb-btn {
+        appearance: none;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        background: transparent;
+        cursor: pointer;
         opacity: 0.75;
         transition: opacity 0.2s ease, transform 0.2s ease;
-        > div {
-            width: 88px;
-            height: 88px;
+        flex: 0 0 auto;
+        touch-action: manipulation;
+        &:focus-visible {
+            outline: 2px solid colors.$primarycolor;
+            outline-offset: 2px;
         }
-        &.slick-current {
+        &.is-active {
             opacity: 1;
             transform: scale(1.02);
-        }
-        @include mixins.respond-below(custom767) {
-            width: 72px !important;
-            min-width: 72px;
-            max-width: 72px;
-            height: 72px;
-            > div {
-                width: 72px;
-                height: 72px;
-            }
         }
     }
 
     .listing-thumb-square {
         position: relative;
+        display: block;
         width: 88px;
         height: 88px;
         min-width: 88px;
@@ -569,7 +562,6 @@
         background-color: #eef0f2;
         box-sizing: border-box;
         border: 2px solid transparent;
-        cursor: pointer;
         @include mixins.respond-below(custom767) {
             width: 72px;
             height: 72px;
@@ -588,7 +580,7 @@
         }
     }
 
-    .slick-slide.slick-current .listing-thumb-square {
+    .listing-thumb-btn.is-active .listing-thumb-square {
         border-color: colors.$primarycolor;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
     }

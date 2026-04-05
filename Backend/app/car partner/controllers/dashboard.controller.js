@@ -11,7 +11,7 @@ export const getDashboardStats = async (req, res) => {
     });
 
     // --- Fetch all cars for this partner ---
-    const cars = await prisma.car.findMany({
+    const rows = await prisma.car.findMany({
       where: { partnerId },
       select: {
         id: true,
@@ -20,6 +20,7 @@ export const getDashboardStats = async (req, res) => {
         category: true,
         brand: true,
         isAvailable: true,
+        deletedAt: true,
         bookings: {
           select: {
             id: true,
@@ -29,6 +30,7 @@ export const getDashboardStats = async (req, res) => {
         },
       },
     });
+    const cars = rows.filter((c) => c.deletedAt == null);
 
     const carIds = cars.map((c) => c.id);
     const totalCars = cars.length;

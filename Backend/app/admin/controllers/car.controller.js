@@ -152,7 +152,9 @@ export const createAdminCar = async (req, res) => {
 export const listAdminCars = async (req, res) => {
   try {
     const now = new Date();
-    const cars = await prisma.car.findMany({
+    // Don’t use `where: { deletedAt: null }` on MongoDB — legacy docs without the field
+    // are excluded by that filter in some Prisma versions. Filter in JS instead.
+    const rows = await prisma.car.findMany({
       include: {
         pricing: true,
         seasonalPricing: true,
@@ -165,6 +167,7 @@ export const listAdminCars = async (req, res) => {
       },
       orderBy: { createdAt: "desc" },
     });
+    const cars = rows.filter((c) => c.deletedAt == null);
 
     const data = cars.map((car) => {
       const reqs = car.unavailabilityRequests || [];
@@ -248,6 +251,9 @@ export const updateAdminCar = async (req, res) => {
 
     const existing = await prisma.car.findUnique({ where: { id: req.params.id } });
     if (!existing) return res.status(404).json({ message: "Car not found" });
+    if (existing.deletedAt) {
+      return res.status(400).json({ message: "Cannot edit a car removed from fleet" });
+    }
 
     const data = {};
     for (const key of UPDATABLE_FIELDS) {
@@ -367,17 +373,58 @@ export const updateAdminCar = async (req, res) => {
   }
 };
 
-// ─── Delete Car ───────────────────────────────────────────────────────────────
+// ─── Remove car from fleet (soft delete) ─────────────────────────────────────
+const CAR_DELETE_CANCEL_REASON = "Vehicle removed from fleet (car deleted by admin)";
+
 export const deleteAdminCar = async (req, res) => {
   try {
     const adminId = req.admin?.id;
     if (!adminId) return res.status(403).json({ message: "Forbidden" });
 
-    const existing = await prisma.car.findUnique({ where: { id: req.params.id } });
+    const carId = req.params.id;
+    const existing = await prisma.car.findUnique({ where: { id: carId } });
     if (!existing) return res.status(404).json({ message: "Car not found" });
+    if (existing.deletedAt) {
+      return res.status(400).json({ message: "Car is already removed from fleet" });
+    }
 
-    await prisma.car.delete({ where: { id: req.params.id } });
-    res.status(200).json({ message: "Car deleted" });
+    const now = new Date();
+
+    const summary = await prisma.$transaction(async (tx) => {
+      // Cancel upcoming + in-progress only; keep COMPLETED / CANCELLED / past CONFIRMED as-is.
+      // Payments and booking rows stay in the database for invoices / history.
+      const cancelled = await tx.booking.updateMany({
+        where: {
+          carId,
+          OR: [
+            { status: "PENDING" },
+            { status: "CONFIRMED", returnDate: { gte: now } },
+          ],
+        },
+        data: {
+          status: "CANCELLED",
+          cancellationReason: CAR_DELETE_CANCEL_REASON,
+          cancelledAt: now,
+        },
+      });
+
+      await tx.car.update({
+        where: { id: carId },
+        data: {
+          deletedAt: now,
+          isAvailable: false,
+          featured: false,
+        },
+      });
+
+      return { cancelledBookings: cancelled.count };
+    });
+
+    res.status(200).json({
+      message: "Car deleted",
+      softDeleted: true,
+      ...summary,
+    });
   } catch (error) {
     res.status(500).json({ message: "Error deleting car", error: error.message });
   }
@@ -388,6 +435,9 @@ export const toggleCarAvailability = async (req, res) => {
   try {
     const existing = await prisma.car.findUnique({ where: { id: req.params.id } });
     if (!existing) return res.status(404).json({ message: "Car not found" });
+    if (existing.deletedAt) {
+      return res.status(400).json({ message: "Car removed from fleet" });
+    }
 
     const car = await prisma.car.update({
       where: { id: req.params.id },
@@ -405,6 +455,9 @@ export const toggleCarVerification = async (req, res) => {
   try {
     const existing = await prisma.car.findUnique({ where: { id: req.params.id } });
     if (!existing) return res.status(404).json({ message: "Car not found" });
+    if (existing.deletedAt) {
+      return res.status(400).json({ message: "Car removed from fleet" });
+    }
 
     const car = await prisma.car.update({
       where: { id: req.params.id },

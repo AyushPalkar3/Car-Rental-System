@@ -33,9 +33,9 @@ import {
 import { RelatedCarsSlider } from "./relatedCarsSlider";
 import { img_path } from "../../environment";
 import { buildCarGalleryImagePaths } from "../../utils/carGalleryImages";
+import { getMediaBaseUrl } from "../../core/utils/envUrls";
 
-const CAR_IMAGE_BASE =
-  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+const CAR_IMAGE_BASE = getMediaBaseUrl();
 
 const LISTING_GALLERY_FALLBACK = `${img_path}assets/img/cars/slider-01.jpg`;
 
@@ -451,19 +451,11 @@ const listingDetails = () => {
     setCurrentIndex(index);
     setOpen(true);
   };
-  const [nav1, setNav1] = useState<any>(null);
-  const [nav2, setNav2] = useState<any>(null);
+  const [mainSlideIndex, setMainSlideIndex] = useState(0);
   const sliderRef1 = useRef<any>(null);
-  const sliderRef2 = useRef<any>(null);
 
   const setMainSliderRef = useCallback((slider: any) => {
     sliderRef1.current = slider;
-    setNav1(slider);
-  }, []);
-
-  const setThumbSliderRef = useCallback((slider: any) => {
-    sliderRef2.current = slider;
-    setNav2(slider);
   }, []);
 
   const settings1 = useMemo(
@@ -474,31 +466,21 @@ const listingDetails = () => {
       speed: 500,
       slidesToShow: 1,
       slidesToScroll: 1,
-      asNavFor: nav2 ?? undefined,
       ref: setMainSliderRef,
+      afterChange: (index: number) => {
+        const n = galleryImages.length;
+        if (!n) return;
+        setMainSlideIndex(
+          galleryInfiniteMain ? ((index % n) + n) % n : index,
+        );
+      },
     }),
-    [nav2, galleryInfiniteMain, setMainSliderRef],
-  );
-
-  const settings2 = useMemo(
-    () => ({
-      dots: false,
-      arrows: false,
-      infinite: false,
-      speed: 300,
-      variableWidth: true,
-      slidesToScroll: 1,
-      swipeToSlide: true,
-      focusOnSelect: true,
-      asNavFor: nav1 ?? undefined,
-      ref: setThumbSliderRef,
-    }),
-    [nav1, setThumbSliderRef],
+    [galleryInfiniteMain, galleryImages.length, setMainSliderRef],
   );
 
   useLayoutEffect(() => {
     sliderRef1.current?.slickGoTo?.(0);
-    sliderRef2.current?.slickGoTo?.(0);
+    setMainSlideIndex(0);
   }, [id, galleryImages.length]);
 
   const specificationRows = useMemo(() => buildSpecificationRows(car), [car]);
@@ -711,68 +693,42 @@ const listingDetails = () => {
                     </div> */}
                   </Slider>
                 </div>
-                <div className="slider slider-nav-thumbnails">
-                  <Slider
-                    key={`detail-thumb-${id}-${galleryImages.length}`}
-                    {...settings2}
-                  >
-                    {isLoading ? (
-                      <div
-                        key="th-loading"
-                        className="listing-thumb-square d-flex align-items-center justify-content-center"
+                <div className="listing-thumbnails-static">
+                  {isLoading ? (
+                    <div
+                      key="th-loading"
+                      className="listing-thumb-square d-flex align-items-center justify-content-center"
+                    >
+                      <div className="spinner-border spinner-border-sm text-secondary" role="status">
+                        <span className="visually-hidden">Loading…</span>
+                      </div>
+                    </div>
+                  ) : galleryImages.length > 0 ? (
+                    galleryImages.map((element: string, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        className={`listing-thumb-btn${idx === mainSlideIndex ? " is-active" : ""}`}
+                        onClick={() => {
+                          sliderRef1.current?.slickGoTo?.(idx);
+                          setMainSlideIndex(idx);
+                        }}
+                        aria-label={`Show photo ${idx + 1}`}
+                        aria-current={idx === mainSlideIndex ? "true" : undefined}
                       >
-                        <div className="spinner-border spinner-border-sm text-secondary" role="status">
-                          <span className="visually-hidden">Loading…</span>
-                        </div>
-                      </div>
-                    ) : galleryImages.length > 0 ? (
-                      galleryImages.map((element: string, idx: number) => (
-                        <div key={idx} className="listing-thumb-square">
-                          <ListingGalleryImage
-                            imagePath={element}
-                            alt={`Thumbnail ${idx + 1}`}
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <div key="th-fallback" className="listing-thumb-square">
-                        <ImageWithBasePath
-                          src="assets/img/cars/slider-thum-01.jpg"
-                          alt=""
-                        />
-                      </div>
-                    )}
-                    {/* <div>
-                    <ImageWithBasePath
+                        <span className="listing-thumb-square">
+                          <ListingGalleryImage imagePath={element} alt="" />
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div key="th-fallback" className="listing-thumb-square">
+                      <ImageWithBasePath
                         src="assets/img/cars/slider-thum-01.jpg"
-                        alt="product image"
+                        alt=""
                       />
                     </div>
-                    <div>
-                    <ImageWithBasePath
-                        src="assets/img/cars/slider-thum-02.jpg"
-                        alt="product image"
-                      />
-                    </div>
-                    <div>
-                    <ImageWithBasePath
-                        src="assets/img/cars/slider-thum-03.jpg"
-                        alt="product image"
-                      />
-                    </div>
-                    <div>
-                    <ImageWithBasePath
-                        src="assets/img/cars/slider-thum-04.jpg"
-                        alt="product image"
-                      />
-                    </div>
-                    <div>
-                    <ImageWithBasePath
-                        src="assets/img/cars/slider-thum-05.jpg"
-                        alt="product image"
-                      />
-                    </div> */}
-                  </Slider>
+                  )}
                 </div>
 
               </div>

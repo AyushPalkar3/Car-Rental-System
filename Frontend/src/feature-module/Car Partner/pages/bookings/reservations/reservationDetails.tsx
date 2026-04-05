@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
-
-const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+import { getApiBaseUrl, getMediaBaseUrl } from "../../../../../core/utils/envUrls";
 
 const statusColors: Record<string, string> = {
   COMPLETED: "bg-success-transparent",
@@ -26,7 +25,7 @@ const ReservationDetails = () => {
       if (!token || !id) return;
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:4000/api/car-partner/bookings/${id}`, {
+        const res = await axios.get(`${getApiBaseUrl()}/car-partner/bookings/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setBooking(res.data);
@@ -127,7 +126,7 @@ const ReservationDetails = () => {
                                     car?.images?.[0]
                                       ? car.images[0].startsWith("http")
                                         ? car.images[0]
-                                        : `${IMAGE_BASE_URL}${car.images[0]}`
+                                        : `${getMediaBaseUrl()}${car.images[0]}`
                                       : "assets/admin/img/car/car-01.jpg"
                                   }
                                   onError={(e:any) => e.target.src = "assets/admin/img/car/car-01.jpg"}

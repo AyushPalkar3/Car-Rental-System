@@ -14,9 +14,9 @@ import ImageWithBasePath from '../../../core/data/img/ImageWithBasePath';
 import { carAPI } from '../../../api/user/car.api';
 import { getCarDayRate } from '../../../utils/carPricing';
 import { img_path } from '../../../environment';
+import { getMediaBaseUrl } from '../../../core/utils/envUrls';
 
-const API_IMAGE_BASE =
-  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+const API_IMAGE_BASE = getMediaBaseUrl();
 
 function formatTransmission(t: string) {
   const map: Record<string, string> = {

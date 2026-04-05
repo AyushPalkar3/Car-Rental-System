@@ -6,6 +6,7 @@ import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { adminCarAPI } from "../../../service/api/car";
 import CarDetailsMiniCalendar from "./carDetailsMiniCalendar";
+import { getMediaBaseUrl } from "../../../../../core/utils/envUrls";
 
 const CarDetails = () => {
     const [searchParams] = useSearchParams();
@@ -17,14 +18,7 @@ const CarDetails = () => {
     const [open1, setOpen1] = useState(false);
     const [lightboxIdx, setLightboxIdx] = useState(0);
 
-    const imageBaseUrl = useMemo(() => {
-        const env = import.meta.env;
-        const base =
-            env.VITE_API_BASE_URL_IMAGE ||
-            env.VITE_API_BASE_URL ||
-            "http://localhost:4000";
-        return typeof base === "string" ? base.replace(/\/$/, "") : "http://localhost:4000";
-    }, []);
+    const imageBaseUrl = useMemo(() => getMediaBaseUrl(), []);
 
     const getImageUrl = (path: string | null | undefined): string => {
         if (!path) return "/assets/admin/img/car/car-01.jpg";

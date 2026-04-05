@@ -14,9 +14,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { setBookingDetails } from "./checkoutSlice";
 import { couponAPI } from "../../api/user/coupon.api";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
+import { getMediaBaseUrl } from "../../core/utils/envUrls";
 
-const CAR_IMAGE_BASE =
-  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+const CAR_IMAGE_BASE = getMediaBaseUrl();
 
 const BookingCheckout = () => {
   const routes = all_routes;

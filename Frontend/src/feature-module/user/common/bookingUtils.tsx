@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { formatBookingDisplayId } from "../../../core/utils/bookingDisplayId";
-
-const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+import { getApiBaseUrl, getMediaBaseUrl } from "../../../core/utils/envUrls";
 
 // Shared utility for formatting booking data from backend for DataTable
 export const getAccessToken = (): string => {
@@ -20,7 +19,7 @@ export const formatBooking = (booking: any) => ({
   img: booking.car?.images?.[0]
     ? booking.car.images[0].startsWith("http")
       ? booking.car.images[0]
-      : `${IMAGE_BASE_URL}${booking.car.images[0]}`
+      : `${getMediaBaseUrl()}${booking.car.images[0]}`
     : "assets/img/cars/car-05.jpg",
   deliveryStatus:
     booking.bookingType === "DELIVERY" ? "Delivery" : "Self Pickup",
@@ -220,7 +219,7 @@ export const ExtendBookingModal = ({
     setSubmitting(true);
     try {
       const res = await axios.patch(
-        `http://localhost:4000/api/bookings/${booking.id}/extend`,
+        `${getApiBaseUrl()}/bookings/${booking.id}/extend`,
         { userId, returnDate: newEnd.toISOString() },
         { headers: { Authorization: `Bearer ${getAccessToken()}` } }
       );
@@ -361,7 +360,7 @@ export const BookingModal = ({
                       booking.car?.images?.[0]
                         ? booking.car.images[0].startsWith("http")
                           ? booking.car.images[0]
-                          : `${IMAGE_BASE_URL}${booking.car.images[0]}`
+                          : `${getMediaBaseUrl()}${booking.car.images[0]}`
                         : "assets/img/cars/car-05.jpg"
                     }
                     alt="car"

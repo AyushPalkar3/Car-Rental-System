@@ -10,6 +10,7 @@ import {
 } from "../../../service/api/reservations";
 import { displayStatus } from "./reservationUtils";
 import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
+import { getMediaBaseUrl } from "../../../../../core/utils/envUrls";
 
 const formatDetail = (iso: string) =>
   new Date(iso).toLocaleString(undefined, {
@@ -38,16 +39,7 @@ const ReservationDetails = () => {
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
 
-  const imageBaseUrl = useMemo(() => {
-    const fromEnv = (import.meta as unknown as { env?: { VITE_API_BASE_URL_IMAGE?: string } })
-      .env?.VITE_API_BASE_URL_IMAGE;
-    if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.replace(/\/$/, "");
-    const api = import.meta.env.VITE_API_BASE_URL || "";
-    if (typeof api === "string" && api.trim()) {
-      return api.replace(/\/api\/?$/i, "").replace(/\/$/, "");
-    }
-    return "http://localhost:4000";
-  }, []);
+  const imageBaseUrl = useMemo(() => getMediaBaseUrl(), []);
 
   const absFileUrl = useCallback((path: string | null | undefined): string | null => {
     const s = String(path || "").trim();

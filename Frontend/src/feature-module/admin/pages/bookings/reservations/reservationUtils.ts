@@ -62,6 +62,7 @@ export function mapReservationToTableRow(
   return {
     key: b.id,
     bookingId: b.id,
+    customerId: b.user?.id ?? b.userId,
     CAR_NO: formatBookingDisplayId(b.id),
     CAR: car?.name ?? "—",
     CAR_IMG: thumbUrl,

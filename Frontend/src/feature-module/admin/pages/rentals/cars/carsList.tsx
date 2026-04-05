@@ -6,6 +6,7 @@ import ImageWithBasePath from "../../../../../core/data/img/ImageWithBasePath";
 import CommonDatatable from "../../../common/dataTable";
 import { adminCarAPI } from "../../../service/api/car";
 import { adminUnavailabilityAPI } from "../../../service/api/unavailability";
+import { getMediaBaseUrl } from "../../../../../core/utils/envUrls";
 
 type BackendCar = {
     id: string;
@@ -48,15 +49,10 @@ const CarsList = () => {
     const [adminNote, setAdminNote] = useState("");
     const [unavailSubmitting, setUnavailSubmitting] = useState(false);
     const [refreshSeq, setRefreshSeq] = useState(0);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+    const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
-    const imageBaseUrl = useMemo(() => {
-        const env = import.meta.env;
-        const base =
-            env.VITE_API_BASE_URL_IMAGE ||
-            env.VITE_API_BASE_URL ||
-            "http://localhost:4000";
-        return typeof base === "string" ? base.replace(/\/$/, "") : "http://localhost:4000";
-    }, []);
+    const imageBaseUrl = useMemo(() => getMediaBaseUrl(), []);
 
     const getImageUrl = (path: string | null | undefined): string | null => {
         if (!path) return null;
@@ -73,7 +69,12 @@ const CarsList = () => {
             try {
                 setLoading(true);
                 const res = await adminCarAPI.listCars();
-                const cars: BackendCar[] = res?.data?.data ?? [];
+                const payload = res?.data;
+                const cars: BackendCar[] = Array.isArray(payload?.data)
+                    ? payload.data
+                    : Array.isArray(payload)
+                      ? payload
+                      : [];
 
                 const mapped = cars.map((car: BackendCar) => {
                     const dailyPrice =
@@ -109,9 +110,17 @@ const CarsList = () => {
                 });
 
                 if (isMounted) setData(mapped);
-            } catch (e) {
+            } catch (e: unknown) {
                 if (isMounted) setData([]);
                 console.error("Failed to load cars", e);
+                const errMsg =
+                    e &&
+                    typeof e === "object" &&
+                    "message" in e &&
+                    typeof (e as { message: unknown }).message === "string"
+                        ? (e as { message: string }).message
+                        : "Could not load cars. Check that the API is running and you are logged in.";
+                message.error(errMsg);
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -394,14 +403,15 @@ const CarsList = () => {
                             </Link>
                         </li>
                         <li>
-                            <Link
-                                className="dropdown-item rounded-1"
-                                to="#"
-                                data-bs-toggle="modal"
-                                data-bs-target="#delete_extra_services">
+                            <button
+                                type="button"
+                                className="dropdown-item rounded-1 text-start w-100 border-0 bg-transparent text-danger"
+                                onClick={() =>
+                                    setDeleteTarget({ id: record.key, name: record.CAR })
+                                }>
                                 <i className="ti ti-trash me-1" />
                                 Delete
-                            </Link>
+                            </button>
                         </li>
                     </ul>
                 </div>
@@ -907,6 +917,75 @@ const CarsList = () => {
                 )}
                 {/* /Table */}
             </div>
+
+            <Modal
+                title="Delete car"
+                open={!!deleteTarget}
+                onCancel={() => {
+                    if (!deleteSubmitting) setDeleteTarget(null);
+                }}
+                footer={null}
+                width={480}
+                destroyOnClose>
+                {deleteTarget && (
+                    <>
+                        <p className="mb-2">
+                            Delete <strong>{deleteTarget.name}</strong>? This hides the car from listings
+                            and the admin car list; booking and payment history stay in the database.
+                        </p>
+                        <p className="text-muted small mb-3">
+                            All <strong>pending</strong> bookings and <strong>current / future</strong>{" "}
+                            confirmed rentals for this vehicle will be marked{" "}
+                            <strong>cancelled</strong>. Past completed trips, payments, and invoices are
+                            kept.
+                        </p>
+                        <div className="d-flex gap-2 justify-content-end">
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                disabled={deleteSubmitting}
+                                onClick={() => setDeleteTarget(null)}>
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-danger"
+                                disabled={deleteSubmitting}
+                                onClick={async () => {
+                                    setDeleteSubmitting(true);
+                                    try {
+                                        const res = await adminCarAPI.deleteCar(deleteTarget.id);
+                                        const d = res?.data as {
+                                            cancelledBookings?: number;
+                                            message?: string;
+                                        };
+                                        const c = d?.cancelledBookings ?? 0;
+                                        message.success(
+                                            c > 0
+                                                ? `Car deleted. ${c} booking(s) cancelled (payments & history kept).`
+                                                : (d?.message ?? "Car deleted."),
+                                        );
+                                        setDeleteTarget(null);
+                                        setRefreshSeq(s => s + 1);
+                                    } catch (err: unknown) {
+                                        const msg =
+                                            err &&
+                                            typeof err === "object" &&
+                                            "message" in err &&
+                                            typeof (err as { message: unknown }).message === "string"
+                                                ? (err as { message: string }).message
+                                                : "Could not delete car";
+                                        message.error(msg);
+                                    } finally {
+                                        setDeleteSubmitting(false);
+                                    }
+                                }}>
+                                {deleteSubmitting ? "Deleting…" : "Delete"}
+                            </button>
+                        </div>
+                    </>
+                )}
+            </Modal>
 
             <Modal
                 title="Review block request"

@@ -99,7 +99,7 @@ export const getPopularCars = async (req, res) => {
     const limit =
       Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 24) : 6;
 
-    const cars = await prisma.car.findMany({
+    const rows = await prisma.car.findMany({
       where: { isVerified: true },
       include: {
         pricing: true,
@@ -113,6 +113,7 @@ export const getPopularCars = async (req, res) => {
         },
       },
     });
+    const cars = rows.filter((c) => c.deletedAt == null);
 
     const scored = cars.map((car) => {
       const bookingCount = car._count.bookings;
@@ -161,13 +162,14 @@ export const getPopularCars = async (req, res) => {
  */
 export const getAllCars = async (req, res) => {
   try {
-    const cars = await prisma.car.findMany({
+    const rows = await prisma.car.findMany({
       where: { isVerified: true },
       include: {
         pricing: true,
         reviews: true,
       },
     });
+    const cars = rows.filter((c) => c.deletedAt == null);
 
     const window = parseRentalWindow(req.query.pickup, req.query.returnAt);
 
@@ -278,6 +280,10 @@ export const getCarById = async (req, res) => {
     });
 
     if (!car) {
+      return res.status(404).json({ message: "Car not found" });
+    }
+
+    if (car.deletedAt) {
       return res.status(404).json({ message: "Car not found" });
     }
 

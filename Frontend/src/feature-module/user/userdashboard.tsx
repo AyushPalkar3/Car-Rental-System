@@ -8,8 +8,7 @@ import { all_routes } from "../../router/all_routes";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { getAccessToken } from "./common/bookingUtils";
-
-const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+import { getApiBaseUrl, getMediaBaseUrl } from "../../core/utils/envUrls";
 
 const statusBadgeClass: Record<string, string> = {
   PENDING: "badge-light-secondary",
@@ -40,7 +39,7 @@ const UserDashboard = () => {
         if (!userId) return;
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:4000/api/bookings/user/${userId}/stats`,
+          `${getApiBaseUrl()}/bookings/user/${userId}/stats`,
           { headers: { Authorization: `Bearer ${getAccessToken()}` } }
         );
         setStats(res.data);
@@ -57,7 +56,7 @@ const UserDashboard = () => {
     if (car?.images?.[0]) {
       return car.images[0].startsWith("http")
         ? car.images[0]
-        : `${IMAGE_BASE_URL}${car.images[0]}`;
+        : `${getMediaBaseUrl()}${car.images[0]}`;
     }
     return "assets/img/cars/car-01.jpg";
   };

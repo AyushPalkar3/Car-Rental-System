@@ -7,6 +7,7 @@ import { Seater } from "../../../common/json/selectOption";
 import { adminCarAPI } from "../../../service/api/car";
 import { carPartnerAPI } from "../../../service/api/carPartner";
 import { getAdmin } from "../../../service/api/admin";
+import { getMediaBaseUrl } from "../../../../../core/utils/envUrls";
 
 const AMENITY_OPTIONS = [
     "Air Condition",
@@ -94,10 +95,7 @@ const EditCar = () => {
     const [seasonalForm, setSeasonalForm]             = useState<SeasonalEntry>(emptySeasonalForm);
     const [editingSeasonalIdx, setEditingSeasonalIdx] = useState<number | null>(null);
 
-    const imageBaseUrl = useMemo(() => {
-        const base = (import.meta as any)?.env?.VITE_API_BASE_URL_IMAGE;
-        return typeof base === "string" ? base.replace(/\/$/, "") : "http://localhost:4000";
-    }, []);
+    const imageBaseUrl = useMemo(() => getMediaBaseUrl(), []);
 
     const getImageUrl = (path: string | null | undefined): string => {
         if (!path) return "/assets/admin/img/car/car-01.jpg";

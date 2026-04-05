@@ -95,7 +95,7 @@ export const getAdminDashboard = async (req, res) => {
       }),
       prisma.car.findMany({
         orderBy: { createdAt: "desc" },
-        take: 1,
+        take: 25,
         include: { pricing: true },
       }),
       prisma.payment.findMany({
@@ -204,7 +204,7 @@ export const getAdminDashboard = async (req, res) => {
     const incomeThisWeekRounded = Math.round(earningsThisWeek);
     const expenseThisWeek = -Math.max(1, Math.round(incomeThisWeekRounded * 0.12));
 
-    const newlyAdded = cars[0] || null;
+    const newlyAdded = cars.find((c) => c.deletedAt == null) || null;
     const dayPrice =
       newlyAdded?.pricing?.find((p) => p.duration === "DAY")?.price ??
       newlyAdded?.pricing?.[0]?.price ??

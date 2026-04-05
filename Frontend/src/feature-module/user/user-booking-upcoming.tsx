@@ -17,6 +17,7 @@ import {
   BookingModal,
   BookingTableSkeleton,
 } from "./common/bookingUtils";
+import { getApiBaseUrl } from "../../core/utils/envUrls";
 
 const UserBookingUpcoming = () => {
   const routes = all_routes;
@@ -36,7 +37,7 @@ const UserBookingUpcoming = () => {
         if (!userId) return;
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:4000/api/bookings/user/${userId}`,
+          `${getApiBaseUrl()}/bookings/user/${userId}`,
           { headers: { Authorization: `Bearer ${getAccessToken()}` } }
         );
         // Filter PENDING = Upcoming

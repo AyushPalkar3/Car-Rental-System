@@ -18,6 +18,7 @@ import {
   ExtendBookingModal,
   BookingTableSkeleton,
 } from "./common/bookingUtils";
+import { getApiBaseUrl } from "../../core/utils/envUrls";
 
 const UserBookings = () => {
   const routes = all_routes;
@@ -36,7 +37,7 @@ const UserBookings = () => {
       if (!userId) return;
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:4000/api/bookings/user/${userId}`,
+        `${getApiBaseUrl()}/bookings/user/${userId}`,
         { headers: { Authorization: `Bearer ${getAccessToken()}` } }
       );
       setAllBookings(res.data.map(formatBooking));

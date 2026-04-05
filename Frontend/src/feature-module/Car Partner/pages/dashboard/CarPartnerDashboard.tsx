@@ -6,9 +6,7 @@ import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import ReactApexChart from "react-apexcharts";
 import axios from "axios";
 import Cookies from "js-cookie";
-
-const API_BASE = "http://localhost:4000";
-const API_MEDIA_BASE = import.meta.env.VITE_API_BASE_URL_IMAGE || API_BASE;
+import { getApiBaseUrl, getMediaBaseUrl } from "../../../../core/utils/envUrls";
 
 const statusColors: Record<string, string> = {
   COMPLETED: "bg-success-transparent",
@@ -287,7 +285,7 @@ const CarPartnerDashboard = () => {
       }
       setLoading(true);
       try {
-        const res = await axios.get(`${API_BASE}/api/car-partner/dashboard`, {
+        const res = await axios.get(`${getApiBaseUrl()}/car-partner/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = res.data;
@@ -525,7 +523,7 @@ const CarPartnerDashboard = () => {
                       src={
                         newestCar.image?.startsWith("http")
                           ? newestCar.image
-                          : `${API_MEDIA_BASE}${newestCar.image}`
+                          : `${getMediaBaseUrl()}${newestCar.image}`
                       }
                       onError={(e: any) => { e.target.src = "assets/admin/img/car/car.jpg"; }}
                       alt="img"
@@ -602,7 +600,7 @@ const CarPartnerDashboard = () => {
                                     r.carImage
                                       ? r.carImage.startsWith("http")
                                         ? r.carImage
-                                        : `${API_MEDIA_BASE}${r.carImage}`
+                                        : `${getMediaBaseUrl()}${r.carImage}`
                                       : "assets/admin/img/car/car-01.jpg"
                                   }
                                   onError={(e: any) => { e.target.src = "assets/admin/img/car/car-01.jpg"; }}
@@ -701,7 +699,7 @@ const CarPartnerDashboard = () => {
                                       car.image
                                         ? car.image.startsWith("http")
                                           ? car.image
-                                          : `${API_MEDIA_BASE}${car.image}`
+                                          : `${getMediaBaseUrl()}${car.image}`
                                         : `assets/admin/img/car/car-0${(idx % 5) + 1}.jpg`
                                     }
                                     onError={(e: any) => { e.target.src = `assets/admin/img/car/car-01.jpg`; }}

@@ -6,9 +6,9 @@ import { listingDetailsPath } from "../../router/all_routes";
 import { img_path } from "../../environment";
 import { getCarDayRate } from "../../utils/carPricing";
 import { buildCarGalleryImagePaths } from "../../utils/carGalleryImages";
+import { getMediaBaseUrl } from "../../core/utils/envUrls";
 
-const CAR_IMAGE_BASE =
-  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+const CAR_IMAGE_BASE = getMediaBaseUrl();
 
 function formatEnum(val: string | undefined | null) {
   if (!val) return "—";

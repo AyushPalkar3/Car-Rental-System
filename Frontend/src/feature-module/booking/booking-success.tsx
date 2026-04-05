@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { RentalBreakdownLines } from "./rentalBreakdownLines";
 import { formatBookingDisplayId } from "../../core/utils/bookingDisplayId";
+import { getApiBaseUrl, getMediaBaseUrl } from "../../core/utils/envUrls";
 
 const getAccessToken = () => {
   const value = `; ${document.cookie}`;
@@ -13,13 +14,6 @@ const getAccessToken = () => {
   if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
   return "";
 };
-
-const apiBase =
-  (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL ||
-  "http://localhost:4000";
-const imageBase =
-  (import.meta as unknown as { env?: { VITE_API_BASE_URL_IMAGE?: string } }).env
-    ?.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
 
 const BookingSuccess = () => {
   const bookingData = useSelector((state: any) => state.checkout.bookingData);
@@ -39,7 +33,7 @@ const BookingSuccess = () => {
     }
     try {
       setInvoiceLoading(true);
-      const res = await fetch(`${apiBase}/api/payment/booking/${bookingId}/invoice`, {
+      const res = await fetch(`${getApiBaseUrl()}/payment/booking/${bookingId}/invoice`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -96,8 +90,8 @@ const BookingSuccess = () => {
                       checkoutData?.car?.images?.[0]
                         ? checkoutData.car.images[0].startsWith("http")
                           ? checkoutData.car.images[0]
-                          : `${imageBase}${checkoutData.car.images[0]}`
-                        : `${imageBase}/uploads/default-car.jpg`
+                          : `${getMediaBaseUrl()}${checkoutData.car.images[0]}`
+                        : `${getMediaBaseUrl()}/uploads/default-car.jpg`
                     }
                     alt="img"
                   />

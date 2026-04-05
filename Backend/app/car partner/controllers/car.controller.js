@@ -114,11 +114,12 @@ export const listPartnerCars = async (req, res) => {
     const partnerId = requirePartner(req, res);
     if (!partnerId) return;
 
-    const cars = await prisma.car.findMany({
+    const rows = await prisma.car.findMany({
       where: { partnerId },
       include: { pricing: true },
       orderBy: { createdAt: "desc" },
     });
+    const cars = rows.filter((c) => c.deletedAt == null);
 
     res.status(200).json({
       count: cars.length,
@@ -142,7 +143,7 @@ export const getPartnerCar = async (req, res) => {
       include: { pricing: true, reviews: true },
     });
 
-    if (!car) {
+    if (!car || car.deletedAt != null) {
       return res.status(404).json({ message: "Car not found" });
     }
 
@@ -192,6 +193,9 @@ export const updatePartnerCar = async (req, res) => {
     });
     if (!existing) {
       return res.status(404).json({ message: "Car not found" });
+    }
+    if (existing.deletedAt) {
+      return res.status(400).json({ message: "This car was removed from the fleet by an admin" });
     }
 
     const data = {};

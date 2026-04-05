@@ -20,6 +20,7 @@ import { getCarDayRate } from "../../utils/carPricing";
 import { buildCarGalleryImagePaths } from "../../utils/carGalleryImages";
 import { carfilterData } from "./carFilter";
 import { fuelFilterToApi, transmissionFilterToApi } from "../../utils/listingCarFilters";
+import { getMediaBaseUrl } from "../../core/utils/envUrls";
 import { FaCogs, FaRoad, FaGasPump, FaBolt, FaCalendarAlt, FaUsers } from "react-icons/fa";
 
 
@@ -815,7 +816,7 @@ const ListingGrid = () => {
                                   <div key={index} className="slide-images">
                                     <Link to={listingDetailsPath(car.id)}>
                                       <img
-                                        src={`${import.meta.env.VITE_API_BASE_URL_IMAGE}${img}`}
+                                        src={`${getMediaBaseUrl()}${img}`}
                                         className="img-fluid"
                                         alt={car.name}
                                       />

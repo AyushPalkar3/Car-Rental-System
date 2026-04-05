@@ -5,8 +5,16 @@ import ImageWithBasePath from "../../../../core/data/img/ImageWithBasePath";
 import { all_routes } from "../../../../router/all_routes";
 import { userAPI } from "../../service/api/user";
 import { toast } from "react-toastify";
+import { getMediaBaseUrl } from "../../../../core/utils/envUrls";
 
-const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+function resolveDocumentUrl(path: string | null | undefined): string | null {
+  if (path == null) return null;
+  const p = String(path).trim();
+  if (!p) return null;
+  if (/^https?:\/\//i.test(p)) return p;
+  const rel = p.startsWith("/") ? p : `/${p}`;
+  return `${getMediaBaseUrl()}${rel}`;
+}
 
 const CustomerDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -132,54 +140,50 @@ const CustomerDetails = () => {
                         <h6>Documents</h6>
                       </div>
                       <div className="d-flex align-items-center flex-wrap gap-4">
-                        {user.dlPdf && (
-                          <div className="d-flex align-items-center">
-                            <span className="me-2">
-                              <ImageWithBasePath
-                                src="assets/admin/img/icons/pdf-icon.svg"
-                                alt="img"
-                              />
-                            </span>
-                            <div>
-                              <h6 className="fs-14 fw-medium">
-                                <a href={user.dlPdf} target="_blank" rel="noopener noreferrer">Driving License</a>
-                              </h6>
+                        {[
+                          {
+                            label: "Driving License",
+                            href: resolveDocumentUrl(user.dlPdf),
+                          },
+                          {
+                            label: "Aadhaar Card",
+                            href: resolveDocumentUrl(user.aadhaarPdf),
+                          },
+                          {
+                            label: "Address Proof",
+                            href: resolveDocumentUrl(user.addressProofPdf),
+                          },
+                        ]
+                          .filter((d) => d.href)
+                          .map(({ label, href }) => (
+                            <div
+                              key={label}
+                              className="d-flex align-items-center border rounded px-3 py-2 bg-light"
+                            >
+                              <span className="me-2 flex-shrink-0">
+                                <ImageWithBasePath
+                                  src="assets/admin/img/icons/pdf-icon.svg"
+                                  alt=""
+                                />
+                              </span>
+                              <div>
+                                <h6 className="fs-14 fw-medium mb-0">{label}</h6>
+                                <a
+                                  href={href!}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="fs-13 text-primary text-decoration-underline"
+                                >
+                                  View PDF
+                                </a>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {user.aadhaarPdf && (
-                          <div className="d-flex align-items-center">
-                            <span className="me-2">
-                              <ImageWithBasePath
-                                src="assets/admin/img/icons/pdf-icon.svg"
-                                alt="img"
-                              />
-                            </span>
-                            <div>
-                              <h6 className="fs-14 fw-medium">
-                                <a href={user.aadhaarPdf} target="_blank" rel="noopener noreferrer">Aadhaar Card</a>
-                              </h6>
-                            </div>
-                          </div>
-                        )}
-                        {user.addressProofPdf && (
-                          <div className="d-flex align-items-center">
-                            <span className="me-2">
-                              <ImageWithBasePath
-                                src="assets/admin/img/icons/pdf-icon.svg"
-                                alt="img"
-                              />
-                            </span>
-                            <div>
-                              <h6 className="fs-14 fw-medium">
-                                <a href={user.addressProofPdf} target="_blank" rel="noopener noreferrer">Address Proof</a>
-                              </h6>
-                            </div>
-                          </div>
-                        )}
-                        {!user.dlPdf && !user.aadhaarPdf && !user.addressProofPdf && (
-                          <p>No documents uploaded</p>
-                        )}
+                          ))}
+                        {!resolveDocumentUrl(user.dlPdf) &&
+                          !resolveDocumentUrl(user.aadhaarPdf) &&
+                          !resolveDocumentUrl(user.addressProofPdf) && (
+                            <p className="text-muted mb-0">No documents uploaded</p>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -201,7 +205,7 @@ const CustomerDetails = () => {
                                             booking.car.thumbnail
                                               ? booking.car.thumbnail.startsWith("http")
                                                 ? booking.car.thumbnail
-                                                : `${IMAGE_BASE_URL}${booking.car.thumbnail}`
+                                                : `${getMediaBaseUrl()}${booking.car.thumbnail}`
                                               : "assets/admin/img/car/car-06.jpg"
                                           }
                                           alt=""

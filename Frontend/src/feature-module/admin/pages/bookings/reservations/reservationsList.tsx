@@ -147,7 +147,16 @@ const ReservationsList = () => {
       render: (text: string, record: any) => (
         <div>
           <h6 className="mb-1 fs-14">
-            <Link to={all_routes.companyDetails}>{text}</Link>
+            {record.customerId ? (
+              <Link
+                to={`${all_routes.customerDetails}/${record.customerId}`}
+                className="text-primary"
+              >
+                {text}
+              </Link>
+            ) : (
+              <span>{text}</span>
+            )}
           </h6>
           <span
             className={`badge  ${record.BADGE === "Client" ? "bg-secondary-transparent" : "bg-violet-transparent"} rounded-pill`}

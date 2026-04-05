@@ -6,8 +6,7 @@ import CommonDatatable from "../../../common/dataTable";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { formatBookingDisplayId } from "../../../../../core/utils/bookingDisplayId";
-
-const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+import { getApiBaseUrl, getMediaBaseUrl } from "../../../../../core/utils/envUrls";
 
 // Status mapping utilities similar to what we did for User Bookings
 const statusColors: Record<string, string> = {
@@ -67,7 +66,7 @@ const ReservationsList = () => {
       if (!token) return;
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:4000/api/car-partner/bookings", {
+        const res = await axios.get(`${getApiBaseUrl()}/car-partner/bookings`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -155,7 +154,7 @@ const ReservationsList = () => {
               src={
                 record.CAR_IMG?.startsWith("http")
                   ? record.CAR_IMG
-                  : `${IMAGE_BASE_URL}${record.CAR_IMG || ""}`
+                  : `${getMediaBaseUrl()}${record.CAR_IMG || ""}`
               }
               onError={(e:any) => e.target.src = "assets/admin/img/car/car-01.jpg"}
               alt="car"

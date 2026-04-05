@@ -14,8 +14,7 @@ const getAccessToken = () => {
   return "";
 };
 
-const IMAGE_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+const IMAGE_BASE_URL = import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
 
 const BookingPayment = () => {
   const routes = all_routes;
@@ -82,7 +81,7 @@ const BookingPayment = () => {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: "INR",
-        name: "EKALO DRIVE",
+        name: "Ekal Car Rental",
         description: "Complete your car reservation",
         image: "/logo192.png",
         order_id: order.id,
@@ -343,9 +342,7 @@ const BookingPayment = () => {
                                 <span className="car-img">
                                   <img
                                     src={
-                                      bookingData.car.images[0].startsWith(
-                                        "http"
-                                      )
+                                      bookingData.car.images[0].startsWith("http")
                                         ? bookingData.car.images[0]
                                         : `${IMAGE_BASE_URL}${bookingData.car.images[0]}`
                                     }

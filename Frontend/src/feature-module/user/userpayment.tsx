@@ -10,9 +10,7 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import { getAccessToken } from "./common/bookingUtils";
 import { formatBookingDisplayId } from "../../core/utils/bookingDisplayId";
-
-const IMAGE_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL_IMAGE || "http://localhost:4000";
+import { getApiBaseUrl, getMediaBaseUrl } from "../../core/utils/envUrls";
 
 const UserPayment = () => {
   const userInfo = useSelector((state: any) => state.user.userInfo);
@@ -33,7 +31,7 @@ const UserPayment = () => {
         if (!userId) return;
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:4000/api/payment/by-user/${userId}`,
+          `${getApiBaseUrl()}/payment/by-user/${userId}`,
           { headers: { Authorization: `Bearer ${getAccessToken()}` } }
         );
         setPayments(res.data || []);
@@ -129,7 +127,7 @@ const UserPayment = () => {
     try {
       const token = getAccessToken();
       const res = await axios.get(
-        `http://localhost:4000/api/payment/booking/${selectedPayment.bookingId}/invoice?gst=0`,
+        `${getApiBaseUrl()}/payment/booking/${selectedPayment.bookingId}/invoice?gst=0`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: "blob",
@@ -171,7 +169,7 @@ const UserPayment = () => {
             src={
               p.booking.car.images[0].startsWith("http")
                 ? p.booking.car.images[0]
-                : `${IMAGE_BASE_URL}${p.booking.car.images[0]}`
+                : `${getMediaBaseUrl()}${p.booking.car.images[0]}`
             }
             alt="car"
           />

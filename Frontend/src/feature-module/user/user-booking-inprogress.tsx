@@ -19,6 +19,7 @@ import {
   canExtendInProgressBooking,
   BookingTableSkeleton,
 } from "./common/bookingUtils";
+import { getApiBaseUrl } from "../../core/utils/envUrls";
 
 export const UserBookingInprogress = () => {
   const routes = all_routes;
@@ -37,7 +38,7 @@ export const UserBookingInprogress = () => {
       if (!userId) return;
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:4000/api/bookings/user/${userId}`,
+        `${getApiBaseUrl()}/bookings/user/${userId}`,
         { headers: { Authorization: `Bearer ${getAccessToken()}` } }
       );
       const formatted = res.data
